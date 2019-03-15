@@ -1,0 +1,131 @@
+{
+	"OK": {
+		"error": false,
+		"code": "00",
+		"name": "OK",
+		"status": 200,
+		"from": "",
+		"info": {},
+		"message": "Ok.",
+		"data": {}
+	},
+	"NOT_FOUND": {
+		"error": false,
+		"code": "00",
+		"name": "NOT_FOUND",
+		"status": 200,
+		"from": "",
+		"info": {},
+		"message": "Not found.",
+		"data": {}
+	},
+	"FOUND": {
+		"error": false,
+		"code": "00",
+		"name": "FOUND",
+		"status": 200,
+		"from": "",
+		"info": {},
+		"message": "Found.",
+		"data": {}
+	},
+
+	"ERR_DUPLICATE": {
+		"error": true,
+		"code": "-01",
+		"name": "ERR_DUPLICATE",
+		"status": 200,
+		"from": "",
+		"info": {},
+		"message": "Duplicates!",
+		"data": {}
+	},
+
+	"GENERAL_ERR": {
+		"error": true,
+		"code": "GENERAL_ERR",
+		"name": "GENERAL_ERR",
+		"status": 500,
+		"from": "",
+		"info": {},
+		"message": "Something went wrong!",
+		"data": {}
+	},
+
+	"SERVICE_NOT_FOUND": {
+		"error": true,
+		"code": "SERVICE_NOT_FOUND",
+		"name": "SERVICE_NOT_FOUND",
+		"status": 404,
+		"from": "",
+		"info": {},
+		"message": "Service not found!",
+		"data": {}
+	},
+
+	"ERR_DATABASE": {
+		"error": true,
+		"code": "ERR_DATABASE",
+		"name": "ERR_DATABASE",
+		"status": 500,
+		"from": "",
+		"info": {},
+		"message": "Database problems!",
+		"data": {}
+	},
+
+	"INVALID_REQUEST": {
+		"error": true,
+		"code": "INVALID_REQUEST",
+		"name": "INVALID_REQUEST",
+		"status": 400,
+		"from": "",
+		"info": {},
+		"message": "Invalid request!",
+		"data": {}
+	},
+
+	"INVALID_HEADERS": {
+		"error": true,
+		"code": "INVALID_HEADERS",
+		"name": "INVALID_HEADERS",
+		"status": 400,
+		"from": "",
+		"info": {},
+		"message": "Invalid headers!",
+		"data": {}
+	},
+
+	"MISSING_KEY": {
+		"error": true,
+		"code": "MISSING_KEY",
+		"name": "MISSING_KEY",
+		"status": 400,
+		"from": "",
+		"info": {},
+		"message": "Missing key!",
+		"data": {}
+	},
+
+	"UNAUTHORIZED": {
+		"error": true,
+		"code": "UNAUTHORIZED",
+		"name": "UNAUTHORIZED",
+		"status": 401,
+		"from": "",
+		"info": {},
+		"message": "Unauthorized!",
+		"data": {}
+	},
+
+	"DEVICE_DISSCONNECTED": {
+		"error": true,
+		"code": "DEVICE_DISSCONNECTED",
+		"name": "DEVICE_DISSCONNECTED",
+		"status": 500,
+		"from": "",
+		"info": {},
+		"message": "Device Not Connected",
+		"data": {}
+	}
+}
