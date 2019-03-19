@@ -72,6 +72,10 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: true
 		},
+		is_connected: {
+			type: Sequelize.INTEGER,
+			allowNull: false
+		},
 		created_at: {
             allowNull: false,
             type: Sequelize.DATE,

@@ -992,9 +992,7 @@ exports.commandtest = function (APP, req, callback) {
 };
 
 exports.sensordata = function (APP, req, callback) {
-    // CALL `sitadev_iot`.`sp_datasensor`(id_device, id_akun, ip_device, pin, status_devic, current_sensor, watt, date_device);
-    
-	var params = APP.queries.select('device_box_listrik', req, APP.models);
+
 	var datareq = req.body
 	var response = {}
 	var pin
@@ -1003,7 +1001,6 @@ exports.sensordata = function (APP, req, callback) {
 	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.id_device) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
-	// if(!datareq.tipe_device) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
@@ -1022,56 +1019,69 @@ exports.sensordata = function (APP, req, callback) {
 			pin = datareq.pin
 		}
 
-	if (datareq.sensor_status == '0' && datareq.status == '1')
-		{
-			status_saklar = '0'
-			console.log('update health status')
+	APP.db.sequelize.query("update device_box_listrik set is_connected = 1 where id_device = '" + datareq.id_device + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 
-			APP.db.sequelize.query("update device_box_listrik set health_status = 1 where id_device = '" + datareq.id_device + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	.then(device => {		
+		console.log('health status updated')
 		
-			.then(device => {		
-				console.log('health status updated')
-
-				console.log('sp_datasensor')
-				APP.db.sequelize.query('CALL sitadev_iot.sp_datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
-					{ 
-						replacements: {
-							id_device: datareq.id_device,
-							id_akun: datareq.id_akun,
-							ip_device: datareq.ip_device,
-							pin : pin,
-							status_device: status_saklar,
-							current_sensor: datareq.ampere,
-							watt: datareq.wattage,
-							date_device: datareq.date
-						}, 
-						type: APP.db.sequelize.QueryTypes.RAW 
-					}
-				)
-
-				.then((rows) => {
-
-					console.log(rows[0].message)
-					var spreturn = rows[0].message
-						
-					if (rows[0].message == '0')
-						{
-							response = {
-								code : 'OK',
-								error : 'true',
-								message : 'Device not activated yet'
-							}
+		if (datareq.sensor_status == '0' && datareq.status == '1')
+			{
+				status_saklar = '0'
+				console.log('update health status')
+	
+				APP.db.sequelize.query("update device_box_listrik set health_status = 1 where id_device = '" + datareq.id_device + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+			
+				.then(device => {		
+					console.log('health status updated')
+	
+					console.log('sp_datasensor')
+					APP.db.sequelize.query('CALL sitadev_iot.sp_datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
+						{ 
+							replacements: {
+								id_device: datareq.id_device,
+								id_akun: datareq.id_akun,
+								ip_device: datareq.ip_device,
+								pin : pin,
+								status_device: status_saklar,
+								current_sensor: datareq.ampere,
+								watt: datareq.wattage,
+								date_device: datareq.date
+							}, 
+							type: APP.db.sequelize.QueryTypes.RAW 
 						}
-					else
-						{
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Data saved'
+					)
+	
+					.then((rows) => {
+	
+						console.log(rows[0].message)
+						var spreturn = rows[0].message
+							
+						if (rows[0].message == '0')
+							{
+								response = {
+									code : 'OK',
+									error : 'true',
+									message : 'Device not activated yet'
+								}
 							}
+						else
+							{
+								response = {
+									code : 'OK',
+									error : 'false',
+									message : 'Data saved'
+								}
+							}
+						return callback(null, response);
+	
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
 						}
-					return callback(null, response);
-
+						return callback(response);
+					});
+	
 				}).catch((err) => {
 					response = {
 						code: 'ERR_DATABASE',
@@ -1079,65 +1089,65 @@ exports.sensordata = function (APP, req, callback) {
 					}
 					return callback(response);
 				});
-
-			}).catch((err) => {
-				response = {
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				}
-				return callback(response);
-			});
-		}
-	else
-		{
-			status_saklar = datareq.status
-			console.log('update health status')
-
-			APP.db.sequelize.query("update device_box_listrik set health_status = 0 where id_device = '" + datareq.id_device + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-		
-			.then(device => {		
-				console.log('health status updated')
-
-				console.log('sp_datasensor')
-				APP.db.sequelize.query('CALL sitadev_iot.sp_datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
-					{ 
-						replacements: {
-							id_device: datareq.id_device,
-							id_akun: datareq.id_akun,
-							ip_device: datareq.ip_device,
-							pin : pin,
-							status_device: status_saklar,
-							current_sensor: datareq.ampere,
-							watt: datareq.wattage,
-							date_device: datareq.date
-						}, 
-						type: APP.db.sequelize.QueryTypes.RAW 
-					}
-				)
-
-				.then((rows) => {
-
-					console.log(rows[0].message)
-					var spreturn = rows[0].message
-						
-					if (rows[0].message == '0')
-						{
-							response = {
-								code : 'OK',
-								error : 'true',
-								message : 'Device not activated yet'
-							}
+			}
+		else
+			{
+				status_saklar = datareq.status
+				console.log('update health status')
+	
+				APP.db.sequelize.query("update device_box_listrik set health_status = 0 where id_device = '" + datareq.id_device + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+			
+				.then(device => {		
+					console.log('health status updated')
+	
+					console.log('sp_datasensor')
+					APP.db.sequelize.query('CALL sitadev_iot.sp_datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
+						{ 
+							replacements: {
+								id_device: datareq.id_device,
+								id_akun: datareq.id_akun,
+								ip_device: datareq.ip_device,
+								pin : pin,
+								status_device: status_saklar,
+								current_sensor: datareq.ampere,
+								watt: datareq.wattage,
+								date_device: datareq.date
+							}, 
+							type: APP.db.sequelize.QueryTypes.RAW 
 						}
-					else
-						{
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Data saved'
+					)
+	
+					.then((rows) => {
+	
+						console.log(rows[0].message)
+						var spreturn = rows[0].message
+							
+						if (rows[0].message == '0')
+							{
+								response = {
+									code : 'OK',
+									error : 'true',
+									message : 'Device not activated yet'
+								}
 							}
+						else
+							{
+								response = {
+									code : 'OK',
+									error : 'false',
+									message : 'Data saved'
+								}
+							}
+						return callback(null, response);
+	
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
 						}
-					return callback(null, response);
-
+						return callback(response);
+					});
+	
 				}).catch((err) => {
 					response = {
 						code: 'ERR_DATABASE',
@@ -1145,15 +1155,15 @@ exports.sensordata = function (APP, req, callback) {
 					}
 					return callback(response);
 				});
-
-			}).catch((err) => {
-				response = {
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				}
-				return callback(response);
-			});
+			}
+			
+	}).catch((err) => {
+		response = {
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
 		}
+		return callback(response);
+	});
 	
 };
 
