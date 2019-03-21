@@ -1,14 +1,15 @@
 "use strict";
 
 module.exports = function (sequelize, Sequelize) {
-	var device_box_listrik = sequelize.define('device_box_listrik', {
-		id_device: {
+	var device = sequelize.define('device', {
+
+		device_id: {
 			type: Sequelize.STRING,
 			allowNull: false,
 			unique: true,
 			primaryKey: true
 		},
-		id_akun: {
+		user_id: {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
@@ -16,31 +17,31 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
-		nama_device: {
+		device_name: {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
-		status_device: {
+		device_status: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		tanggal_install: {
+		install_date: {
 			type: Sequelize.DATE,
 			allowNull: false
 		},
-		tanggal_aktif: {
+		active_date: {
 			type: Sequelize.DATE,
 			allowNull: true
 		},
-		saklar: {
+		switch: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		tipe_device: {
+		device_type: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		jml_pin: {
+		number_of_pin: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
@@ -74,7 +75,7 @@ module.exports = function (sequelize, Sequelize) {
 		},
 		is_connected: {
 			type: Sequelize.INTEGER,
-			allowNull: false
+			allowNull: true
 		},
 		created_at: {
             allowNull: false,
@@ -88,7 +89,7 @@ module.exports = function (sequelize, Sequelize) {
         }
   }, {});
 
-  device_box_listrik.associate = function (models) {};
+  device.associate = function (models) {};
 
-  return device_box_listrik;
+  return device;
 };

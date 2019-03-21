@@ -51,7 +51,7 @@ exports.mongoGet = function (APP, req, callback) {
 
 exports.setlumensensor = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -68,13 +68,13 @@ exports.setlumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_device : params.id_device,
-			id_akun : params.id_akun,
+			device_id : params.id_device,
+			user_id : params.id_akun,
 			ip_device : params.ip_device
 		}
 	}
 
-	Device.findAll(query.condition).then((result) => {
+	Device.findAll(query.options).then((result) => {
 		if (result.length > 0) {
 			Device.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
@@ -101,7 +101,7 @@ exports.setlumensensor = function (APP, req, callback) {
 
 exports.setall = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -116,11 +116,11 @@ exports.setall = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_akun : params.id_akun
+			user_id : params.id_akun
 		}
 	}
 
-	Device.findAll(query.condition).then((result) => {
+	Device.findAll(query.options).then((result) => {
 		if (result.length > 0) {
 			Device.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
@@ -147,7 +147,7 @@ exports.setall = function (APP, req, callback) {
 
 exports.switchlumensensor = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -162,8 +162,8 @@ exports.switchlumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_device : params.id_device,
-			id_akun : params.id_akun,
+			device_id : params.id_device,
+			user_id : params.id_akun,
 			ip_device : params.ip_device
 		}
 	}
@@ -195,7 +195,7 @@ exports.switchlumensensor = function (APP, req, callback) {
 
 exports.removelumensensor = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -211,8 +211,8 @@ exports.removelumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_device : params.id_device,
-			id_akun : params.id_akun,
+			device_id : params.id_device,
+			user_id : params.id_akun,
 			ip_device : params.ip_device
 		}
 	}
@@ -244,7 +244,7 @@ exports.removelumensensor = function (APP, req, callback) {
 
 exports.removeall = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -258,7 +258,7 @@ exports.removeall = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_akun : params.id_akun
+			user_id : params.id_akun
 		}
 	}
 
@@ -267,11 +267,26 @@ exports.removeall = function (APP, req, callback) {
 			Device.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
 				console.log(resUpdate)
-				
-				return callback(null, {
-					code : 'OK',
-					message : 'Remove Lumen Sensor Value on All Devices Success and Saved'
+
+				query.value = {
+					lumensensor_status : 0
+				}
+				query.options = {
+					where : {
+						user_id : params.id_akun
+					}
+				}
+
+				Device.update(query.value, query.options).then((resUpdate) => {
+					console.log(`========== RESULT ==========`)
+					console.log(resUpdate)
+					
+					return callback(null, {
+						code : 'OK',
+						message : 'Remove Lumen Sensor Value on All Devices Success and Saved'
+					});
 				});
+				
 			});
 		} else {
 			return callback(null, {
@@ -289,7 +304,7 @@ exports.removeall = function (APP, req, callback) {
 
 exports.lumensensordata = function (APP, req, callback) {
 	const datareq = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 
 	console.log(`========== PARAMS ==========`)
 	console.log(datareq)
@@ -299,8 +314,8 @@ exports.lumensensordata = function (APP, req, callback) {
 	if(!datareq.sensorvalue) return callback({ code: 'MISSING_KEY' })
 
     query.where = { 
-		id_akun : datareq.id_akun,
-		id_device : datareq.id_device
+		user_id : datareq.id_akun,
+		device_id : datareq.id_device
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 
@@ -312,77 +327,88 @@ exports.lumensensordata = function (APP, req, callback) {
         console.log(element.ip_device)
         console.log(element.tipe_device)
         console.log(element.lumensensor_on)
-        console.log(element.lumensensor_off)
-        
-        var mode = ""
-		if (element.tipe_device == '1')
+		console.log(element.lumensensor_off)
+		console.log(element.lumensensor_status)
+
+		if (element.lumensensor_status == '1')
+		{
+			var mode = ""
+			if (element.tipe_device == '1')
 			{
 				mode = '1'
 			}
-		else
+			else
 			{
 				mode = '0'
             }
-        console.log(mode)
+        	console.log(mode)
 
-        if (element.lumensensor_on > datareq.sensorvalue)
-        {
-            console.log("nyala")
-            var params = {
-				"id_akun": datareq.id_akun,
-				"id_device": datareq.id_device,
-				"ip_device": element.ip_device,
-				"nama_device": element.nama_device,
-				"status": "1",
-				"type": element.tipe_device,
-				"pin": "0",
-				"mode": mode
-			}
-			console.log(params)
-			var url = `http://localhost:${process.env.PORT}/device/command`
-
-            console.log("hit device command")
-            request.post(url, params, (err, result) => {
-				if (err) {
-					
+        	if (element.lumensensor_on > datareq.sensorvalue)
+        	{
+				console.log("nyala")
+				var params = {
+					"id_akun": datareq.id_akun,
+					"id_device": datareq.id_device,
+					"ip_device": element.ip_device,
+					"nama_device": element.nama_device,
+					"status": "1",
+					"type": element.tipe_device,
+					"pin": "0",
+					"mode": mode
 				}
+				console.log(params)
+				var url = `http://localhost:${process.env.PORT}/device/command`
+
+				console.log("hit device command")
+				request.post(url, params, (err, result) => {
+					if (err) {
+						
+					}
+					return callback(null, {
+						code : 'OK'
+					});
+				})
+        	}
+        	else if(element.lumensensor_off < datareq.sensorvalue)
+        	{
+				console.log("mati")
+				var params = {
+					"id_akun": datareq.id_akun,
+					"id_device": datareq.id_device,
+					"ip_device": element.ip_device,
+					"nama_device": element.nama_device,
+					"status": "0",
+					"type": element.tipe_device,
+					"pin": "0",
+					"mode": mode
+				}
+				console.log(params)
+				var url = `http://localhost:${process.env.PORT}/device/command`
+
+				console.log("hit device command")
+				request.post(url, params, (err, result) => {
+					if (err) {
+						
+					}
+					return callback(null, {
+						code : 'OK'
+					});
+				})
+        	}
+        	else
+        	{
 				return callback(null, {
 					code : 'OK'
 				});
-			})
-        }
-        else if(element.lumensensor_off < datareq.sensorvalue)
-        {
-            console.log("mati")
-            var params = {
-				"id_akun": datareq.id_akun,
-				"id_device": datareq.id_device,
-				"ip_device": element.ip_device,
-				"nama_device": element.nama_device,
-				"status": "0",
-				"type": element.tipe_device,
-				"pin": "0",
-				"mode": mode
-			}
-			console.log(params)
-			var url = `http://localhost:${process.env.PORT}/device/command`
-
-            console.log("hit device command")
-            request.post(url, params, (err, result) => {
-				if (err) {
-					
-				}
-				return callback(null, {
-					code : 'OK'
-				});
-			})
-        }
-        else
-        {
-            return callback(null, {
-                code : 'OK'
-            });
-        }
+        	}
+		}
+		else
+		{
+			return callback(null, {
+				code : 'OK',
+				message : 'Lumen Sensor Status OFF'
+			});
+		}
 			
 	}).catch((err) => {
 		return callback({
