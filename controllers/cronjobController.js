@@ -68,7 +68,7 @@ module.exports = function () {
 
     // Scheduler Device On Off
 	scheduler.scheduleJob('*/30 * * * *', function(time) {
-        let Device = APP.models.mysql.device_box_listrik
+        let Device = APP.models.mysql.device
         let hours = (time.getHours() < 10 ? '0' : '' ) + time.getHours()
 		let minutes = (time.getMinutes() < 10 ? '0' : '' ) + time.getMinutes()
 		let seconds = (time.getSeconds() < 10 ? '0' : '') + time.getSeconds()
@@ -77,11 +77,11 @@ module.exports = function () {
 		console.log(`=============== SCHEDULER DEVICE ON/OFF at ${convertedTime} ===============`)
 
         query.attributes = [
-            'id_device',
-            'id_akun',
+            'device_id',
+            'user_id',
             'ip_device',
-            'nama_device',
-            'tipe_device',
+            'device_name',
+            'device_type',
             'timer_on',
             'timer_off'
         ]
@@ -99,11 +99,11 @@ module.exports = function () {
                     let device = result[index].toJSON()
                     let url = `http://localhost:${process.env.PORT}/device/command`
                     let params = {
-                        "id_akun" : device.id_akun.toString(),
-                        "id_device" : device.id_device.toString(),
+                        "id_akun" : device.user_id.toString(),
+                        "id_device" : device.device_id.toString(),
                         "ip_device" : device.ip_device.toString(),
-                        "nama_device" : device.nama_device.toString(),
-                        "type" : device.tipe_device.toString(),
+                        "nama_device" : device.device_name.toString(),
+                        "type" : device.device_type.toString(),
                         "mode" : "1",
                         "pin" : ""
                     }
@@ -137,17 +137,17 @@ module.exports = function () {
     
     // Scheduler Connected Device
     scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
-        let Device = APP.models.mysql.device_box_listrik
+        let Device = APP.models.mysql.device
         let timeFormat = datetime.formatHMS(timeCron)
         let dateFormat = datetime.formatYMD(timeCron)
 
         console.log(`=============== SCHEDULER CHECK DC DEVICE at ${dateFormat} ${timeFormat} ===============`)
 
         query.where = {
-            'saklar': '1',
+            'switch': '1',
             'is_connected': '1'
         }
-        query.attributes = [ 'id_device' ]
+        query.attributes = [ 'device_id' ]
 
         async.waterfall([
             function getID(callback) {
@@ -157,7 +157,7 @@ module.exports = function () {
                     for (let i = 0; i < result.length; i++) {
                         let res = result[i].toJSON()
 
-                        deviceID[i] = res.id_device
+                        deviceID[i] = res.device_id
                     }
                     
                     callback(null, deviceID)
@@ -184,7 +184,7 @@ module.exports = function () {
                 }
                 query.options = {
                     where : {
-                        id_device : data
+                        device_id : data
                     }
                 }
                 
