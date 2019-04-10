@@ -24,7 +24,8 @@ exports.creategroup = function (APP, req, callback) {
 
 	console.log("create group");
 	APP.models.mysql.device_group.create({
-		id_akun: datareq.id_akun,
+
+		user_id: datareq.id_akun,
 		name: datareq.name,		
 		description: datareq.description,
 		tdl: datareq.tdl
@@ -62,7 +63,7 @@ exports.updategrouptdl = function (APP, req, callback) {
 	console.log(date);
 	
 	console.log("updatetdl");
-	APP.db.sequelize.query("update device_group set tdl = '" + datareq.tdl + "' where id_akun = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	APP.db.sequelize.query("update device_group set tdl = '" + datareq.tdl + "' where user_id = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 	
 	.then(device => {
 
@@ -97,7 +98,7 @@ exports.updategroupname = function (APP, req, callback) {
 	console.log(date);
 	
 	console.log("updategroupname");
-	APP.db.sequelize.query("update device_group set name = '" + datareq.name + "', description = '" + datareq.description + "' where id_akun = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	APP.db.sequelize.query("update device_group set name = '" + datareq.name + "', description = '" + datareq.description + "' where user_id = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 	
 	.then(device => {
 
@@ -119,18 +120,17 @@ exports.updategroupname = function (APP, req, callback) {
 
 exports.getdevicegroup = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_box_listrik
+	const Device = APP.models.mysql.device
 	
 	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
 	if(!params.id_group) return callback({ code: 'MISSING_KEY' })
 	
 	query.where = { 
-		id_akun : params.id_akun,
+		user_id : params.id_akun,
 		group_id : params.id_group,
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 	
-	// APP.db.sequelize.query("select id_device, ip_device, nama_device, status_device, saklar, tipe_device, jml_pin from device_box_listrik where id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.SELECT})	
 	Device.findAll(query).then((result) => {
 	return callback(null, {
 		code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
@@ -161,7 +161,7 @@ exports.assigngroup = function (APP, req, callback) {
 	console.log(date);
 	
 	console.log("updatetdl");
-	APP.db.sequelize.query("update device_box_listrik set group_id = '" + datareq.id_group + "' where id_akun = '" + datareq.id_akun + "' and id_device = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	APP.db.sequelize.query("update device set group_id = '" + datareq.id_group + "' where user_id = '" + datareq.id_akun + "' and device_id = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 	
 	.then(device => {
 
@@ -196,7 +196,7 @@ exports.removegroup = function (APP, req, callback) {
 	console.log(date);
 	
 	console.log("updatetdl");
-	APP.db.sequelize.query("update device_box_listrik set group_id = NULL where id_akun = '" + datareq.id_akun + "' and id_device = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	APP.db.sequelize.query("update device set group_id = NULL where user_id = '" + datareq.id_akun + "' and device_id = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 	
 	.then(device => {
 
@@ -223,11 +223,10 @@ exports.getgroup = function (APP, req, callback) {
 	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
 	
 	query.where = { 
-		id_akun : params.id_akun
+		user_id : params.id_akun
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
-	
-	// APP.db.sequelize.query("select id_device, ip_device, nama_device, status_device, saklar, tipe_device, jml_pin from device_box_listrik where id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.SELECT})	
+		
 	Device.findAll(query).then((result) => {
 		
 		return callback(null, {
@@ -246,7 +245,6 @@ exports.getgroup = function (APP, req, callback) {
 
 exports.deletegroup = function (APP, req, callback) {
 	
-	var params = APP.queries.select('device_box_listrik', req, APP.models);
 	var datareq = req.body
 	var response = {}
 
@@ -259,7 +257,7 @@ exports.deletegroup = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
-	APP.db.sequelize.query("delete from device_group where id = '" + datareq.id_group + "' and id_akun = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	APP.db.sequelize.query("delete from device_group where id = '" + datareq.id_group + "' and user_id = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 
 	.then(device => {
 		console.log("delete device")
@@ -296,7 +294,7 @@ exports.grouptotalruntime = function (APP, req, callback) {
 	console.log(date);
 
 	console.log('sp_runtimereport_total_pergroup')
-	APP.db.sequelize.query('CALL sitadev_iot.sp_runtimereport_total_pergroup (:id_akun, :group_id, :start_date, :end_date)',
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total_pergroup (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
                 id_akun: datareq.id_akun,
@@ -345,7 +343,7 @@ exports.groupruntime = function (APP, req, callback) {
 	console.log(date);
 
 	console.log('sp_runtimereport_pergroup')
-	APP.db.sequelize.query('CALL sitadev_iot.sp_runtimereport_pergroup (:id_akun, :group_id, :start_date, :end_date)',
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pergroup (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
                 id_akun: datareq.id_akun,
@@ -394,7 +392,7 @@ exports.groupdailyruntime = function (APP, req, callback) {
 	console.log(date);
 
 	console.log('sp_runtimereport_total_pergroup')
-	APP.db.sequelize.query('CALL sitadev_iot.sp_runtimereport_group_perday (:id_akun, :group_id, :start_date, :end_date)',
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_group_perday (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
                 id_akun: datareq.id_akun,

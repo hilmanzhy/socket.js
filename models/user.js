@@ -1,6 +1,6 @@
 module.exports = function (sequelize, Sequelize) {
     var User = sequelize.define('users', {
-        id_akun: {
+        user_id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
             autoIncrement: true,
@@ -18,6 +18,8 @@ module.exports = function (sequelize, Sequelize) {
         password: Sequelize.STRING,
         device_key: Sequelize.STRING,
         active_status: Sequelize.INTEGER,
+        tdl: Sequelize.INTEGER,
+        power: Sequelize.INTEGER,
         action_by: Sequelize.INTEGER,
         ip_address: Sequelize.STRING,
         created_at: {

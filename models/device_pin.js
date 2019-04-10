@@ -1,14 +1,15 @@
 "use strict";
 
 module.exports = function (sequelize, Sequelize) {
-	var device_box_listrik = sequelize.define('device_box_listrik', {
-		id_device: {
+	var device_pin = sequelize.define('device_pin', {
+
+		device_id: {
 			type: Sequelize.STRING,
 			allowNull: false,
 			unique: true,
 			primaryKey: true
 		},
-		id_akun: {
+		user_id: {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
@@ -16,63 +17,36 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
-		nama_device: {
+		device_name: {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
-		status_device: {
+		device_status: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		tanggal_install: {
+		install_date: {
 			type: Sequelize.DATE,
-			allowNull: false
+			allowNull: false,
+			defaultValue: Sequelize.NOW
 		},
-		tanggal_aktif: {
+		active_date: {
 			type: Sequelize.DATE,
 			allowNull: true
 		},
-		saklar: {
+		switch: {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		tipe_device: {
+		pin: {
 			type: Sequelize.INTEGER,
 			allowNull: false
-		},
-		jml_pin: {
+        },
+        group_id: {
 			type: Sequelize.INTEGER,
 			allowNull: false
-		},
-		timer_on: {
-			type: Sequelize.TIME,
-			allowNull: true
-		},
-		timer_off: {
-			type: Sequelize.TIME,
-			allowNull: true
-		},
-		timer_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_on: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_off: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		health_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		created_at: {
+        },
+        created_at: {
             allowNull: false,
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
@@ -84,7 +58,7 @@ module.exports = function (sequelize, Sequelize) {
         }
   }, {});
 
-  device_box_listrik.associate = function (models) {};
+  device_pin.associate = function (models) {};
 
-  return device_box_listrik;
+  return device_pin;
 };
