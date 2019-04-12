@@ -99,11 +99,11 @@ module.exports = function () {
                     let device = result[index].toJSON()
                     let url = `http://localhost:${process.env.PORT}/device/command`
                     let params = {
-                        "id_akun" : device.user_id.toString(),
-                        "id_device" : device.device_id.toString(),
+                        "user_id" : device.user_id.toString(),
+                        "device_id" : device.device_id.toString(),
                         "ip_device" : device.ip_device.toString(),
-                        "nama_device" : device.device_name.toString(),
-                        "type" : device.device_type.toString(),
+                        "device_name" : device.device_name.toString(),
+                        "device_type" : device.device_type.toString(),
                         "mode" : "1",
                         "pin" : ""
                     }

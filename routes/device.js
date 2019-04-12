@@ -314,32 +314,4 @@ router.post('/timer/remove', (req, res, next) => {
 	});
 });
 
-/* Route Device Timer */
-router.post('/lumensensor/set', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/set ==========")
-	deviceController.setlumensensor(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/lumensensor/switch', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/switch ==========")
-	deviceController.switchlumensensor(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/lumensensor/remove', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/remove ==========")
-	deviceController.removelumensensor(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
 module.exports = router;
