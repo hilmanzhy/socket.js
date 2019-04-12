@@ -1,13 +1,14 @@
 {
-  "name": "Sitamoto Core App",
-  "version": "v2.0.0",
-  "description": "Sitamoto Core App",
+  "name": "sitamoto",
+  "version": "2.0.0",
+  "description": "Core App Sitamoto",
+  "private": true,
   "main": "app.js",
   "scripts": {
     "app": "nodemon app.js",
     "socket": "nodemon socket.js"
   },
-  "author": "Vascomm backend",
+  "author": "Vascomm | IoT Dev Team",
   "license": "MIT",
   "dependencies": {
     "async": "^2.6.2",
@@ -38,6 +39,7 @@
     "react-dom": "^16.8.6",
     "sequelize": "^4.43.1",
     "sequelize-cli": "^4.1.1",
+    "socket.io": "^2.2.0",
     "trycatch": "^1.5.21",
     "unirest": "^0.6.0",
     "uuid": "^3.3.2",
