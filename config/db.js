@@ -42,7 +42,7 @@ var options = (process.env.NODE_ENV === 'production') ? {
 	timezone: '+07:00',
 	dialect: mysqlDialect,
 	pool: mysqlPool,
-	dialectOptions: mysqlDialectOptions,
+	// dialectOptions: mysqlDialectOptions,
 	define: define,
 	logging: false
 } : {
@@ -51,7 +51,7 @@ var options = (process.env.NODE_ENV === 'production') ? {
 	timezone: '+07:00',
 	dialect: mysqlDialect,
 	pool: mysqlPool,
-	dialectOptions: mysqlDialectOptions,
+	// dialectOptions: mysqlDialectOptions,
 	define: define
 };
 const sequelize = new Sequelize(process.env.MYSQL_NAME, process.env.MYSQL_USER, process.env.MYSQL_PASS, options);
