@@ -116,6 +116,29 @@ io.on('connection', (socket) => {
 			if (err) console.log(err)
 		})		
 	});
+	// Sensor Data
+	socket.on('sensordata', function (params) {
+		console.log(`===== SOCKET SENSOR DATA =====`)
+		console.log(`${params.user_id}`)
+
+		req.app = { db : db }
+		req.body = params
+
+
+		const deviceController = require('./controllers/deviceController.js');
+
+		deviceController.sensordata(req.app, req, (err, result) => {
+			if (err) return console.error({
+				"status" : 'ERR',
+				"message" : err
+			})
+
+			return socket.emit('res-sensordata', {
+				"status" : 200,
+				"params" : result
+			})
+		})
+	});
 })
 
 http.listen(process.env.SOCKET_PORT, function() {
