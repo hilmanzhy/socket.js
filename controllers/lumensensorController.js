@@ -58,7 +58,7 @@ exports.setlumensensor = function (APP, req, callback) {
 
 	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
 	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_on) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_off) return callback({ code: 'MISSING_KEY' })
 	
@@ -70,7 +70,7 @@ exports.setlumensensor = function (APP, req, callback) {
 		where : {
 			device_id : params.id_device,
 			user_id : params.id_akun,
-			ip_device : params.ip_device
+			device_ip : params.device_ip
 		}
 	}
 
@@ -154,7 +154,7 @@ exports.switchlumensensor = function (APP, req, callback) {
 	
 	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
 	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_status) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
@@ -164,7 +164,7 @@ exports.switchlumensensor = function (APP, req, callback) {
 		where : {
 			device_id : params.id_device,
 			user_id : params.id_akun,
-			ip_device : params.ip_device
+			device_ip : params.device_ip
 		}
 	}
 
@@ -202,7 +202,7 @@ exports.removelumensensor = function (APP, req, callback) {
 	
 	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
 	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
 		lumensensor_on : null,
@@ -213,7 +213,7 @@ exports.removelumensensor = function (APP, req, callback) {
 		where : {
 			device_id : params.id_device,
 			user_id : params.id_akun,
-			ip_device : params.ip_device
+			device_ip : params.device_ip
 		}
 	}
 
@@ -324,7 +324,7 @@ exports.lumensensordata = function (APP, req, callback) {
         console.log(`========== RESULT ==========`)
         const element = result
         console.log(element.nama_device)
-        console.log(element.ip_device)
+        console.log(element.device_ip)
         console.log(element.tipe_device)
         console.log(element.lumensensor_on)
 		console.log(element.lumensensor_off)
@@ -349,7 +349,7 @@ exports.lumensensordata = function (APP, req, callback) {
 				var params = {
 					"id_akun": datareq.id_akun,
 					"id_device": datareq.id_device,
-					"ip_device": element.ip_device,
+					"device_ip": element.device_ip,
 					"nama_device": element.nama_device,
 					"status": "1",
 					"type": element.tipe_device,
@@ -375,7 +375,7 @@ exports.lumensensordata = function (APP, req, callback) {
 				var params = {
 					"id_akun": datareq.id_akun,
 					"id_device": datareq.id_device,
-					"ip_device": element.ip_device,
+					"device_ip": element.device_ip,
 					"nama_device": element.nama_device,
 					"status": "0",
 					"type": element.tipe_device,

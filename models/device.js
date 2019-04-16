@@ -13,7 +13,7 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.STRING,
 			allowNull: false
 		},
-		ip_device: {
+		device_ip: {
 			type: Sequelize.STRING,
 			allowNull: false
 		},

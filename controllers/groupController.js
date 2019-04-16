@@ -585,7 +585,7 @@ exports.groupcommand = function (APP, req, callback) {
 			var params = {
 				"id_akun": datareq.id_akun,
 				"id_device": element.id_device,
-				"ip_device": element.ip_device,
+				"device_ip": element.device_ip,
 				"nama_device": element.nama_device,
 				"status": datareq.status,
 				"type": element.tipe_device,
