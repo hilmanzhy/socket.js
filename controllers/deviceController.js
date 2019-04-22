@@ -57,7 +57,7 @@ exports.registerdevice = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_name) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
@@ -72,7 +72,7 @@ exports.registerdevice = function (APP, req, callback) {
 		where : {
 			device_id : datareq.device_id,
 			user_id : datareq.user_id,
-			ip_device : datareq.ip_device
+			device_ip : datareq.device_ip
 		}
 	}
 
@@ -93,7 +93,7 @@ exports.registerdevice = function (APP, req, callback) {
 				APP.models.mysql.device.create({
 					device_id: datareq.device_id,
 					user_id: datareq.user_id,
-					ip_device: datareq.ip_device,		
+					device_ip: datareq.device_ip,		
 					device_status: '0',
 					device_name: datareq.device_name,
 					install_date: date,
@@ -203,12 +203,12 @@ exports.registerdevice = function (APP, req, callback) {
 			else
 			{
 				console.log("insert device");
-				APP.db.sequelize.query('CALL sitadev_iot_2.create_devicepin (:id_device, :ip_device, :id_akun, :nama_device, :tanggal_install, :jumlah_pin, :group_id)',
+				APP.db.sequelize.query('CALL sitadev_iot_2.create_devicepin (:id_device, :device_ip, :id_akun, :nama_device, :tanggal_install, :jumlah_pin, :group_id)',
 					{ 
 						replacements: {
 							id_device: datareq.device_id,
 							id_akun: datareq.user_id,
-							ip_device: datareq.ip_device,
+							device_ip: datareq.device_ip,
 							nama_device: datareq.device_name,
 							tanggal_install: date,
 							jumlah_pin : datareq.pin,
@@ -722,7 +722,7 @@ exports.updatename = function (APP, req, callback) {
 			where : {
 				device_id : datareq.device_id,
 				user_id : datareq.user_id,
-				ip_device : datareq.ip_device
+				device_ip : datareq.device_ip
 			}
 		}
 
@@ -935,7 +935,7 @@ exports.devicehistory = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
-	var query = "select device_id, ip_device, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
+	var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
 
 	if (datareq.device_id != '')
 	{
@@ -972,7 +972,7 @@ exports.commandtest = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.status) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_name) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
@@ -987,7 +987,7 @@ exports.commandtest = function (APP, req, callback) {
 		where : {
 			device_id : datareq.device_id,
 			user_id : datareq.user_id,
-			ip_device : datareq.ip_device
+			device_ip : datareq.device_ip
 		}
 	}
 	
@@ -995,7 +995,7 @@ exports.commandtest = function (APP, req, callback) {
 	{
 		Device.findAll(query.options).then((result) => {
 			if (result.length > 0) {
-				APP.db.sequelize.query("update device set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and ip_device = '" + datareq.ip_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+				APP.db.sequelize.query("update device set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 			
 				.then(device => {
 
@@ -1004,7 +1004,7 @@ exports.commandtest = function (APP, req, callback) {
 
 						device_id: datareq.device_id,
 						user_id: datareq.user_id,
-						ip_device: datareq.ip_device,					
+						device_ip: datareq.device_ip,					
 						switch: datareq.status,
 						device_name: datareq.device_name,
 						device_type: datareq.device_type,
@@ -1054,7 +1054,7 @@ exports.commandtest = function (APP, req, callback) {
 		Device.findAll(query.options).then((result) => {
 			if (result.length > 0) {
 
-				APP.db.sequelize.query("update device_pin set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and ip_device = '" + datareq.ip_device + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+				APP.db.sequelize.query("update device_pin set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 			
 				.then(device => {
 
@@ -1063,7 +1063,7 @@ exports.commandtest = function (APP, req, callback) {
 
 						device_id: datareq.device_id,
 						user_id: datareq.user_id,
-						ip_device: datareq.ip_device,					
+						device_ip: datareq.device_ip,					
 						switch: datareq.status,
 						device_name: datareq.device_name,
 						device_type: datareq.device_type,
@@ -1075,12 +1075,12 @@ exports.commandtest = function (APP, req, callback) {
 					}).then((rows) => {
 
 						console.log('execute singel ccu device')
-						APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:id_akun, :id_device, :ip_device)',
+						APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:id_akun, :id_device, :device_ip)',
 							{ 
 								replacements: {
 									id_device: datareq.device_id,
 									id_akun: datareq.user_id,
-									ip_device: datareq.ip_device
+									device_ip: datareq.device_ip
 								}, 
 								type: APP.db.sequelize.QueryTypes.RAW 
 							}
@@ -1137,12 +1137,12 @@ exports.commandtest = function (APP, req, callback) {
 		Device.findAll(query.options).then((result) => {
 			if (result.length > 0) {
 				console.log('execute all pin')
-				APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :ip_device, :status_saklar)',
+				APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :device_ip, :status_saklar)',
 					{ 
 						replacements: {
 							id_device: datareq.device_id,
 							id_akun: datareq.user_id,
-							ip_device: datareq.ip_device,					
+							device_ip: datareq.device_ip,					
 							status_saklar: datareq.status
 						}, 
 						type: APP.db.sequelize.QueryTypes.RAW 
@@ -1199,7 +1199,7 @@ exports.sensordata = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
@@ -1235,12 +1235,11 @@ exports.sensordata = function (APP, req, callback) {
 					console.log('health status updated')
 	
 					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
+					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:id_device, :id_akun, :pin, :status_device, :current_sensor, :watt, :date_device)',
 						{ 
 							replacements: {
 								id_device: datareq.device_id,
 								id_akun: datareq.user_id,
-								ip_device: datareq.ip_device,
 								pin : pin,
 								status_device: status_saklar,
 								current_sensor: datareq.ampere,
@@ -1301,12 +1300,11 @@ exports.sensordata = function (APP, req, callback) {
 					console.log('health status updated')
 	
 					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:id_device, :id_akun, :ip_device, :pin, :status_device, :current_sensor, :watt, :date_device)',
+					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:id_device, :id_akun, :pin, :status_device, :current_sensor, :watt, :date_device)',
 						{ 
 							replacements: {
 								id_device: datareq.device_id,
 								id_akun: datareq.user_id,
-								ip_device: datareq.ip_device,
 								pin : pin,
 								status_device: status_saklar,
 								current_sensor: datareq.ampere,
@@ -1427,12 +1425,12 @@ exports.runtimereportperday = function (APP, req, callback) {
 	console.log(date);
 
 	console.log('runtimereport_perday')
-	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_perday (:id_akun, :id_device, :ip_device, :date_from, :date_to)',
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_perday (:id_akun, :id_device, :device_ip, :date_from, :date_to)',
 		{ 
 			replacements: {
 				id_akun: datareq.user_id,
 				id_device: datareq.device_id,
-				ip_device: datareq.ip_device,
+				device_ip: datareq.device_ip,
 				tipe_device: datareq.type,
 				date_from: datareq.date_from,		
 				date_to: datareq.date_to
@@ -1460,7 +1458,7 @@ exports.runtimereportperday = function (APP, req, callback) {
 };
 
 exports.runtimereportperdev = function (APP, req, callback) {
-    // CALL `sitadev_iot`.`sp_runtimereport_perdevice`(id_akun, id_device, ip_device, start_date, end_date );
+    // CALL `sitadev_iot`.`sp_runtimereport_perdevice`(id_akun, id_device, device_ip, start_date, end_date );
 	
 	var datareq = req.body
 	console.log(datareq);
@@ -1476,12 +1474,12 @@ exports.runtimereportperdev = function (APP, req, callback) {
 	console.log(date);
 
 	console.log('runtimereport_perdevice')
-	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_perdevice (:id_akun, :id_device, :ip_device, :date_from, :date_to)',
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_perdevice (:id_akun, :id_device, :device_ip, :date_from, :date_to)',
 		{ 
 			replacements: {
 				id_akun: datareq.user_id,
 				id_device: datareq.device_id,
-				ip_device: datareq.ip_device,
+				device_ip: datareq.device_ip,
 				tipe_device: datareq.type,
 				date_from: datareq.date_from,		
 				date_to: datareq.date_to
@@ -1574,7 +1572,7 @@ exports.settimer = function (APP, req, callback) {
 		where : {
 			device_id : params.device_id,
 			user_id : params.user_id,
-			ip_device : params.ip_device
+			device_ip : params.device_ip
 		}
 	}
 
@@ -1804,7 +1802,7 @@ exports.command = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.status) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_name) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
@@ -1815,7 +1813,7 @@ exports.command = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
-	var url = 'http://' + datareq.ip_device + ':9999/command'
+	var url = 'http://' + datareq.device_ip + ':9999/command'
 	console.log(url);
 	var params = {
 		"device_id": datareq.device_id,
@@ -1833,7 +1831,7 @@ exports.command = function (APP, req, callback) {
 			where : {
 				device_id : datareq.device_id,
 				user_id : datareq.user_id,
-				ip_device : datareq.ip_device
+				device_ip : datareq.device_ip
 			}
 		}
 
@@ -1875,7 +1873,7 @@ exports.command = function (APP, req, callback) {
 							return callback(response);
 						});
 		
-						APP.db.sequelize.query("update device set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and ip_device = '" + datareq.ip_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+						APP.db.sequelize.query("update device set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 			
 						.then(device => {
 		
@@ -1884,7 +1882,7 @@ exports.command = function (APP, req, callback) {
 								
 								device_id: datareq.device_id,
 								user_id: datareq.user_id,
-								ip_device: datareq.ip_device,					
+								device_ip: datareq.device_ip,					
 								switch: datareq.status,
 								device_name: datareq.device_name,
 								device_type: datareq.device_type,
@@ -1941,7 +1939,7 @@ exports.command = function (APP, req, callback) {
 			where : {
 				device_id : datareq.device_id,
 				user_id : datareq.user_id,
-				ip_device : datareq.ip_device
+				device_ip : datareq.device_ip
 			}
 		}
 
@@ -1952,7 +1950,7 @@ exports.command = function (APP, req, callback) {
 					where : {
 						device_id : datareq.device_id,
 						user_id : datareq.user_id,
-						ip_device : datareq.ip_device,
+						device_ip : datareq.device_ip,
 						pin : datareq.pin
 					}
 				}
@@ -1995,7 +1993,7 @@ exports.command = function (APP, req, callback) {
 									return callback(response);
 								});
 				
-								APP.db.sequelize.query("update device_pin set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and ip_device = '" + datareq.ip_device + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+								APP.db.sequelize.query("update device_pin set switch = '" + datareq.status + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 					
 								.then(device => {
 				
@@ -2004,7 +2002,7 @@ exports.command = function (APP, req, callback) {
 				
 										device_id: datareq.device_id,
 										user_id: datareq.user_id,
-										ip_device: datareq.ip_device,					
+										device_ip: datareq.device_ip,					
 										switch: datareq.status,
 										device_name: datareq.device_name,
 										device_type: datareq.device_type,
@@ -2016,12 +2014,12 @@ exports.command = function (APP, req, callback) {
 									}).then((rows) => {
 				
 										console.log('execute singel ccu device')
-										APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:id_akun, :id_device, :ip_device)',
+										APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:id_akun, :id_device, :device_ip)',
 											{ 
 												replacements: {
 													id_device: datareq.device_id,
 													id_akun: datareq.user_id,
-													ip_device: datareq.ip_device
+													device_ip: datareq.device_ip
 												}, 
 												type: APP.db.sequelize.QueryTypes.RAW 
 											}
@@ -2099,7 +2097,7 @@ exports.command = function (APP, req, callback) {
 			where : {
 				device_id : datareq.device_id,
 				user_id : datareq.user_id,
-				ip_device : datareq.ip_device
+				device_ip : datareq.device_ip
 			}
 		}
 
@@ -2142,12 +2140,12 @@ exports.command = function (APP, req, callback) {
 						});
 		
 						console.log('execute all pin')
-						APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :ip_device, :status_saklar)',
+						APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :device_ip, :status_saklar)',
 							{ 
 								replacements: {
 									id_device: datareq.device_id,
 									id_akun: datareq.user_id,
-									ip_device: datareq.ip_device,					
+									device_ip: datareq.device_ip,					
 									status_saklar: datareq.status
 								}, 
 								type: APP.db.sequelize.QueryTypes.RAW 
@@ -2209,7 +2207,7 @@ exports.ipupdate = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 
 	var date = new Date();
@@ -2221,7 +2219,7 @@ exports.ipupdate = function (APP, req, callback) {
 		console.log("update ip device");
 
 		query.value = {
-			ip_device : datareq.ip_device
+			device_ip : datareq.device_ip
 		}
 		query.options = {
 			where : {
@@ -2257,7 +2255,7 @@ exports.ipupdate = function (APP, req, callback) {
 	else
 	{
 		query.value = {
-			ip_device : datareq.ip_device
+			device_ip : datareq.device_ip
 		}
 		query.options = {
 			where : {
@@ -2337,7 +2335,7 @@ exports.regischeck = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ip_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 
 	var date = new Date();
 	date.setHours(date.getHours());
@@ -2361,7 +2359,7 @@ exports.regischeck = function (APP, req, callback) {
 				if (device[0].device > 0)
 				{
 					console.log("ipcheck");
-					APP.db.sequelize.query("select count(*) as ip from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "' and ip_device = '"  + datareq.ip_device + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
+					APP.db.sequelize.query("select count(*) as ip from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "' and device_ip = '"  + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
 					
 					.then(ip => {
 						console.log(ip)
