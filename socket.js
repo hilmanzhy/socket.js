@@ -5,13 +5,14 @@
 const environment = require('./app.json').env;
 require('env2')('.env.' + environment);
 const app = require('express')();
-const http = require('http').Server(app);
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const async = require('async');
 
 const db = require('./config/db.js');
 
 var req = {};
+var session = {};
 
 /**
  * SOCKET ON
@@ -26,11 +27,11 @@ io.on('connection', (socket) => {
 	socket.on('handshake', (device) => {
 		console.log(`===== SOCKET_ID ${socket.id} | DEVICE_ID ${device.device_id} CONNECTED =====`)
 
+		session.device = socket.id
 		query.sql = {
 			where : { device_id : device.device_id },
 			attributes : [ 'device_id' ]
 		}
-
 		query.mongo = {
 			find : { device_id : device.device_id },
 			update : { session_id : socket.id },
@@ -77,7 +78,6 @@ io.on('connection', (socket) => {
 				})				
 			},
 
-			
 		], function (err, res) {
 			if (err) return console.log(`===== SOCKET_ERR ${err} =====`)
 		})
@@ -118,12 +118,12 @@ io.on('connection', (socket) => {
 	});
 	// Sensor Data
 	socket.on('sensordata', function (params) {
-		console.log(`===== SOCKET SENSOR DATA =====`)
-		console.log(`${params.user_id}`)
+		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`)
+		console.log(params)
+		console.log(`=======================================================================`)
 
 		req.app = { db : db }
 		req.body = params
-
 
 		const deviceController = require('./controllers/deviceController.js');
 
@@ -133,12 +133,39 @@ io.on('connection', (socket) => {
 				"message" : err
 			})
 
-			return socket.emit('res-sensordata', {
-				"status" : 200,
-				"params" : result
-			})
+			return socket.emit('res-sensordata', result)
 		})
 	});
+	// Command
+	socket.on('apicommand', function (params) {
+		session.app = socket.id
+		if (params) {
+			console.log(`========== SOCKET APICOMMAND ==========`)
+			console.log(params)
+			console.log(`========================================`)
+
+			DeviceSession.findOne({ device_id : params.device_id}).then((result) => {
+				return io.to(result.session_id).emit('command', params)
+			}).catch((err) => {
+				return console.error({
+					"status" : 'ERR',
+					"message" : err
+				})
+			})
+		}
+	})
+	// Res Command
+	socket.on('res-command', function (res) {
+		console.log(`========== SOCKET RES-COMMAND ==========`)
+		console.log(res)
+		console.log(`========================================`)
+
+		console.log(`========== SOCKET_ID APP ==========`)
+		console.log(session.app)
+		console.log(`===================================`)
+
+		io.to(session.app).emit('res-apicommand', res)
+	})
 })
 
 http.listen(process.env.SOCKET_PORT, function() {
