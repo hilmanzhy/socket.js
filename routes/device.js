@@ -236,9 +236,9 @@ router.post('/testing', (req, res, next) => {
 	});
 });
 
-router.post('/commandtest', (req, res, next) => {
-	console.log("commandtest")
-	deviceController.commandtest(req.APP, req, (err, result) => {
+router.post('/commandpanel', (req, res, next) => {
+	console.log("commandpanel")
+	deviceController.commandpanel(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		// console.log(result)
 		// res.send(result)
