@@ -1205,7 +1205,7 @@ exports.sensordata = function (APP, req, callback) {
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.status) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.sensor_status) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
@@ -1226,7 +1226,7 @@ exports.sensordata = function (APP, req, callback) {
 	.then(device => {		
 		console.log('connection status updated')
 		
-		if (datareq.sensor_status == '0' && datareq.status == '1')
+		if (datareq.sensor_status == '0' && datareq.switch == '1')
 			{
 				switch_status = '0'
 				console.log('update health status')
@@ -1293,7 +1293,7 @@ exports.sensordata = function (APP, req, callback) {
 			}
 		else
 			{
-				switch_status = datareq.status
+				switch_status = datareq.switch
 				console.log('update health status')
 	
 				APP.db.sequelize.query("update device set health_status = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
@@ -1568,8 +1568,7 @@ exports.settimer = function (APP, req, callback) {
 	query.options = {
 		where : {
 			device_id : params.device_id,
-			user_id : params.user_id,
-			device_ip : params.device_ip
+			user_id : params.user_id
 		}
 	}
 
