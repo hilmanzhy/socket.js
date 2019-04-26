@@ -972,10 +972,7 @@ exports.commandpanel = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_name) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.mode) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 
@@ -983,212 +980,242 @@ exports.commandpanel = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
-	query.options = {
-		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id,
-			device_ip : datareq.device_ip
-		}
+	query.where = {
+		device_id : datareq.device_id,
+		user_id : datareq.user_id
 	}
-	
-	if (datareq.mode == '0' && datareq.device_type == '0')
-	{
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0) 
+	query.attributes = { exclude: ['created_at', 'updated_at'] }
+
+	Device.findAll(query).then(device => {
+		if (device.length > 0) 
+		{
+			console.log(device[0].device_ip)
+			console.log(device[0].device_name)
+			console.log(device[0].device_type)
+			console.log(device[0].is_connected)
+
+			if (device[0].is_connected == '1')
 			{
-				APP.db.sequelize.query("update device set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {
+				if (datareq.mode == '0' && device[0].device_type == '0')
+				{
+					Device.findAll(query.options).then((result) => {
+						if (result.length > 0) 
+						{
+							APP.db.sequelize.query("update device set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+						
+							.then(device => {
 
-					console.log("add to history")
-					APP.models.mysql.device_history.create({
+								console.log("add to history")
+								APP.models.mysql.device_history.create({
 
-						device_id: datareq.device_id,
-						user_id: datareq.user_id,
-						device_ip: datareq.device_ip,					
-						switch: datareq.switch,
-						device_name: datareq.device_name,
-						device_type: datareq.device_type,
-						date: date,
-						created_at: date,
-						updated_at: date
-
-					}).then((rows) => {
-
-						response = {
-							code : 'OK',
-							error : 'false',
-							message : 'Command success and saved'
-						}
-						return callback(null, response);
-
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-			
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			} else {
-				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
-				});
-			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			});
-		});
-	}
-	else if (datareq.mode == '2' && datareq.device_type == '1')
-	{
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0) 
-			{
-				APP.db.sequelize.query("update device_pin set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {
-
-					console.log("add to history")
-					APP.models.mysql.device_history.create({
-
-						device_id: datareq.device_id,
-						user_id: datareq.user_id,
-						device_ip: datareq.device_ip,					
-						switch: datareq.switch,
-						device_name: datareq.device_name,
-						device_type: datareq.device_type,
-						pin: datareq.pin,
-						date: date,
-						created_at: date,
-						updated_at: date
-
-					}).then((rows) => {
-
-						console.log('execute singel ccu device')
-						APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
-							{ 
-								replacements: {
 									device_id: datareq.device_id,
 									user_id: datareq.user_id,
-									device_ip: datareq.device_ip
-								}, 
-								type: APP.db.sequelize.QueryTypes.RAW 
-							}
-						)
+									device_ip: datareq.device_ip,					
+									switch: datareq.switch,
+									device_name: datareq.device_name,
+									device_type: datareq.device_type,
+									date: date,
+									created_at: date,
+									updated_at: date
 
-						.then(device => {
-							console.log(device)
+								}).then((rows) => {
 
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Command success and saved'
-							}
-							return callback(null, response);
+									response = {
+										code : 'OK',
+										error : 'false',
+										message : 'Command success and saved'
+									}
+									return callback(null, response);
 
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-
+								}).catch((err) => {
+									response = {
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									}
+									return callback(response);
+								});
+						
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+						} else {
+							return callback(null, {
+								code : 'NOT_FOUND',
+								message : 'Device Not Found'
+							});
+						}
 					}).catch((err) => {
-						response = {
+						return callback({
 							code: 'ERR_DATABASE',
 							data: JSON.stringify(err)
-						}
-						return callback(response);
+						});
 					});
+				}
+				else if (datareq.mode == '2' && device[0].device_type == '1')
+				{
+					Device.findAll(query.options).then((result) => {
+						if (result.length > 0) 
+						{
+							APP.db.sequelize.query("update device_pin set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 						
-				}).catch((err) => {
+							.then(device => {
+
+								console.log("add to history")
+								APP.models.mysql.device_history.create({
+
+									device_id: datareq.device_id,
+									user_id: datareq.user_id,
+									device_ip: datareq.device_ip,					
+									switch: datareq.switch,
+									device_name: datareq.device_name,
+									device_type: datareq.device_type,
+									pin: datareq.pin,
+									date: date,
+									created_at: date,
+									updated_at: date
+
+								}).then((rows) => {
+
+									console.log('execute singel ccu device')
+									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
+										{ 
+											replacements: {
+												device_id: datareq.device_id,
+												user_id: datareq.user_id,
+												device_ip: datareq.device_ip
+											}, 
+											type: APP.db.sequelize.QueryTypes.RAW 
+										}
+									)
+
+									.then(device => {
+										console.log(device)
+
+										response = {
+											code : 'OK',
+											error : 'false',
+											message : 'Command success and saved'
+										}
+										return callback(null, response);
+
+									}).catch((err) => {
+										response = {
+											code: 'ERR_DATABASE',
+											data: JSON.stringify(err)
+										}
+										return callback(response);
+									});
+
+								}).catch((err) => {
+									response = {
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									}
+									return callback(response);
+								});
+									
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+						} else {
+							return callback(null, {
+								code : 'NOT_FOUND',
+								message : 'Device Not Found'
+							});
+						}
+					}).catch((err) => {
+						return callback({
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						});
+					});
+				}
+				else if (datareq.mode == '1' && device[0].device_type == '1')
+				{
+					Device.findAll(query.options).then((result) => {
+						if (result.length > 0) 
+						{
+							console.log('execute all pin')
+							APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)',
+								{ 
+									replacements: {
+										device_id: datareq.device_id,
+										user_id: datareq.user_id,
+										device_ip: datareq.device_ip,					
+										switch: datareq.switch
+									}, 
+									type: APP.db.sequelize.QueryTypes.RAW 
+								}
+							)
+
+							.then(device => {
+								console.log(device)
+
+								response = {
+									code : 'OK',
+									error : 'false',
+									message : 'Command success and saved'
+								}
+								return callback(null, response);
+
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+						} else {
+							return callback(null, {
+								code : 'NOT_FOUND',
+								message : 'Device Not Found'
+							});
+						}
+					}).catch((err) => {
+						return callback({
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						});
+					});
+				}
+				else
+				{
+					console.log('eror')
 					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
+						code: 'INVALID_REQUEST'
 					}
 					return callback(response);
-				});
-			} else {
-				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
-				});
+				}
 			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			});
-		});
-	}
-	else if (datareq.mode == '1' && datareq.device_type == '1')
-	{
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0) 
+			else
 			{
-				console.log('execute all pin')
-				APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)',
-					{ 
-						replacements: {
-							device_id: datareq.device_id,
-							user_id: datareq.user_id,
-							device_ip: datareq.device_ip,					
-							switch: datareq.switch
-						}, 
-						type: APP.db.sequelize.QueryTypes.RAW 
-					}
-				)
-
-				.then(device => {
-					console.log(device)
-
-					response = {
-						code : 'OK',
-						error : 'false',
-						message : 'Command success and saved'
-					}
-					return callback(null, response);
-
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			} else {
 				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
+					code : 'DEVICE_DISSCONNECTED'
 				});
 			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
+		}
+		else
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Device Not Found'
 			});
-		});
-	}
-	else
-	{
-		console.log('eror')
+		}
+	}).catch((err) => {
 		response = {
-			code: 'INVALID_REQUEST'
+		code: 'ERR_DATABASE',
+		data: JSON.stringify(err)
 		}
 		return callback(response);
-	}
+	});
 	
 };
 
@@ -1201,7 +1228,6 @@ exports.sensordata = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
@@ -1798,103 +1824,52 @@ exports.command = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_name) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.mode) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 
 	var date = new Date();
 	date.setHours(date.getHours());
 	console.log(date);
-
-	var url = 'http://' + datareq.device_ip + ':9999/command'
-	console.log(url);
-	var params = {
-		"device_id": datareq.device_id,
-		"status": datareq.status,
-		"type": datareq.mode,
-		"pin": datareq.pin
-	}
-	console.log(params);
 	
-	if (datareq.mode == '0' && datareq.device_type == '0')
-	{
-		console.log("hit mini CCU device");
+	query.where = {
+			device_id : datareq.device_id,
+			user_id : datareq.user_id
+	}
+	query.attributes = { exclude: ['created_at', 'updated_at'] }
 
-		query.options = {
-			where : {
-				device_id : datareq.device_id,
-				user_id : datareq.user_id,
-				device_ip : datareq.device_ip
-			}
-		}
+	Device.findAll(query).then(device => {
+		if (device.length > 0) 
+		{
+			console.log(device[0].device_ip)
+			console.log(device[0].device_name)
+			console.log(device[0].device_type)
+			console.log(device[0].is_connected)
 
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0) 
+			if (device[0].is_connected == '1')
 			{
-				request.post(url, params, (err, result) => {
-					if (err) 
-					{
-						APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-						.then(device => {		
-							console.log('connection status updated')
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-		
-						response = {
-							code : 'DEVICE_DISSCONNECTED'
-						}
-						console.log('response')
-						return callback(null, response);
-					} 
-					else 
-					{
-						APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-						.then(device => {		
-							console.log('connection status updated')
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-		
-						APP.db.sequelize.query("update device set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-						.then(device => {
-		
-							console.log("add to history")
-							APP.models.mysql.device_history.create({
-								
-								device_id: datareq.device_id,
-								user_id: datareq.user_id,
-								device_ip: datareq.device_ip,					
-								switch: datareq.switch,
-								device_name: datareq.device_name,
-								device_type: datareq.device_type,
-								date: date,
-								created_at: date,
-								updated_at: date
-		
-							}).then((rows) => {
-		
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Command success and saved'
-								}
-								return callback(null, response);
-		
+				var url = 'http://' + device[0].device_ip + ':9999/command'
+				console.log(url);
+				var params = {
+					"device_id": datareq.device_id,
+					"status": datareq.switch,
+					"type": datareq.mode,
+					"pin": datareq.pin
+				}
+				console.log(params);
+
+				if (datareq.mode == '0' && device[0].device_type == '0')
+				{
+					console.log("hit mini CCU device");
+
+					request.post(url, params, (err, result) => {
+						if (err) 
+						{
+							APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+					
+							.then(device => {		
+								console.log('connection status updated')
+
 							}).catch((err) => {
 								response = {
 									code: 'ERR_DATABASE',
@@ -1903,294 +1878,333 @@ exports.command = function (APP, req, callback) {
 								return callback(response);
 							});
 			
-						}).catch((err) => {
 							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
+								code : 'DEVICE_DISSCONNECTED'
 							}
-							return callback(response);
-						});
-					}
-				})
-			} 
-			else 
-			{
-				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
-				});
-			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			});
-		});	
-	}
-	else if (datareq.mode == '2' && datareq.device_type == '1')
-	{
-		console.log("hit single CCU device pin");
+							console.log('response')
+							return callback(null, response);
+						} 
+						else 
+						{
+							APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+					
+							.then(device => {		
+								console.log('connection status updated')
 
-		query.options = {
-			where : {
-				device_id : datareq.device_id,
-				user_id : datareq.user_id,
-				device_ip : datareq.device_ip
-			}
-		}
-
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0) 
-			{
-				query.options = {
-					where : {
-						device_id : datareq.device_id,
-						user_id : datareq.user_id,
-						device_ip : datareq.device_ip,
-						pin : datareq.pin
-					}
-				}
-
-				Device_pin.findAll(query.options).then((result) => {
-					if (result.length > 0) 
-					{
-						request.post(url, params, (err, result) => {
-							if (err) {
-								APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-						
-								.then(device => {		
-									console.log('connection status updated')
-								}).catch((err) => {
-									response = {
-										code: 'ERR_DATABASE',
-										data: JSON.stringify(err)
-									}
-									return callback(response);
-								});
-				
+							}).catch((err) => {
 								response = {
-									code : 'DEVICE_DISSCONNECTED'
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
 								}
-								console.log('response')
-								return callback(null, response);
+								return callback(response);
+							});
+			
+							APP.db.sequelize.query("update device set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 				
-							}
-							else
-							{
-								APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-						
-								.then(device => {		
-									console.log('connection status updated')
-								}).catch((err) => {
-									response = {
-										code: 'ERR_DATABASE',
-										data: JSON.stringify(err)
-									}
-									return callback(response);
-								});
-				
-								APP.db.sequelize.query("update device_pin set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-					
-								.then(device => {
-				
-									console.log("add to history")
-									APP.models.mysql.device_history_listrik.create({
-				
-										device_id: datareq.device_id,
-										user_id: datareq.user_id,
-										device_ip: datareq.device_ip,					
-										switch: datareq.switch,
-										device_name: datareq.device_name,
-										device_type: datareq.device_type,
-										pin: datareq.pin,
-										date: date,
-										created_at: date,
-										updated_at: date
-				
-									}).then((rows) => {
-				
-										console.log('execute singel ccu device')
-										APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
-											{ 
-												replacements: {
-													device_id: datareq.device_id,
-													user_id: datareq.user_id,
-													device_ip: datareq.device_ip
-												}, 
-												type: APP.db.sequelize.QueryTypes.RAW 
-											}
-										)
-				
-										.then(device => {
-											console.log(device)
-				
-											response = {
-												code : 'OK',
-												error : 'false',
-												message : 'Command success and saved'
-											}
-											return callback(null, response);
-				
-										}).catch((err) => {
-											response = {
-												code: 'ERR_DATABASE',
-												data: JSON.stringify(err)
-											}
-											return callback(response);
-										});
-				
-									}).catch((err) => {
-										response = {
-											code: 'ERR_DATABASE',
-											data: JSON.stringify(err)
-										}
-										return callback(response);
-									});
-					
-								}).catch((err) => {
-									response = {
-										code: 'ERR_DATABASE',
-										data: JSON.stringify(err)
-									}
-									return callback(response);
-								});
-							}
-						});
-					} 
-					else 
-					{
-						return callback(null, {
-							code : 'NOT_FOUND',
-							message : 'Device Pin Not Found'
-						});
-					}
-				}).catch((err) => {
-					return callback({
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					});
-				});
-			} 
-			else 
-			{
-				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
-				});
-			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			});
-		});
-	}
-	else if (datareq.mode == '1' && datareq.device_type == '1')
-	{
-		console.log("hit single CCU device");
-
-		query.options = {
-			where : {
-				device_id : datareq.device_id,
-				user_id : datareq.user_id,
-				device_ip : datareq.device_ip
-			}
-		}
-
-		Device.findAll(query.options).then((result) => {
-			if (result.length > 0)
-			{
-				request.post(url, params, (err, result) => {
-					if (err) {
-						APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-						.then(device => {		
-							console.log('connection status updated')
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-		
-						response = {
-							code : 'DEVICE_DISSCONNECTED'
-						}
-						console.log('response')
-						return callback(null, response);
-		
-					}
-					else
-					{
-						APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-						.then(device => {		
-							console.log('connection status updated')
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-		
-						console.log('execute all pin')
-						APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch_status)',
-							{ 
-								replacements: {
+							.then(device => {
+			
+								console.log("add to history")
+								APP.models.mysql.device_history.create({
+									
 									device_id: datareq.device_id,
 									user_id: datareq.user_id,
 									device_ip: datareq.device_ip,					
-									switch_status: datareq.switch
-								}, 
-								type: APP.db.sequelize.QueryTypes.RAW 
-							}
-						)
-		
-						.then(device => {
-							console.log(device)
-		
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Command success and saved'
-							}
-							return callback(null, response);
-		
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
+									switch: datareq.switch,
+									device_name: datareq.device_name,
+									device_type: datareq.device_type,
+									date: date,
+									created_at: date,
+									updated_at: date
+			
+								}).then((rows) => {
+			
+									response = {
+										code : 'OK',
+										error : 'false',
+										message : 'Command success and saved'
+									}
+									return callback(null, response);
+			
+								}).catch((err) => {
+									response = {
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									}
+									return callback(response);
+								});
+				
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+						}
+					})
+				}
+				else if (datareq.mode == '2' && device[0].device_type == '1')
+				{
+					console.log("hit single CCU device pin");
+
+					query.options = {
+						where : {
+							device_id : datareq.device_id,
+							user_id : datareq.user_id,
+							device_ip : datareq.device_ip
+						}
 					}
-				});
-			} 
-			else 
+
+					Device.findAll(query.options).then((result) => {
+						if (result.length > 0) 
+						{
+							query.options = {
+								where : {
+									device_id : datareq.device_id,
+									user_id : datareq.user_id,
+									device_ip : datareq.device_ip,
+									pin : datareq.pin
+								}
+							}
+
+							Device_pin.findAll(query.options).then((result) => {
+								if (result.length > 0) 
+								{
+									request.post(url, params, (err, result) => {
+										if (err) {
+											APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+									
+											.then(device => {		
+												console.log('connection status updated')
+											}).catch((err) => {
+												response = {
+													code: 'ERR_DATABASE',
+													data: JSON.stringify(err)
+												}
+												return callback(response);
+											});
+							
+											response = {
+												code : 'DEVICE_DISSCONNECTED'
+											}
+											console.log('response')
+											return callback(null, response);
+							
+										}
+										else
+										{
+											APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+									
+											.then(device => {		
+												console.log('connection status updated')
+											}).catch((err) => {
+												response = {
+													code: 'ERR_DATABASE',
+													data: JSON.stringify(err)
+												}
+												return callback(response);
+											});
+							
+											APP.db.sequelize.query("update device_pin set switch = '" + datareq.switch + "' where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and device_ip = '" + datareq.device_ip + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+								
+											.then(device => {
+							
+												console.log("add to history")
+												APP.models.mysql.device_history_listrik.create({
+							
+													device_id: datareq.device_id,
+													user_id: datareq.user_id,
+													device_ip: datareq.device_ip,					
+													switch: datareq.switch,
+													device_name: datareq.device_name,
+													device_type: datareq.device_type,
+													pin: datareq.pin,
+													date: date,
+													created_at: date,
+													updated_at: date
+							
+												}).then((rows) => {
+							
+													console.log('execute singel ccu device')
+													APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
+														{ 
+															replacements: {
+																device_id: datareq.device_id,
+																user_id: datareq.user_id,
+																device_ip: datareq.device_ip
+															}, 
+															type: APP.db.sequelize.QueryTypes.RAW 
+														}
+													)
+							
+													.then(device => {
+														console.log(device)
+							
+														response = {
+															code : 'OK',
+															error : 'false',
+															message : 'Command success and saved'
+														}
+														return callback(null, response);
+							
+													}).catch((err) => {
+														response = {
+															code: 'ERR_DATABASE',
+															data: JSON.stringify(err)
+														}
+														return callback(response);
+													});
+							
+												}).catch((err) => {
+													response = {
+														code: 'ERR_DATABASE',
+														data: JSON.stringify(err)
+													}
+													return callback(response);
+												});
+								
+											}).catch((err) => {
+												response = {
+													code: 'ERR_DATABASE',
+													data: JSON.stringify(err)
+												}
+												return callback(response);
+											});
+										}
+									});
+								} 
+								else 
+								{
+									return callback(null, {
+										code : 'NOT_FOUND',
+										message : 'Device Pin Not Found'
+									});
+								}
+							}).catch((err) => {
+								return callback({
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								});
+							});
+						} 
+						else 
+						{
+							return callback(null, {
+								code : 'NOT_FOUND',
+								message : 'Device Not Found'
+							});
+						}
+					}).catch((err) => {
+						return callback({
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						});
+					});
+				}
+				else if (datareq.mode == '1' && device[0].device_type == '1')
+				{
+					console.log("hit single CCU device");
+
+					request.post(url, params, (err, result) => {
+						if (err) {
+							APP.db.sequelize.query("update device set is_connected = 0 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+					
+							.then(device => {		
+								console.log('connection status updated')
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+			
+							response = {
+								code : 'DEVICE_DISSCONNECTED'
+							}
+							console.log('response')
+							return callback(null, response);
+			
+						}
+						else
+						{
+							APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+					
+							.then(device => {		
+								console.log('connection status updated')
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+			
+							console.log('execute all pin')
+							APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch_status)',
+								{ 
+									replacements: {
+										device_id: datareq.device_id,
+										user_id: datareq.user_id,
+										device_ip: datareq.device_ip,					
+										switch_status: datareq.switch
+									}, 
+									type: APP.db.sequelize.QueryTypes.RAW 
+								}
+							)
+			
+							.then(device => {
+								console.log(device)
+			
+								response = {
+									code : 'OK',
+									error : 'false',
+									message : 'Command success and saved'
+								}
+								return callback(null, response);
+			
+							}).catch((err) => {
+								response = {
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								}
+								return callback(response);
+							});
+						}
+					});
+				}
+				else
+				{
+					console.log('eror')
+					response = {
+						code: 'INVALID_REQUEST',
+						message: 'Wrong mode or device type'
+					}
+					return callback(response);
+				}
+			}
+			else
 			{
 				return callback(null, {
-					code : 'NOT_FOUND',
-					message : 'Device Not Found'
+					code : 'DEVICE_DISSCONNECTED'
 				});
 			}
-		}).catch((err) => {
-			return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
+		}
+		else
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Device Not Found'
 			});
-		});
-	}
-	else
-	{
-		console.log('eror')
+		}
+	}).catch((err) => {
 		response = {
-			code: 'INVALID_REQUEST',
-			message: 'Wrong mode or device type'
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
 		}
 		return callback(response);
-	}
+	});
+
 };
 
 exports.ipupdate = function (APP, req, callback) {
