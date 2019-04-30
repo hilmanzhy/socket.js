@@ -199,7 +199,7 @@ exports.updatekey = function (APP, req, callback) {
     console.log(`========== PARAMS ==========`)
 	console.log(params)
     
-    if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
+    if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.username) return callback({ code: 'MISSING_KEY' })
 	if(!params.key) return callback({ code: 'MISSING_KEY' })
 
@@ -208,7 +208,7 @@ exports.updatekey = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			id_akun : params.id_akun,
+			user_id : params.user_id,
 			username : params.username,
 		}
 	}
