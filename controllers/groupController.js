@@ -15,7 +15,6 @@ exports.creategroup = function (APP, req, callback) {
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.name) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.description) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.tdl) return callback({ code: 'MISSING_KEY' })
 
 	console.log(datareq)
 
@@ -302,7 +301,7 @@ exports.removegroup = function (APP, req, callback) {
 
 				response = {
 					code : 'OK',	
-					message : 'Device has been removed'
+					message : 'Device has been removed from this group'
 				}
 				return callback(null, response);
 
