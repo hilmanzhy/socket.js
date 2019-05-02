@@ -721,8 +721,7 @@ exports.updatename = function (APP, req, callback) {
 		query.options = {
 			where : {
 				device_id : datareq.device_id,
-				user_id : datareq.user_id,
-				device_ip : datareq.device_ip
+				user_id : datareq.user_id
 			}
 		}
 
@@ -1093,12 +1092,11 @@ exports.commandpanel = function (APP, req, callback) {
 								}).then((rows) => {
 
 									console.log('execute singel ccu device')
-									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
+									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
 										{ 
 											replacements: {
 												device_id: datareq.device_id,
-												user_id: datareq.user_id,
-												device_ip: datareq.device_ip
+												user_id: datareq.user_id
 											}, 
 											type: APP.db.sequelize.QueryTypes.RAW 
 										}
@@ -2028,12 +2026,11 @@ exports.command = function (APP, req, callback) {
 										}).then((rows) => {
 					
 											console.log('execute singel ccu device')
-											APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)',
+											APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
 												{ 
 													replacements: {
 														device_id: datareq.device_id,
-														user_id: datareq.user_id,
-														device_ip: datareq.device_ip
+														user_id: datareq.user_id
 													}, 
 													type: APP.db.sequelize.QueryTypes.RAW 
 												}
