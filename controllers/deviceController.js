@@ -2197,33 +2197,125 @@ exports.commandtest = function (APP, req, callback) {
 };
 
 exports.commandsocket = function (APP, req, callback) {
-	async.waterfall([
-		function (callback) {
-			if(!req.body.user_id) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.device_id) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.device_ip) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.status) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.device_name) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.device_type) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.mode) return callback({ code: 'MISSING_KEY' })
-			if(!req.body.pin) return callback({ code: 'MISSING_KEY' })
+	const Device = APP.models.mysql.device;
+	const DevicePIN = APP.models.mysql.device_pin;
+	const DeviceHistory = APP.models.mysql.device_history;
+	const Sequelize = APP.db.sequelize;
 
-			callback(null, true)
-		},
-		function (data, callback) {
-			socket.emit('apicommand', req.body)
-			socket.on('res-apicommand', function (response) {
-				console.log(`========== SOCKET RES-APICOMMAND ==========`)
-				console.log(response)
-				console.log(`===========================================`)
+	let params = req.body
+	let output = {}
 
-				callback(null, response)
-			})
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
+	if(!params.switch) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_name) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_type) return callback({ code: 'MISSING_KEY' })
+	if(!params.mode) return callback({ code: 'MISSING_KEY' })
+	if(!params.pin) return callback({ code: 'MISSING_KEY' })
+
+	socket.emit('apicommand', params)
+
+	query.options = {
+		where : {
+			device_id : params.device_id,
+			user_id : params.user_id,
+			device_ip : params.device_ip
 		}
-	], function (err, result) {
-		if (err) return callback(err);
+	}
+	query.create = {		
+		device_id: params.device_id,
+		user_id: params.user_id,
+		device_ip: params.device_ip,					
+		switch: params.switch,
+		device_name: params.device_name,
+		device_type: params.device_type
+	}
 
-		return callback(null, result)
+	Device.findOne(query.options).then(resDevice => {
+		if (resDevice) {
+			if (resDevice.is_connected == 0) return callback({ code : "DEVICE_DISSCONNECTED" })
+
+			if (params.device_type == "0" && params.mode == "0") {
+				console.log(`/ COMMAND MINI CCU DEVICE /`)
+
+				DeviceHistory.create(query.create).then(rows => {
+					return callback(null, { code : 'OK' });
+				}).catch((err) => {
+					response = {
+						code: 'ERR_DATABASE',
+						data: JSON.stringify(err)
+					}
+
+					return callback(response);
+				});
+			} else if (params.device_type == "1") {
+				switch(params.mode) {
+					case "1":
+						console.log(`/ COMMAND SINGLE CCU DEVICE /`)
+
+						DeviceHistory.create(query.create).then(rows => {
+							Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)', { 
+								replacements: {
+									user_id: params.user_id,
+									device_id: params.device_id,
+									device_ip: params.device_ip,					
+									switch: params.status
+								}, 
+								type: Sequelize.QueryTypes.RAW 
+							})
+
+							return callback(null, { code : 'OK' });
+						}).catch(err => {
+							response = {
+								code: 'ERR_DATABASE',
+								data: JSON.stringify(err)
+							}
+
+							return callback(response);
+						})
+
+						break;
+					case "2":
+						console.log(`/ COMMAND SINGLE CCU DEVICE PIN /`)
+
+						query.options.where.pin = params.pin
+						query.create.pin = params.pin
+
+						DevicePIN.findOne(query.options).then(resDevicePin => {
+							if (!resDevicePin) return callback({ "code": "NOT_FOUND" })
+
+							Sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :device_ip)', {
+								replacements: {
+									user_id: datareq.user_id,
+									device_id: datareq.device_id,
+									device_ip: datareq.device_ip
+								}, 
+								type: APP.db.sequelize.QueryTypes.RAW 
+							})
+						}).catch((err) => {
+							response = {
+								code: 'ERR_DATABASE',
+								data: JSON.stringify(err)
+							}
+
+							return callback(response);
+						});
+
+						break;
+				}
+			} else {
+				return callback({ "code": "INVALID_REQUEST" })
+			}
+		} else {
+			return callback({ "code": "NOT_FOUND" })
+		}
+
+	}).catch((err) => {
+		return callback({
+			"code": "GENERAL_ERR",
+			"message": err
+		})
 	})
 }
 

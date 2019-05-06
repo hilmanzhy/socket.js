@@ -10,7 +10,11 @@ module.exports = function (sequelize, Sequelize) {
 		switch: { type: Sequelize.BOOLEAN, allowNull: false},
 		device_type: { type: Sequelize.BOOLEAN, allowNull: false},
 		device_name: { type: Sequelize.STRING, allowNull: false},
-		date: { type: Sequelize.DATE, allowNull: false},
+		date: {
+            type: Sequelize.DATE,
+            allowNull: false,
+            defaultValue: Sequelize.NOW
+        },
 		created_at: {
             allowNull: false,
             type: Sequelize.DATE,

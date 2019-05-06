@@ -122,10 +122,21 @@
 		"error": true,
 		"code": "DEVICE_DISSCONNECTED",
 		"name": "DEVICE_DISSCONNECTED",
+		"status": 408,
+		"from": "",
+		"info": {},
+		"message": "Device is not Connected",
+		"data": {}
+	},
+
+	"SOCKET_ERR": {
+		"error": true,
+		"code": "SOCKET_ERR",
+		"name": "SOCKET_ERR",
 		"status": 500,
 		"from": "",
 		"info": {},
-		"message": "Device Not Connected",
+		"message": "Socket Error!",
 		"data": {}
 	}
 }

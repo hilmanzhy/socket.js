@@ -11,13 +11,14 @@ const async = require('async');
 
 const db = require('./config/db.js');
 
+var output = {};
 var req = {};
-var session = {};
 
 /**
  * SOCKET ON
  */
 const Device = require('./models/device.js')(db.sequelize, db.Sequelize)
+const deviceController = require('./controllers/deviceController.js');
 const DeviceSession = require('./models/mongo/device_session.js')(db.mongo);
 
 let query = {}
@@ -27,7 +28,6 @@ io.on('connection', (socket) => {
 	socket.on('handshake', (device) => {
 		console.log(`===== SOCKET_ID ${socket.id} | DEVICE_ID ${device.device_id} CONNECTED =====`)
 
-		session.device = socket.id
 		query.sql = {
 			where : { device_id : device.device_id },
 			attributes : [ 'device_id' ]
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
 			},
 
 		], function (err, res) {
-			if (err) return console.log(`===== SOCKET_ERR ${err} =====`)
+			if (err) return console.error(`===== SOCKET_ERR ${err} =====`)
 		})
 	})
 	// Disconnect Device
@@ -113,11 +113,11 @@ io.on('connection', (socket) => {
 				})
 			}
 		], function (err, res) {
-			if (err) console.log(err)
+			if (err) return console.error(err)
 		})		
 	});
 	// Sensor Data
-	socket.on('sensordata', function (params) {
+	socket.on('sensordata', function (params, callback) {
 		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`)
 		console.log(params)
 		console.log(`=======================================================================`)
@@ -125,46 +125,61 @@ io.on('connection', (socket) => {
 		req.app = { db : db }
 		req.body = params
 
-		const deviceController = require('./controllers/deviceController.js');
-
 		deviceController.sensordata(req.app, req, (err, result) => {
-			if (err) return console.error({
-				"status" : 'ERR',
-				"message" : err
-			})
+			if (err) return callback(err, result)
 
-			return socket.emit('res-sensordata', result)
+			return callback(null, result)
 		})
+
 	});
 	// Command
 	socket.on('apicommand', function (params) {
-		session.app = socket.id
-		if (params) {
-			console.log(`========== SOCKET APICOMMAND ==========`)
-			console.log(params)
-			console.log(`========================================`)
+		console.log(`========== SOCKET APICOMMAND ==========`)
+		console.log(params)
+		console.log(`========== ================= ==========`)
 
-			DeviceSession.findOne({ device_id : params.device_id}).then((result) => {
-				return io.to(result.session_id).emit('command', params)
-			}).catch((err) => {
-				return console.error({
-					"status" : 'ERR',
-					"message" : err
-				})
-			})
-		}
+		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
+			io.to(result.session_id).emit('command', params)
+		}).catch((err) => {
+			output.err = {
+				"code": "SOCKET_ERR",
+				"message": err
+			}
+
+			console.error(output.err)
+		})
 	})
 	// Res Command
-	socket.on('res-command', function (res) {
+	socket.on('res-command', function (params) {
 		console.log(`========== SOCKET RES-COMMAND ==========`)
-		console.log(res)
-		console.log(`========================================`)
+		console.log(params)
+		console.log(`========== ================== ==========`)
 
-		console.log(`========== SOCKET_ID APP ==========`)
-		console.log(session.app)
-		console.log(`===================================`)
+		query.value = { switch : params.switch }
+		query.options = {
+			where : {
+				device_id : params.device_id
+			}
+		}
 
-		io.to(session.app).emit('res-apicommand', res)
+		Device.update(query.value, query.options).then((resDevice) => {
+			output.code = `OK`
+
+			if (resDevice > 0) {
+				output.message = `Switch updated`
+			} else {
+				output.message = `Switch not updated`
+			}
+
+			return console.log(output)
+		}).catch((err) => {
+			output = {
+				code : `GENERAL_ERR`,
+				message : err
+			}
+
+			return console.error(output)
+		})
 	})
 })
 
