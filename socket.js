@@ -89,12 +89,16 @@ io.on('connection', (socket) => {
 		async.waterfall([
 			function (callback) {
 				DeviceSession.findOne({ session_id : socket.id }).then((result) => {
-					query.mongo = {
-						find : { device_id : result.device_id },
-						update : { status: 0 }
+					if (result) {
+						query.mongo = {
+							find : { device_id : result.device_id },
+							update : { status: 0 }
+						}
+	
+						callback(null, query.mongo)
+					} else {
+						callback(`Session Not Found`)
 					}
-
-					callback(null, query.mongo)
 				}).catch((err) => {
 					callback(err)
 				});
