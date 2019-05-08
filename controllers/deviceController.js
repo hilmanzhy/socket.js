@@ -2399,66 +2399,43 @@ exports.regischeck = function (APP, req, callback) {
 	Device.findAll(query.options).then((result) => {
 		if (result.length > 0) 
 		{
-			console.log("regischeck");
-			APP.db.sequelize.query("select count(*) as device from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
+			console.log("ipcheck");
+			APP.db.sequelize.query("select count(*) as ip from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "' and device_ip = '"  + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
 			
-			.then(device => {
-				console.log(device)
-				if (device[0].device > 0)
+			.then(ip => {
+				console.log(ip)
+
+				if (ip[0].ip > 0)
 				{
-					console.log("ipcheck");
-					APP.db.sequelize.query("select count(*) as ip from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "' and device_ip = '"  + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
-					
-					.then(ip => {
-						console.log(ip)
-
-						if (ip[0].ip > 0)
-						{
-							response = {
-								code : 'OK',
-								message : '2'
-							}
-							return callback(null, response);
-						}
-						else	
-						{
-							response = {
-								code : 'OK',
-								message : '1'
-							}
-							return callback(null, response);
-						}
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-				}
-				else
-					{
-						response = {
-							code : 'OK',
-							message : '0'
-						}
-						return callback(null, response);
+					response = {
+						code : 'OK',
+						message : '0'
 					}
-
+					return callback(null, response);
+				}
+				else	
+				{
+					response = {
+						code : 'OK',
+						message : '1'
+					}
+					return callback(null, response);
+				}
 			}).catch((err) => {
 				response = {
 					code: 'ERR_DATABASE',
 					data: JSON.stringify(err)
 				}
 				return callback(response);
-			});
+			});		
 		}
 		else 
 		{
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'Device Not Found'
-			});
+			response = {
+				code : 'OK',
+				message : '2'
+			}
+			return callback(null, response);
 		}
 	}).catch((err) => {
 		return callback({
