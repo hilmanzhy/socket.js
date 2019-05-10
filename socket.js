@@ -10,9 +10,29 @@ const io = require('socket.io')(http);
 const async = require('async');
 
 const db = require('./config/db.js');
+const model = require('./config/model.js')
 
 var output = {};
 var req = {};
+req.app = {};
+
+async.waterfall([
+	function initializeModels (callback) {
+		model(db, (err, result) => {
+			if (err) {
+				if (err) return console.error(err);
+			} else {
+				req.app.models = result;
+
+				callback(null, true);
+			}
+		});
+	}
+], (err, result) => {
+	if (err) {
+		if (err) return console.error(`===== SOCKET_ERR ${err} =====`)
+	}
+})
 
 /**
  * SOCKET ON
@@ -81,7 +101,7 @@ io.on('connection', (socket) => {
 		], function (err, res) {
 			if (err) return console.error(`===== SOCKET_ERR ${err} =====`)
 		})
-	})
+	});
 	// Disconnect Device
 	socket.on('disconnect', function () {
 		console.log(`===== SOCKET_ID ${socket.id} DISCONNECTED =====`)
@@ -120,6 +140,44 @@ io.on('connection', (socket) => {
 			if (err) return console.error(err)
 		})		
 	});
+	// Check Device
+	socket.on('checkdevice', (params, callback) => {
+		console.log(`========== SOCKET CHECKDEVICE | DEVICE_ID ${params.device_id} ==========`)
+
+		req.app.db = db;
+		req.body = params
+
+		deviceController.regischeck(req.app, req, (err, result) => {
+			if (err) return callback(err, result)
+			console.log(result.message)
+			switch (result.message) {
+				case '1':
+					console.log(`========== DEVICE_IP ${params.device_id} NOT MATCH ==========`)
+					
+					deviceController.ipupdate(req.app, req, (err, result) => {
+						if (err) return callback(err, result)
+			
+						return callback(null, result)
+					})
+					break;
+				
+				case '2':
+					console.log(`========== DEVICE_ID ${params.device_id} NOT REGISTERED ==========`)
+
+					deviceController.registerdevice(req.app, req, (err, result) => {
+						if (err) return callback(err, result)
+			
+						return callback(null, result)
+					})
+
+					break;
+
+				default:
+					return callback(null, { code: 'OK' })
+					break;
+			}
+		})
+	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
 		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`)
@@ -134,7 +192,6 @@ io.on('connection', (socket) => {
 
 			return callback(null, result)
 		})
-
 	});
 	// Command
 	socket.on('apicommand', function (params) {
@@ -152,8 +209,8 @@ io.on('connection', (socket) => {
 
 			console.error(output.err)
 		})
-	})
-	// Res Command
+	});
+	// Response Command
 	socket.on('res-command', function (params) {
 		console.log(`========== SOCKET RES-COMMAND ==========`)
 		console.log(params)
@@ -184,7 +241,7 @@ io.on('connection', (socket) => {
 
 			return console.error(output)
 		})
-	})
+	});
 })
 
 http.listen(process.env.SOCKET_PORT, function() {
