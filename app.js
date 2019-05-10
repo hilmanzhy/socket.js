@@ -130,10 +130,8 @@ fs.readdir('./routes', (err, files) => {
 				});
 
 				app.listen(process.env.PORT, () => {
-					// Call Cronjob
 					var cron = cronjob();
-
-					return console.log('Bismillah, Semoga Lancar. ' + process.env.SERVICE_NAME + ' Listen on Port ' + process.env.PORT);
+					return console.log(process.env.SERVICE_NAME + ' start on port ' + process.env.PORT);
 				});
 			}
 		}

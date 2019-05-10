@@ -56,9 +56,8 @@ exports.setlumensensor = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_on) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_off) return callback({ code: 'MISSING_KEY' })
 	
@@ -68,9 +67,8 @@ exports.setlumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			device_id : params.id_device,
-			user_id : params.id_akun,
-			device_ip : params.device_ip
+			device_id : params.device_id,
+			user_id : params.user_id
 		}
 	}
 
@@ -106,7 +104,7 @@ exports.setall = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_on) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_off) return callback({ code: 'MISSING_KEY' })
 	
@@ -116,7 +114,7 @@ exports.setall = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			user_id : params.id_akun
+			user_id : params.user_id
 		}
 	}
 
@@ -152,9 +150,8 @@ exports.switchlumensensor = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 	
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.lumensensor_status) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
@@ -162,14 +159,14 @@ exports.switchlumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			device_id : params.id_device,
-			user_id : params.id_akun,
-			device_ip : params.device_ip
+			device_id : params.device_id,
+			user_id : params.user_id
 		}
 	}
 
 	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) {
+		if (result.length > 0) 
+		{
 			Device.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
 				console.log(resUpdate)
@@ -193,6 +190,51 @@ exports.switchlumensensor = function (APP, req, callback) {
 	});
 };
 
+exports.switchall = function (APP, req, callback) {
+	const params = req.body
+	const Device = APP.models.mysql.device
+
+	console.log(`========== PARAMS ==========`)
+	console.log(params)
+	
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.lumensensor_status) return callback({ code: 'MISSING_KEY' })
+
+	query.value = {
+		lumensensor_status : params.lumensensor_status
+	}
+	query.options = {
+		where : {
+			user_id : params.user_id
+		}
+	}
+
+	Device.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			Device.update(query.value, query.options).then((resUpdate) => {
+				console.log(`========== RESULT ==========`)
+				console.log(resUpdate)
+				
+				return callback(null, {
+					code : 'OK',
+					message : 'Switch Lumen Sensor for all Device Success'
+				});
+			});
+		} else {
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Device Not Found'
+			});
+		}
+	}).catch((err) => {
+		return callback({
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		});
+	});
+};
+
 exports.removelumensensor = function (APP, req, callback) {
 	const params = req.body
 	const Device = APP.models.mysql.device
@@ -200,9 +242,8 @@ exports.removelumensensor = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 	
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!params.id_device) return callback({ code: 'MISSING_KEY' })
-	if(!params.device_ip) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
 		lumensensor_on : null,
@@ -211,9 +252,8 @@ exports.removelumensensor = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			device_id : params.id_device,
-			user_id : params.id_akun,
-			device_ip : params.device_ip
+			device_id : params.device_id,
+			user_id : params.user_id
 		}
 	}
 
@@ -249,7 +289,7 @@ exports.removeall = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 	
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
 		lumensensor_on : null,
@@ -258,7 +298,7 @@ exports.removeall = function (APP, req, callback) {
 	}
 	query.options = {
 		where : {
-			user_id : params.id_akun
+			user_id : params.user_id
 		}
 	}
 
@@ -273,7 +313,7 @@ exports.removeall = function (APP, req, callback) {
 				}
 				query.options = {
 					where : {
-						user_id : params.id_akun
+						user_id : params.user_id
 					}
 				}
 
@@ -309,13 +349,13 @@ exports.lumensensordata = function (APP, req, callback) {
 	console.log(`========== PARAMS ==========`)
 	console.log(datareq)
 	
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.sensorvalue) return callback({ code: 'MISSING_KEY' })
 
     query.where = { 
-		user_id : datareq.id_akun,
-		device_id : datareq.id_device
+		user_id : datareq.user_id,
+		device_id : datareq.device_id
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 
@@ -323,9 +363,7 @@ exports.lumensensordata = function (APP, req, callback) {
 		
         console.log(`========== RESULT ==========`)
         const element = result
-        console.log(element.nama_device)
-        console.log(element.device_ip)
-        console.log(element.tipe_device)
+        console.log(element.device_type)
         console.log(element.lumensensor_on)
 		console.log(element.lumensensor_off)
 		console.log(element.lumensensor_status)
@@ -333,7 +371,7 @@ exports.lumensensordata = function (APP, req, callback) {
 		if (element.lumensensor_status == '1')
 		{
 			var mode = ""
-			if (element.tipe_device == '1')
+			if (element.device_type == '1')
 			{
 				mode = '1'
 			}
@@ -347,17 +385,14 @@ exports.lumensensordata = function (APP, req, callback) {
         	{
 				console.log("nyala")
 				var params = {
-					"id_akun": datareq.id_akun,
-					"id_device": datareq.id_device,
-					"device_ip": element.device_ip,
-					"nama_device": element.nama_device,
-					"status": "1",
-					"type": element.tipe_device,
+					"user_id": datareq.user_id,
+					"device_id": datareq.device_id,
+					"switch": "1",
 					"pin": "0",
 					"mode": mode
 				}
 				console.log(params)
-				var url = `http://localhost:${process.env.PORT}/device/command`
+				var url = `http://localhost:${process.env.PORT}/device/commandpanel`
 
 				console.log("hit device command")
 				request.post(url, params, (err, result) => {
@@ -373,17 +408,14 @@ exports.lumensensordata = function (APP, req, callback) {
         	{
 				console.log("mati")
 				var params = {
-					"id_akun": datareq.id_akun,
-					"id_device": datareq.id_device,
-					"device_ip": element.device_ip,
-					"nama_device": element.nama_device,
-					"status": "0",
-					"type": element.tipe_device,
+					"user_id": datareq.user_id,
+					"device_id": datareq.device_id,
+					"switch": "0",
 					"pin": "0",
 					"mode": mode
 				}
 				console.log(params)
-				var url = `http://localhost:${process.env.PORT}/device/command`
+				var url = `http://localhost:${process.env.PORT}/device/commandpanel`
 
 				console.log("hit device command")
 				request.post(url, params, (err, result) => {
