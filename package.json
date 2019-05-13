@@ -26,8 +26,8 @@
     "md5": "^2.2.1",
     "method-override": "^2.3.10",
     "moment": "^2.22.1",
-    "mongodb": "^3.1.10",
-    "mongoose": "^5.5.6",
+    "mongodb": "^3.2.4",
+    "mongoose": "^5.5.7",
     "morgan": "^1.9.0",
     "mysql": "^2.17.1",
     "mysql2": "^1.5.3",
@@ -45,7 +45,7 @@
     "uuid": "^3.2.1",
     "validate.js": "^0.12.0",
     "vascommkit": "^1.1.8",
-    "webpack": "^4.30.0",
+    "webpack": "^4.31.0",
     "webpack-cli": "^2.1.4"
   }
 }
