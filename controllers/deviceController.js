@@ -1217,8 +1217,7 @@ exports.commandpanel = function (APP, req, callback) {
 					)
 
 					.then(device => {
-						console.log(device)
-
+			
 						response = {
 							code : 'OK',
 							error : 'false',
