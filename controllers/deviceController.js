@@ -2489,7 +2489,7 @@ exports.commandsocket = function (APP, req, callback) {
 	if(!params.mode) return callback({ code: 'MISSING_KEY' })
 	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 
-	socket.emit('apicommand', params)
+	socket.emit('commandapi', params)
 
 	query.options = {
 		where : {
