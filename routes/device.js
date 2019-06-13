@@ -286,6 +286,26 @@ router.post('/activateallpin', (req, res, next) => {
 	});
 });
 
+router.post('/getpagingdevice', (req, res, next) => {
+	console.log("getpagingdevice")
+	deviceController.getpagingdevice(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		// console.log(result)
+		// res.send(result)
+		return req.APP.output.print(req, res, result);
+	});
+});
+
+router.post('/getpaginghistory', (req, res, next) => {
+	console.log("getpaginghistory")
+	deviceController.getpaginghistory(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		// console.log(result)
+		// res.send(result)
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 /* Route Device Timer */
 router.post('/timer/set', (req, res, next) => {
 	console.log("========== ENDPOINT = /timer/set ==========")

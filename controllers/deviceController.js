@@ -2568,3 +2568,153 @@ exports.activateallpin = function (APP, req, callback) {
 	});
 	
 };
+
+exports.getpagingdevice = function (APP, req, callback) {
+	
+	var datareq = req.body
+	console.log(datareq);
+	var response = {}
+
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.offset) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.limit) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.sort) return callback({ code: 'MISSING_KEY' })
+
+	console.log('getpagingdevice')
+	APP.db.sequelize.query('CALL sitadev_iot_2.get_device_count (:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date)',
+		{ 
+			replacements: {
+				user_id: datareq.user_id,
+				device_id: datareq.device_id,
+				device_ip: datareq.device_ip,
+				device_name: datareq.device_name,
+				device_status: datareq.device_status,
+				install_date: datareq.install_date,
+				active_date: datareq.active_date
+			}, 
+			type: APP.db.sequelize.QueryTypes.RAW 
+		}
+	)
+
+	.then(datacount => {
+
+		APP.db.sequelize.query('CALL sitadev_iot_2.get_device (:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					device_ip: datareq.device_ip,
+					device_name: datareq.device_name,
+					device_status: datareq.device_status,
+					install_date: datareq.install_date,
+					active_date: datareq.active_date,
+					offset: datareq.offset,
+					limit: datareq.limit,
+					sort: datareq.sort
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
+
+		.then(device => {
+
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : {datafound : device,
+				datacount : datacount}
+			});
+		
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
+		});
+		
+	}).catch((err) => {
+
+		response = {
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		}
+		return callback(response);
+		
+	});		
+	
+};
+
+exports.getpaginghistory = function (APP, req, callback) {
+	
+	var datareq = req.body
+	console.log(datareq);
+	var response = {}
+
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.offset) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.limit) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.sort) return callback({ code: 'MISSING_KEY' })
+
+	console.log('getpaginghistory')
+	APP.db.sequelize.query('CALL sitadev_iot_2.get_device_history_count (:user_id, :device_id, :device_ip, :device_name, :date)',
+		{ 
+			replacements: {
+				user_id: datareq.user_id,
+				device_id: datareq.device_id,
+				device_ip: datareq.device_ip,
+				device_name: datareq.device_name,
+				date: datareq.date
+			}, 
+			type: APP.db.sequelize.QueryTypes.RAW 
+		}
+	)
+
+	.then(datacount => {
+
+		APP.db.sequelize.query('CALL sitadev_iot_2.get_device_history (:user_id, :device_id, :device_ip, :device_name, :date, :offset, :limit, :sort)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					device_ip: datareq.device_ip,
+					device_name: datareq.device_name,
+					date: datareq.date,
+					offset: datareq.offset,
+					limit: datareq.limit,
+					sort: datareq.sort
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
+
+		.then(device => {
+
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : {datafound : device,
+				datacount : datacount}
+			});
+		
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
+		});
+		
+	}).catch((err) => {
+
+		response = {
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		}
+		return callback(response);
+		
+	});
+	
+};
