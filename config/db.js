@@ -7,10 +7,10 @@ const mongoose = require('mongoose');
 const host = process.env.MONGO_HOST;
 const name = process.env.MONGO_NAME;
 
-mongoose.connect('mongodb://' + host + '/' + name);
+mongoose.connect('mongodb://' + host + '/' + name, { useNewUrlParser: true });
 mongoose.connection.on('error', console.error.bind(console, 'Database connection error!'));
 mongoose.connection.once('open', () => {
-	console.log('Database connected!');
+	console.log('MongoDB Connected');
 });
 
 exports.mongo = mongoose;
@@ -42,7 +42,7 @@ var options = (process.env.NODE_ENV === 'production') ? {
 	timezone: '+07:00',
 	dialect: mysqlDialect,
 	pool: mysqlPool,
-	dialectOptions: mysqlDialectOptions,
+	// dialectOptions: mysqlDialectOptions,
 	define: define,
 	logging: false
 } : {
@@ -51,7 +51,7 @@ var options = (process.env.NODE_ENV === 'production') ? {
 	timezone: '+07:00',
 	dialect: mysqlDialect,
 	pool: mysqlPool,
-	dialectOptions: mysqlDialectOptions,
+	// dialectOptions: mysqlDialectOptions,
 	define: define
 };
 const sequelize = new Sequelize(process.env.MYSQL_NAME, process.env.MYSQL_USER, process.env.MYSQL_PASS, options);

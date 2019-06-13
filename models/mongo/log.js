@@ -5,8 +5,8 @@ module.exports = function (mongo) {
 
   const ModelSchema = mongo.Schema({
   	endpoint: String,
-	  request: String,
-	  response: String,
+	  request: {},
+	  response: {},
 	  status: String,
 	  date: Date,
 	  time: String

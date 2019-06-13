@@ -334,4 +334,15 @@ router.post('/timer/remove', (req, res, next) => {
 	});
 });
 
+/* Route Command Socket */
+router.post('/commandsocket', (req, res, next) => {
+	console.log("=========== ENDPOINT /commandsocket ===========")
+
+	deviceController.commandsocket(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 module.exports = router;

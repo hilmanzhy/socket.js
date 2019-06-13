@@ -36,8 +36,8 @@ exports.print = function (req, res, params) {
 		function logging (message, callback) {
 			log.insert(req.APP, {
 				body: {
-					request: req.body ? JSON.stringify(req.body) : null,
-					response: output ? JSON.stringify(output) : null,
+					request: req.body ? req.body : null,
+					response: output ? output : null,
 					status: message.company.status || 200,
 					endpoint: req.originalUrl,
 					date: req.customDate,
