@@ -11,6 +11,7 @@
   "author": "Vascomm | IoT Dev Team",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/speech": "^3.0.0",
     "async": "^2.6.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.4",

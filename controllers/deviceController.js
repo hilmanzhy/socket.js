@@ -872,6 +872,7 @@ exports.updatename = function (APP, req, callback) {
 		});
 	}
 	
+	socket.emit('update-pin', { device_id : datareq.device_id})
 };
 
 exports.deletedevice = function (APP, req, callback) {

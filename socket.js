@@ -16,28 +16,11 @@ var output = {};
 var req = {};
 req.app = {};
 
-async.waterfall([
-	function initializeModels (callback) {
-		model(db, (err, result) => {
-			if (err) {
-				if (err) return console.error(err);
-			} else {
-				req.app.models = result;
-
-				callback(null, true);
-			}
-		});
-	}
-], (err, result) => {
-	if (err) {
-		if (err) return console.error(`===== SOCKET_ERR ${err} =====`);
-	}
-});
-
 /**
  * SOCKET ON
  */
 const Device = require('./models/device.js')(db.sequelize, db.Sequelize);
+const DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize);
 const deviceController = require('./controllers/deviceController.js');
 const DeviceSession = require('./models/mongo/device_session.js')(db.mongo);
 
@@ -45,8 +28,11 @@ let query = {};
 
 io.on('connection', (socket) => {
 	// Handshake Device
-	socket.on('handshake', (device) => {
+	socket.on('handshake', (device, callback) => {
 		console.log(`===== SOCKET_ID ${socket.id} | DEVICE_ID ${device.device_id} CONNECTED =====`);
+
+		req.app.db = db;
+		req.body = device;
 
 		query.sql = {
 			where : { device_id : device.device_id },
@@ -62,29 +48,68 @@ io.on('connection', (socket) => {
 		};
 
 		async.waterfall([
-			function (callback) {
-				Device.findOne(query.sql).then((res) => {
-					if (res) {
-						callback(null, res);
-
-						return null;
+			function initializeModels(callback) {
+				console.log(`..... HANDSHAKE INITIALIZE MODEL .....`)
+				model(db, (err, result) => {
+					if (err) {
+						callback(err);
 					} else {
-						callback(`Device_ID ${device.device_id} Not Registered`);
+						req.app.models = result;
+		
+						callback(null, true);
 					}
-				}).catch((err) => {
-					callback(err);
 				});
 			},
 
-			function (data, callback) {
+			function checkDevice(data, callback) {
+				console.log(`..... HANDSHAKE CHECK DEVICE .....`)
+
+				deviceController.regischeck(req.app, req, (err, result) => {
+					if (err) { 
+						callback(err); 
+					} else {
+						switch (result.message) {
+							case '1':
+								console.log(`========== DEVICE_IP ${device.device_id} NOT MATCH ==========`);
+								
+								deviceController.ipupdate(req.app, req, (err, result) => {
+									if (err) callback(err, result);
+						
+									callback(null, result);
+								});
+								break;
+							
+							case '2':
+								console.log(`========== DEVICE_ID ${device.device_id} NOT REGISTERED ==========`);
+			
+								deviceController.registerdevice(req.app, req, (err, result) => {
+									if (err) callback(err, result);
+						
+									callback(null, result);
+								});
+			
+								break;
+			
+							default:
+								callback(null, { code: 'OK' });
+						}						
+					}
+				});
+			},
+
+			function updateDeviceStatus(data, callback) {
+				console.log(`..... HANDSHAKE UPDATE DEVICE STATUS .....`)
+
 				Device.update({ is_connected : 1 }, query.sql).then((result) => {
-					callback(null, result);
+					callback(null, data);
 				}).catch((err) => {
 					callback(err);
 				});
 			},
 
-			function (data, callback) {
+			function updateDeviceSession(data, callback) {
+				console.log(`..... HANDSHAKE UPDATE DEVICE SESSION .....`)
+
 				DeviceSession.find(query.mongo.find).then((result) => {				
 					if (result.length) {
 						DeviceSession.updateOne(query.mongo.find, query.mongo.update, function (err, session) {});
@@ -92,14 +117,32 @@ io.on('connection', (socket) => {
 						DeviceSession.create(query.mongo.create, function (err, session) {});
 					}
 
-					callback(null, true);
+					callback(null, data);
 				}).catch((err) => {
 					callback(err);
 				});
 			},
 
+			function getPinName(data, callback) {
+				console.log(`..... HANDSHAKE GET PIN NAME .....`)
+
+				query.sql.attributes = [ 'pin', 'device_name' ]
+
+				DevicePIN.findAll(query.sql).then( (result) => {
+					callback(null, result)
+				})
+			}
+
 		], function (err, res) {
-			if (err) return console.error(`===== SOCKET_ERR ${err} =====`);
+			if (err) {
+				console.error(`===== SOCKET_ERR =====`);
+				console.error(err);
+				console.error(`===== ========== =====`);
+
+				return callback(err, res);
+			}
+
+			return callback(null, res);
 		});
 	});
 	// Disconnect Device
@@ -140,43 +183,6 @@ io.on('connection', (socket) => {
 			if (err) return console.error(err);
 		});
 	});
-	// Check Device
-	socket.on('checkdevice', (params, callback) => {
-		console.log(`========== SOCKET CHECKDEVICE | DEVICE_ID ${params.device_id} ==========`);
-
-		req.app.db = db;
-		req.body = params;
-
-		deviceController.regischeck(req.app, req, (err, result) => {
-			if (err) return callback(err, result);
-
-			switch (result.message) {
-				case '1':
-					console.log(`========== DEVICE_IP ${params.device_id} NOT MATCH ==========`);
-					
-					deviceController.ipupdate(req.app, req, (err, result) => {
-						if (err) return callback(err, result);
-			
-						return callback(null, result);
-					});
-					break;
-				
-				case '2':
-					console.log(`========== DEVICE_ID ${params.device_id} NOT REGISTERED ==========`);
-
-					deviceController.registerdevice(req.app, req, (err, result) => {
-						if (err) return callback(err, result);
-			
-						return callback(null, result);
-					});
-
-					break;
-
-				default:
-					return callback(null, { code: 'OK' });
-			}
-		});
-	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
 		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`);
@@ -186,13 +192,11 @@ io.on('connection', (socket) => {
 		req.app = { db : db };
 		req.body = params;
 
-		if (req.app.models) {
-			deviceController.sensordata(req.app, req, (err, result) => {
-				if (err) return callback(err, result);
-	
-				return callback(null, result);
-			});
-		}
+		deviceController.sensordata(req.app, req, (err, result) => {
+			if (err) return callback(err, result);
+
+			return callback(null, result);
+		});
 	});
 	// Command API
 	socket.on('commandapi', function (params) {
@@ -220,14 +224,33 @@ io.on('connection', (socket) => {
 		req.app = { db : db };
 		req.body = params;
 
-		if (req.app.models) {
-			deviceController.commandpanel(req.app, req, (err, res) => {
-				if (err) return callback(err, result);
-	
-				return callback(null, result);
-			});
-		}
+		async.waterfall([
+			function (callback) {
+				model(db, (err, result) => {
+					if (err) {
+						callback(err);
+					} else {
+						req.app.models = result;
 		
+						callback(null, true);
+					}
+				});
+			},
+
+			function (data, callback) {
+				deviceController.commandpanel(req.app, req, (err, res) => {
+					if (err) {
+						callback(err);
+					} else {
+						callback(null, res);
+					}
+				});
+			}
+		], function (err, result) {
+			if (err) return callback(err, result);
+
+			return callback(null, result);
+		});
 	});
 	// Response Command
 	socket.on('res-command', function (params) {
@@ -261,6 +284,27 @@ io.on('connection', (socket) => {
 			return console.error(output);
 		});
 	});
+	// Update Pin Name
+	socket.on('update-pin', function (params) {
+		console.log(`..... GET PIN NAME .....`)
+
+		query.sql.where = { device_id : params.device_id }
+
+		DeviceSession.findOne({ device_id : params.device_id }).then((resultSession) => {
+			query.sql.attributes = [ 'pin', 'device_name' ]
+
+			DevicePIN.findAll(query.sql).then( (result) => {
+				io.to(resultSession.session_id).emit('sync-pin', result);
+			})
+		}).catch((err) => {
+			output.err = {
+				code: "SOCKET_ERR",
+				message: err
+			};
+
+			console.error(output.err);
+		});
+	})
 });
 
 http.listen(process.env.SOCKET_PORT, function() {
