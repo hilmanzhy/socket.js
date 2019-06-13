@@ -5,7 +5,7 @@ module.exports = function (sequelize, Sequelize) {
 		id: { type: Sequelize.INTEGER, allowNull: false, unique: true, primaryKey: true, autoIncrement: true },
 		device_id: { type: Sequelize.STRING, allowNull: false},
 		user_id: { type: Sequelize.STRING, allowNull: false},
-		ip_device: { type: Sequelize.STRING, allowNull: false},
+		device_ip: { type: Sequelize.STRING, allowNull: false},
 		pin: { type: Sequelize.STRING, allowNull: true},
 		switch: { type: Sequelize.BOOLEAN, allowNull: false},
 		device_type: { type: Sequelize.BOOLEAN, allowNull: false},

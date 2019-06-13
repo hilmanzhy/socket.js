@@ -45,6 +45,15 @@ router.post('/switch', (req, res, next) => {
 	});
 });
 
+router.post('/switchall', (req, res, next) => {
+	console.log("========== ENDPOINT = /switchall ==========")
+	lumensensorController.switchall(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 router.post('/remove', (req, res, next) => {
 	console.log("========== ENDPOINT = /remove ==========")
 	lumensensorController.removelumensensor(req.APP, req, (err, result) => {

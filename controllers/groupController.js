@@ -12,7 +12,7 @@ exports.creategroup = function (APP, req, callback) {
 	var datareq = req.body
 	var response = {}
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.name) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.description) return callback({ code: 'MISSING_KEY' })
 
@@ -25,7 +25,7 @@ exports.creategroup = function (APP, req, callback) {
 	console.log("create group");
 	APP.models.mysql.device_group.create({
 
-		user_id: datareq.id_akun,
+		user_id: datareq.user_id,
 		name: datareq.name,		
 		description: datareq.description,
 		tdl: datareq.tdl
@@ -53,33 +53,54 @@ exports.updategrouptdl = function (APP, req, callback) {
 	var datareq = req.body
 	console.log(datareq);
 	var response = {}
+	const Device = APP.models.mysql.device_group
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.tdl) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+	query.value = {
+		tdl : datareq.tdl
+	}
+	query.options = {
+		where : {
+			id : datareq.group_id,
+			user_id : datareq.user_id
+		}
+	}
 	
 	console.log("updatetdl");
-	APP.db.sequelize.query("update device_group set tdl = '" + datareq.tdl + "' where user_id = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-	
-	.then(device => {
-
-		response = {
-			code : 'OK',	
-			message : 'Update tdl success'
+	Device.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			Device.update(query.value, query.options).then((resUpdate) => {
+				console.log(`========== update group tdl ==========`)
+				console.log(resUpdate)
+				
+				return callback(null, {
+					code : 'OK',
+					message : 'Update group tdl success'
+				});
+			}).catch((err) => {
+				return callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				});
+			});
+		} 
+		else 
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Group Not Found'
+			});
 		}
-		return callback(null, response);
-
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
+  	}).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        });
+    });
 	
 };
 
@@ -88,33 +109,57 @@ exports.updategroupname = function (APP, req, callback) {
 	var datareq = req.body
 	console.log(datareq);
 	var response = {}
+	const Device = APP.models.mysql.device_group
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.name) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.description) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
+	query.value = {
+		name : datareq.name,
+		description : datareq.description
+	}
+	query.options = {
+		where : {
+			id : datareq.group_id,
+			user_id : datareq.user_id
+		}
+	}
+
 	console.log("updategroupname");
-	APP.db.sequelize.query("update device_group set name = '" + datareq.name + "', description = '" + datareq.description + "' where user_id = '" + datareq.id_akun + "' and id = '" + datareq.id_group + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-	
-	.then(device => {
+	Device.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			Device.update(query.value, query.options).then((resUpdate) => {
+				console.log(`========== update group name and desc ==========`)
+				console.log(resUpdate)
+				
+				return callback(null, {
+					code : 'OK',
+					message : 'Update group name and description success'
+				});
 
-		response = {
-			code : 'OK',	
-			message : 'Update name success'
+			}).catch((err) => {
+				return callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				});
+			});
+		} 
+		else 
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Group Not Found'
+			});
 		}
-		return callback(null, response);
-
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
+  	}).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        });
+    });
 	
 };
 
@@ -122,12 +167,12 @@ exports.getdevicegroup = function (APP, req, callback) {
 	const params = req.body
 	const Device = APP.models.mysql.device
 	
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!params.id_group) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.group_id) return callback({ code: 'MISSING_KEY' })
 	
 	query.where = { 
-		user_id : params.id_akun,
-		group_id : params.id_group,
+		user_id : params.user_id,
+		group_id : params.group_id,
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 	
@@ -151,32 +196,77 @@ exports.assigngroup = function (APP, req, callback) {
 	var datareq = req.body
 	console.log(datareq);
 	var response = {}
+	const Device = APP.models.mysql.device
+	const Device_group = APP.models.mysql.device_group
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	console.log("updatetdl");
-	APP.db.sequelize.query("update device set group_id = '" + datareq.id_group + "' where user_id = '" + datareq.id_akun + "' and device_id = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-	
-	.then(device => {
-
-		response = {
-			code : 'OK',	
-			message : 'Assign group success'
+	query.options = {
+		where : {
+			id : datareq.group_id
 		}
-		return callback(null, response);
+	}
 
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+	console.log("assigngroup");
+	Device_group.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			query.options = {
+				where : {
+					device_id : datareq.device_id,
+					user_id : datareq.user_id
+				}
+			}
+
+			Device.findAll(query.options).then((result) => {
+				if (result.length > 0) 
+				{
+					APP.db.sequelize.query("update device set group_id = '" + datareq.group_id + "' where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	
+					.then(device => {
+
+						response = {
+							code : 'OK',	
+							message : 'Assign group success'
+						}
+						return callback(null, response);
+
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						}
+						return callback(response);
+					});
+				} 
+				else 
+				{
+					return callback(null, {
+						code : 'NOT_FOUND',
+						message : 'Device Not Found'
+					});
+				}
+			}).catch((err) => {
+				return callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				});
+			});
+		} 
+		else 
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Group Not Found'
+			});
 		}
-		return callback(response);
+  	}).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        });
 	});
 	
 };
@@ -186,33 +276,57 @@ exports.removegroup = function (APP, req, callback) {
 	var datareq = req.body
 	console.log(datareq);
 	var response = {}
+	const Device = APP.models.mysql.device
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_device) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	console.log("updatetdl");
-	APP.db.sequelize.query("update device set group_id = NULL where user_id = '" + datareq.id_akun + "' and device_id = '" + datareq.id_device + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-	
-	.then(device => {
-
-		response = {
-			code : 'OK',	
-			message : 'Group removed'
+	query.value = {
+		group_id : null
+	}
+	query.options = {
+		where : {
+			device_id : datareq.device_id,
+			user_id : datareq.user_id
 		}
-		return callback(null, response);
+	}
 
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+	console.log("removegroup");
+	Device.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			APP.db.sequelize.query("update device set group_id = null where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+			
+			.then(device => {
+
+				response = {
+					code : 'OK',	
+					message : 'Device has been removed from this group'
+				}
+				return callback(null, response);
+
+			}).catch((err) => {
+				response = {
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				}
+				return callback(response);
+			});
+	
+		} 
+		else 
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Device Not Found'
+			});
 		}
-		return callback(response);
-	});
+  	}).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        });
+    });
 	
 };
 
@@ -220,10 +334,10 @@ exports.getgroup = function (APP, req, callback) {
 	const params = req.body
 	const Device = APP.models.mysql.device_group
 	
-	if(!params.id_akun) return callback({ code: 'MISSING_KEY' })
+	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	
 	query.where = { 
-		user_id : params.id_akun
+		user_id : params.user_id
 	}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 		
@@ -247,33 +361,52 @@ exports.deletegroup = function (APP, req, callback) {
 	
 	var datareq = req.body
 	var response = {}
+	const Device_group = APP.models.mysql.device_group
 
-	if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 
 	console.log(datareq)
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-
-	APP.db.sequelize.query("delete from device_group where id = '" + datareq.id_group + "' and user_id = '" + datareq.id_akun + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-
-	.then(device => {
-		console.log("delete device")
-
-		response = {
-			code : 'OK',
-			message : 'Delete group success'
+	query.options = {
+		where : {
+			id : datareq.group_id
 		}
-		return callback(null, response);
-		
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+	}
+
+	console.log("deletegroup");
+	Device_group.findAll(query.options).then((result) => {
+		if (result.length > 0) 
+		{
+			APP.db.sequelize.query("delete from device_group where id = '" + datareq.group_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+
+			.then(device => {
+				response = {
+					code : 'OK',
+					message : 'Delete group success'
+				}
+				return callback(null, response);	
+
+			}).catch((err) => {
+				response = {
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				}
+				return callback(response);
+			});
+		} 
+		else 
+		{
+			return callback(null, {
+				code : 'NOT_FOUND',
+				message : 'Group Not Found'
+			});
 		}
-		return callback(response);
+  	}).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        });
 	});
 	
 };
@@ -284,8 +417,8 @@ exports.grouptotalruntime = function (APP, req, callback) {
 	console.log(datareq);
 	var response = {}
 
-    if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-    if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 	
@@ -297,8 +430,8 @@ exports.grouptotalruntime = function (APP, req, callback) {
 	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total_pergroup (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
-                id_akun: datareq.id_akun,
-                group_id: datareq.id_group,
+                id_akun: datareq.user_id,
+                group_id: datareq.group_id,
 				start_date: datareq.date_from,		
 				end_date: datareq.date_to
 			}, 
@@ -306,15 +439,12 @@ exports.grouptotalruntime = function (APP, req, callback) {
 		}
 	)
 
-	.then(device => {
+	.then(result => {
 		
-		console.log(device)
-		response = {
-			code : 'OK',
-			message : 'Data Found',
-			data : device
-		}
-		return callback(null, response);
+		return callback(null, {
+			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : result
+		});
 	
 	}).catch((err) => {
 		response = {
@@ -333,8 +463,8 @@ exports.groupruntime = function (APP, req, callback) {
 	console.log(datareq);
 	var response = {}
 
-    if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-    if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 	
@@ -346,8 +476,8 @@ exports.groupruntime = function (APP, req, callback) {
 	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pergroup (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
-                id_akun: datareq.id_akun,
-                group_id: datareq.id_group,
+                id_akun: datareq.user_id,
+                group_id: datareq.group_id,
 				start_date: datareq.date_from,		
 				end_date: datareq.date_to
 			}, 
@@ -355,15 +485,12 @@ exports.groupruntime = function (APP, req, callback) {
 		}
 	)
 
-	.then(device => {
+	.then(result => {
 		
-		console.log(device)
-		response = {
-			code : 'OK',
-			message : 'Data Found',
-			data : device
-		}
-		return callback(null, response);
+		return callback(null, {
+			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : result
+		});
 	
 	}).catch((err) => {
 		response = {
@@ -382,8 +509,8 @@ exports.groupdailyruntime = function (APP, req, callback) {
 	console.log(datareq);
 	var response = {}
 
-    if(!datareq.id_akun) return callback({ code: 'MISSING_KEY' })
-    if(!datareq.id_group) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+    if(!datareq.group_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 	
@@ -395,8 +522,8 @@ exports.groupdailyruntime = function (APP, req, callback) {
 	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_group_perday (:id_akun, :group_id, :start_date, :end_date)',
 		{ 
 			replacements: {
-                id_akun: datareq.id_akun,
-                group_id: datareq.id_group,
+                id_akun: datareq.user_id,
+                group_id: datareq.group_id,
 				start_date: datareq.date_from,		
 				end_date: datareq.date_to
 			}, 
@@ -404,15 +531,12 @@ exports.groupdailyruntime = function (APP, req, callback) {
 		}
 	)
 
-	.then(device => {
+	.then(result => {
 		
-		console.log(device)
-		response = {
-			code : 'OK',
-			message : 'Data Found',
-			data : device
-		}
-		return callback(null, response);
+		return callback(null, {
+			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : result
+		});
 	
 	}).catch((err) => {
 		response = {
@@ -460,7 +584,7 @@ exports.groupcommand = function (APP, req, callback) {
 			var params = {
 				"id_akun": datareq.id_akun,
 				"id_device": element.id_device,
-				"ip_device": element.ip_device,
+				"device_ip": element.device_ip,
 				"nama_device": element.nama_device,
 				"status": datareq.status,
 				"type": element.tipe_device,

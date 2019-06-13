@@ -79,7 +79,7 @@ module.exports = function () {
         query.attributes = [
             'device_id',
             'user_id',
-            'ip_device',
+            'device_ip',
             'device_name',
             'device_type',
             'timer_on',
@@ -99,11 +99,11 @@ module.exports = function () {
                     let device = result[index].toJSON()
                     let url = `http://localhost:${process.env.PORT}/device/command`
                     let params = {
-                        "id_akun" : device.user_id.toString(),
-                        "id_device" : device.device_id.toString(),
-                        "ip_device" : device.ip_device.toString(),
-                        "nama_device" : device.device_name.toString(),
-                        "type" : device.device_type.toString(),
+                        "user_id" : device.user_id.toString(),
+                        "device_id" : device.device_id.toString(),
+                        "device_ip" : device.device_ip.toString(),
+                        "device_name" : device.device_name.toString(),
+                        "device_type" : device.device_type.toString(),
                         "mode" : "1",
                         "pin" : ""
                     }

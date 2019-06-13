@@ -236,9 +236,9 @@ router.post('/testing', (req, res, next) => {
 	});
 });
 
-router.post('/commandtest', (req, res, next) => {
-	console.log("commandtest")
-	deviceController.commandtest(req.APP, req, (err, result) => {
+router.post('/commandpanel', (req, res, next) => {
+	console.log("commandpanel")
+	deviceController.commandpanel(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		// console.log(result)
 		// res.send(result)
@@ -286,6 +286,26 @@ router.post('/activateallpin', (req, res, next) => {
 	});
 });
 
+router.post('/getpagingdevice', (req, res, next) => {
+	console.log("getpagingdevice")
+	deviceController.getpagingdevice(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		// console.log(result)
+		// res.send(result)
+		return req.APP.output.print(req, res, result);
+	});
+});
+
+router.post('/getpaginghistory', (req, res, next) => {
+	console.log("getpaginghistory")
+	deviceController.getpaginghistory(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		// console.log(result)
+		// res.send(result)
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 /* Route Device Timer */
 router.post('/timer/set', (req, res, next) => {
 	console.log("========== ENDPOINT = /timer/set ==========")
@@ -308,34 +328,6 @@ router.post('/timer/switch', (req, res, next) => {
 router.post('/timer/remove', (req, res, next) => {
 	console.log("========== ENDPOINT = /timer/remove ==========")
 	deviceController.removetimer(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-/* Route Device Timer */
-router.post('/lumensensor/set', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/set ==========")
-	deviceController.setlumensensor(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/lumensensor/switch', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/switch ==========")
-	deviceController.switchlumensensor(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/lumensensor/remove', (req, res, next) => {
-	console.log("========== ENDPOINT = /lumensensor/remove ==========")
-	deviceController.removelumensensor(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);
