@@ -55,7 +55,35 @@ module.exports = function (sequelize, Sequelize) {
             allowNull: false,
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
-        }
+		},
+		timer_on: {
+			type: Sequelize.TIME,
+			allowNull: true
+		},
+		timer_off: {
+			type: Sequelize.TIME,
+			allowNull: true
+		},
+		timer_status: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		},
+		lumensensor_on: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		},
+		lumensensor_off: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		},
+		lumensensor_status: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		},
+		sensor_status: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		}
   }, {});
 
   device_pin.associate = function (models) {};
