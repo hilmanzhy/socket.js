@@ -71,8 +71,7 @@ exports.registerdevice = function (APP, req, callback) {
 	query.options = {
 		where : {
 			device_id : datareq.device_id,
-			user_id : datareq.user_id,
-			device_ip : datareq.device_ip
+			user_id : datareq.user_id
 		}
 	}
 
@@ -87,7 +86,7 @@ exports.registerdevice = function (APP, req, callback) {
 		} 
 		else 
 		{
-			if (datareq.device_type == '0')
+			/* if (datareq.device_type == '0')
 			{
 				console.log("insert device");
 				APP.models.mysql.device.create({
@@ -199,6 +198,16 @@ exports.registerdevice = function (APP, req, callback) {
 						return callback(response);
 					});
 				});
+			}
+			else
+			{ */
+			if (device_type = '0' && pin != '1')
+			{
+				response = {
+					code : 'ERR_DATABASE',
+					message : 'Wrong number of pin on mini device'
+				}
+				return callback(null, response);
 			}
 			else
 			{
@@ -317,6 +326,7 @@ exports.registerdevice = function (APP, req, callback) {
 				});
 			}
 		}
+		//}
 	}).catch((err) => {
 		return callback({
 			code: 'ERR_DATABASE',
@@ -880,7 +890,7 @@ exports.deletedevice = function (APP, req, callback) {
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
+	//if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 
 	console.log(datareq)
 
@@ -898,7 +908,7 @@ exports.deletedevice = function (APP, req, callback) {
 	Device.findAll(query.options).then((result) => {
 		if (result.length > 0) 
 		{
-			if (datareq.device_type == '0')
+			/* if (datareq.device_type == '0')
 			{
 				APP.db.sequelize.query("delete from device where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 			
@@ -921,7 +931,7 @@ exports.deletedevice = function (APP, req, callback) {
 				});
 			}
 			else
-			{
+			{ */
 				APP.db.sequelize.query("delete from device where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
 			
 				.then(device => {
@@ -934,8 +944,7 @@ exports.deletedevice = function (APP, req, callback) {
 
 						response = {
 							code : 'OK',
-							error : 'false',
-							message : 'Delete success'
+							message : 'Delete device ' + datareq.device_id +  ' success'
 						}
 						return callback(null, response);
 						
@@ -954,7 +963,7 @@ exports.deletedevice = function (APP, req, callback) {
 					}
 					return callback(response);
 				});
-			}
+			//}
 		} 
 		else 
 		{
@@ -1586,28 +1595,43 @@ exports.totalruntime = function (APP, req, callback) {
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
-	
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
 
 	console.log('runtimereport_total')
-	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)',
-		{ 
-			replacements: {
-				user_id: datareq.user_id,
-				date_from: datareq.date_from,		
-				date_to: datareq.date_to
-			}, 
-			type: APP.db.sequelize.QueryTypes.RAW 
-		}
-	)
 
-	.then(device => {
+	APP.db.sequelize.query("SELECT count(device_status) as active_device FROM sitadev_iot_2.device where device_status = '1' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+
+	.then(active_device => {
+		console.log(active_device)
+
+		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					date_from: datareq.date_from,		
+					date_to: datareq.date_to
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
+
+		.then(total_runtime => {
+			
+			return callback(null, {
+				code : (total_runtime && (total_runtime.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : {
+					runtime : total_runtime,
+					device : active_device[0]
+				}
+			});
 		
-		return callback(null, {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
 		});
 	
 	}).catch((err) => {
@@ -1619,18 +1643,19 @@ exports.totalruntime = function (APP, req, callback) {
 		return callback(response);
 		
 	});
-	
+
 };
 
 exports.settimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device
+	const Device = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 
 	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 	if(!params.timer_on) return callback({ code: 'MISSING_KEY' })
 	if(!params.timer_off) return callback({ code: 'MISSING_KEY' })
 	
@@ -1641,7 +1666,8 @@ exports.settimer = function (APP, req, callback) {
 	query.options = {
 		where : {
 			device_id : params.device_id,
-			user_id : params.user_id
+			user_id : params.user_id,
+			pin : params.pin
 		}
 	}
 
@@ -1672,7 +1698,7 @@ exports.settimer = function (APP, req, callback) {
 
 exports.switchtimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device
+	const Device = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -1680,6 +1706,7 @@ exports.switchtimer = function (APP, req, callback) {
 	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.timer_status) return callback({ code: 'MISSING_KEY' })
+	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
 		timer_status : params.timer_status
@@ -1687,7 +1714,8 @@ exports.switchtimer = function (APP, req, callback) {
 	query.options = {
 		where : {
 			device_id : params.device_id,
-			user_id : params.user_id
+			user_id : params.user_id,
+			pin : params.pin
 		}
 	}
 
@@ -1709,7 +1737,7 @@ exports.switchtimer = function (APP, req, callback) {
 			else
 			{
 				console.log("check timer");
-				APP.db.sequelize.query("select count(*) as device from device where timer_on is not null and timer_off is not null and user_id = '" + params.user_id + "' and device_id = '" + params.device_id + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
+				APP.db.sequelize.query("select count(*) as device from device_pin where timer_on is not null and timer_off is not null and user_id = '" + params.user_id + "' and device_id = '" + params.device_id + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
 
 				.then(device => {
 					console.log(device)
@@ -1760,13 +1788,14 @@ exports.switchtimer = function (APP, req, callback) {
 
 exports.removetimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device
+	const Device = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
 	
 	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
+	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 
 	query.value = {
 		timer_on : null,
@@ -1776,7 +1805,8 @@ exports.removetimer = function (APP, req, callback) {
 	query.options = {
 		where : {
 			device_id : params.device_id,
-			user_id : params.user_id
+			user_id : params.user_id,
+			pin : params.pin
 		}
 	}
 
@@ -2718,3 +2748,4 @@ exports.getpaginghistory = function (APP, req, callback) {
 	});
 	
 };
+
