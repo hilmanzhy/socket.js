@@ -85,6 +85,7 @@ module.exports = function (sequelize, Sequelize) {
 			allowNull: true
 		}
   }, {});
+  
 
   device_pin.associate = function (models) {};
 
