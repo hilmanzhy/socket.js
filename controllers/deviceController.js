@@ -1715,7 +1715,7 @@ exports.switchtimer = function (APP, req, callback) {
 					else
 					{
 						return callback(null, {
-							code : 'OK',
+							code : 'GENERAL_ERR',
 							message : 'You have to set the timer first before switch the timer on'
 						});
 					}
