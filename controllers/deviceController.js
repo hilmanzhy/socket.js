@@ -203,7 +203,7 @@ exports.registerdevice = function (APP, req, callback) {
 			}
 			else
 			{ */
-			if (datareq.device_type = '0' && datareq.pin != '1')
+			if (datareq.device_type == '0' && datareq.pin != '1')
 			{
 				response = {
 					code : 'ERR_DATABASE',
