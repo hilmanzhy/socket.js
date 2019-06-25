@@ -11,9 +11,9 @@
 	},
 	"NOT_FOUND": {
 		"error": false,
-		"code": "00",
+		"code": "NOT_FOUND",
 		"name": "NOT_FOUND",
-		"status": 200,
+		"status": 404,
 		"from": "",
 		"info": {},
 		"message": "Not found.",
