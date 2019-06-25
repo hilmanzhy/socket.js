@@ -203,7 +203,7 @@ exports.registerdevice = function (APP, req, callback) {
 			}
 			else
 			{ */
-			if (device_type = '0' && pin != '1')
+			if (datareq.device_type = '0' && datareq.pin != '1')
 			{
 				response = {
 					code : 'ERR_DATABASE',
@@ -214,7 +214,7 @@ exports.registerdevice = function (APP, req, callback) {
 			else
 			{
 				console.log("insert device");
-				APP.db.sequelize.query('CALL sitadev_iot_2.create_devicepin (:device_id, :device_ip, :user_id, :device_name, :date, :pin, :group_id)',
+				APP.db.sequelize.query('CALL sitadev_iot_2.create_devicepin (:device_id, :device_ip, :user_id, :device_name, :date, :pin, :group_id, :device_type)',
 					{ 
 						replacements: {
 							device_id: datareq.device_id,
@@ -223,7 +223,8 @@ exports.registerdevice = function (APP, req, callback) {
 							device_name: datareq.device_name,
 							date: date,
 							pin : datareq.pin,
-							group_id : "null"
+							group_id : "null",
+							device_type : datareq.device_type
 						}, 
 						type: APP.db.sequelize.QueryTypes.RAW 
 					}
