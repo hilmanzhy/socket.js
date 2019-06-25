@@ -2624,13 +2624,13 @@ exports.ipupdate = function (APP, req, callback) {
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
+	//if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
 
 	var date = new Date();
 	date.setHours(date.getHours());
 	console.log(date);
 	
-	if (datareq.device_type == '0')
+	/* if (datareq.device_type == '0')
 	{
 		console.log("update ip device");
 
@@ -2669,7 +2669,7 @@ exports.ipupdate = function (APP, req, callback) {
 		});
 	}
 	else
-	{
+	{ */
 		query.value = {
 			device_ip : datareq.device_ip
 		}
@@ -2739,7 +2739,7 @@ exports.ipupdate = function (APP, req, callback) {
 				data: JSON.stringify(err)
 			});
 		});
-	}
+	//}
 };
 
 exports.regischeck = function (APP, req, callback) {
