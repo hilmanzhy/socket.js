@@ -26,6 +26,33 @@ const DeviceSession = require('./models/mongo/device_session.js')(db.mongo);
 
 let query = {};
 
+async function updateSession(query, callback) {
+	DeviceSession.updateOne(
+		query.mongo.find,
+		{ $set : query.mongo.update },
+		{ upsert : true },
+	    function(err, result){
+	        if (err){
+				callback(err);
+	        }else{
+	            callback(null, result);
+	        }
+	    }
+	);
+
+	/*DeviceSession.find(query.mongo.find).then((result) => {				
+		if (result.length) {
+			DeviceSession.updateOne(query.mongo.find, query.mongo.update, function (err, session) {});
+		} else {
+			DeviceSession.create(query.mongo.create, function (err, session) {});
+		}
+
+		callback(null, result);
+	}).catch((err) => {
+		callback(err);
+	});*/
+}
+
 io.on('connection', (socket) => {
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
@@ -114,17 +141,13 @@ io.on('connection', (socket) => {
 			function updateDeviceSession(data, callback) {
 				console.log(`..... HANDSHAKE UPDATE DEVICE SESSION .....`)
 
-				DeviceSession.find(query.mongo.find).then((result) => {				
-					if (result.length) {
-						DeviceSession.updateOne(query.mongo.find, query.mongo.update, function (err, session) {});
+				updateSession(query, (err, res) => {
+					if (err) {
+						callback(err)
 					} else {
-						DeviceSession.create(query.mongo.create, function (err, session) {});
+						callback(null, data)
 					}
-
-					callback(null, data);
-				}).catch((err) => {
-					callback(err);
-				});
+				})
 			},
 
 			function getPinName(data, callback) {
@@ -149,6 +172,55 @@ io.on('connection', (socket) => {
 			return callback(null, res);
 		});
 	});
+	// Handshake Hub
+	socket.on('handshake-hub', (hub, callback) => {
+		query.sql = {
+			where : { device_id : hub.device_id },
+			attributes : [ 'device_id' ]
+		};
+		query.mongo = {
+			find : { device_id : hub.device_id },
+			update : { session_id : socket.id },
+			create : {
+				device_id : hub.device_id,
+				session_id : socket.id,
+			}
+		};
+
+		async.waterfall([
+			function handshake(callback) {
+				console.log(`===== HANDSHAKE HUB ${socket.id} CONNECTED =====`);
+				
+				query.sql = { 
+					where : { user_id : hub.user_id },
+					attributes : [
+						'user_id',
+						'device_id',
+						'device_name',
+						'pin'
+					]
+				}
+				DevicePIN.findAll(query.sql).then( (result) => {
+					callback(null, result)
+				})
+			},
+			function session(data, callback) {
+				console.log(`..... HANDSHAKE UPDATE HUB SESSION .....`)
+
+				updateSession(query, (err, res) => {
+					if (err) {
+						callback(err)
+					} else {
+						callback(null, data)
+					}
+				})
+			}
+		], function (err, result) {
+			if (err) return callback(err, result);
+
+			return callback(null, result);
+		})
+	})
 	// Disconnect Device
 	socket.on('disconnect', function () {
 		console.log(`===== SOCKET_ID ${socket.id} DISCONNECTED =====`);
@@ -256,6 +328,25 @@ io.on('connection', (socket) => {
 			return callback(null, result);
 		});
 	});
+	// Command Voice
+	socket.on('command-voice', function (params) {
+		console.log(`========== SOCKET COMMANDVOICE ==========`);
+		console.log(params);
+		console.log(`========== =================== ==========`);
+
+		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
+			console.log(`..... SENDING COMMANDVOICE TO ${result.device_id} .....`);
+
+			io.to(result.session_id).emit('command', params);
+		}).catch((err) => {
+			output = {
+				"code": "SOCKET_ERR",
+				"message": err
+			};
+
+			console.error(output);
+		});
+	})
 	// Response Command
 	socket.on('res-command', function (params) {
 		console.log(`========== SOCKET RES-COMMAND ==========`);
