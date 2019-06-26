@@ -1545,6 +1545,53 @@ exports.runtimereportperdev = function (APP, req, callback) {
 	
 };
 
+exports.runtimereportdaily = function (APP, req, callback) {
+  
+	var datareq = req.body
+	console.log(datareq);
+	var response = {}
+	
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
+	
+	var date = new Date();
+	date.setHours(date.getHours());
+	console.log(date);
+
+	console.log('runtimereport_perdevice')
+	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
+		{ 
+			replacements: {
+				user_id: datareq.user_id,
+				device_id: datareq.device_id,
+				date_from: datareq.date_from,		
+				date_to: datareq.date_to
+			}, 
+			type: APP.db.sequelize.QueryTypes.RAW 
+		}
+	)
+
+	.then(device => {
+
+		return callback(null, {
+			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : device
+		});
+
+	}).catch((err) => {
+
+		response = {
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		}
+		return callback(response);
+		
+	});
+	
+};
+
 exports.totalruntime = function (APP, req, callback) {
 	
 	var datareq = req.body
