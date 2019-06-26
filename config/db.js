@@ -36,7 +36,7 @@ const mysqlDialectOptions = {
 	requestTimeout: Number(process.env.MYSQL_DIALECT_REQUEST_TIMEOUT)
 };
 const mysqlDialect = process.env.MYSQL_DIALECT;
-var options = (process.env.NODE_ENV === 'production') ? {
+var options = {
 	host: process.env.MYSQL_HOST,
 	port: process.env.MYSQL_PORT,
 	timezone: '+07:00',
@@ -45,14 +45,6 @@ var options = (process.env.NODE_ENV === 'production') ? {
 	// dialectOptions: mysqlDialectOptions,
 	define: define,
 	logging: false
-} : {
-	host: process.env.MYSQL_HOST,
-	port: process.env.MYSQL_PORT,
-	timezone: '+07:00',
-	dialect: mysqlDialect,
-	pool: mysqlPool,
-	// dialectOptions: mysqlDialectOptions,
-	define: define
 };
 const sequelize = new Sequelize(process.env.MYSQL_NAME, process.env.MYSQL_USER, process.env.MYSQL_PASS, options);
 

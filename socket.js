@@ -73,9 +73,11 @@ io.on('connection', (socket) => {
 								console.log(`========== DEVICE_IP ${device.device_id} NOT MATCH ==========`);
 								
 								deviceController.ipupdate(req.app, req, (err, result) => {
-									if (err) callback(err, result);
-						
-									callback(null, result);
+									if (err) {
+										callback(err, result);
+									} else {
+										callback(null, result);
+									}
 								});
 								break;
 							
@@ -83,9 +85,11 @@ io.on('connection', (socket) => {
 								console.log(`========== DEVICE_ID ${device.device_id} NOT REGISTERED ==========`);
 			
 								deviceController.registerdevice(req.app, req, (err, result) => {
-									if (err) callback(err, result);
-						
-									callback(null, result);
+									if (err) {
+										callback(err, result);
+									} else {
+										callback(null, result);
+									}
 								});
 			
 								break;
