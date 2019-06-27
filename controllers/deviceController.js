@@ -1555,40 +1555,78 @@ exports.runtimereportdaily = function (APP, req, callback) {
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.type) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	
 	var date = new Date();
 	date.setHours(date.getHours());
 	console.log(date);
 
-	console.log('runtimereport_perdevice')
-	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
-		{ 
-			replacements: {
-				user_id: datareq.user_id,
-				device_id: datareq.device_id,
-				date_from: datareq.date_from,		
-				date_to: datareq.date_to
-			}, 
-			type: APP.db.sequelize.QueryTypes.RAW 
-		}
-	)
+	if (datareq.type == '0')
+	{
+		console.log('runtimereport_perdevice')
+		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					date_from: datareq.date_from,		
+					date_to: datareq.date_to
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
 
-	.then(device => {
+		.then(device => {
 
-		return callback(null, {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : device
+			});
+
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
 		});
+	}
+	else
+	{
+		console.log('runtimereport_perdevice')
+		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					pin : datareq.pin,
+					date_from: datareq.date_from,		
+					date_to: datareq.date_to
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
 
-	}).catch((err) => {
+		.then(device => {
 
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-		
-	});
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : device
+			});
+
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
+		});
+	}
 	
 };
 
