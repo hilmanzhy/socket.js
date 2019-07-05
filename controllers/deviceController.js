@@ -5,6 +5,7 @@ const md5 = require('md5');
 const unirest = require('unirest');
 const request = require('../functions/request.js');
 const io = require('socket.io-client');
+//const Op = APP.db.sequelize.Op;
 
 var socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
 var query = {};
@@ -996,20 +997,33 @@ exports.devicehistory = function (APP, req, callback) {
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+	/* query.options = {
+		where : {
+			user_id : datareq.user_id,
+			date: {
+				[APP.db.sequelize.Op.between]: [datareq.date_from, datareq.date_to]
+			  }
+		}
+	} */
 
+	
 	var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
 
 	if (datareq.device_id != '')
 	{
 		query = query + " and device_id = '" + datareq.device_id + "'"
 	}
+
+	if (datareq.pin != '')
+	{
+		query = query + " and pin = '" + datareq.pin + "'"
+	}
 	
 	APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
 	
 	.then(device => {
+
+	//Device.findAll(query.options).then((device) => {
 		console.log(device)
 		
 		response = {

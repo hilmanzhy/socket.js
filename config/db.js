@@ -39,7 +39,7 @@ const mysqlDialect = process.env.MYSQL_DIALECT;
 var options = {
 	host: process.env.MYSQL_HOST,
 	port: process.env.MYSQL_PORT,
-	timezone: '+07:00',
+	//timezone: '+07:00',
 	dialect: mysqlDialect,
 	pool: mysqlPool,
 	// dialectOptions: mysqlDialectOptions,
