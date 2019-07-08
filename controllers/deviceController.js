@@ -5,6 +5,7 @@ const md5 = require('md5');
 const unirest = require('unirest');
 const request = require('../functions/request.js');
 const io = require('socket.io-client');
+//const Op = APP.db.sequelize.Op;
 
 var socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
 var query = {};
@@ -996,20 +997,33 @@ exports.devicehistory = function (APP, req, callback) {
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+	/* query.options = {
+		where : {
+			user_id : datareq.user_id,
+			date: {
+				[APP.db.sequelize.Op.between]: [datareq.date_from, datareq.date_to]
+			  }
+		}
+	} */
 
+	
 	var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
 
 	if (datareq.device_id != '')
 	{
 		query = query + " and device_id = '" + datareq.device_id + "'"
 	}
+
+	if (datareq.pin != '')
+	{
+		query = query + " and pin = '" + datareq.pin + "'"
+	}
 	
 	APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
 	
 	.then(device => {
+
+	//Device.findAll(query.options).then((device) => {
 		console.log(device)
 		
 		response = {
@@ -1542,6 +1556,91 @@ exports.runtimereportperdev = function (APP, req, callback) {
 		return callback(response);
 		
 	});
+	
+};
+
+exports.runtimereportdaily = function (APP, req, callback) {
+  
+	var datareq = req.body
+	console.log(datareq);
+	var response = {}
+	
+	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.type) return callback({ code: 'MISSING_KEY' })
+	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
+	
+	var date = new Date();
+	date.setHours(date.getHours());
+	console.log(date);
+
+	if (datareq.type == '0')
+	{
+		console.log('runtimereport_perdevice')
+		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					date_from: datareq.date_from,		
+					date_to: datareq.date_to
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
+
+		.then(device => {
+
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : device
+			});
+
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
+		});
+	}
+	else
+	{
+		console.log('runtimereport_perdevice')
+		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)',
+			{ 
+				replacements: {
+					user_id: datareq.user_id,
+					device_id: datareq.device_id,
+					pin : datareq.pin,
+					date_from: datareq.date_from,		
+					date_to: datareq.date_to
+				}, 
+				type: APP.db.sequelize.QueryTypes.RAW 
+			}
+		)
+
+		.then(device => {
+
+			return callback(null, {
+				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data : device
+			});
+
+		}).catch((err) => {
+
+			response = {
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			}
+			return callback(response);
+			
+		});
+	}
 	
 };
 

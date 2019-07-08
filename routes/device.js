@@ -186,6 +186,16 @@ router.post('/runtimereportperdev', (req, res, next) => {
 	});
 });
 
+router.post('/runtimereportdaily', (req, res, next) => {
+	console.log("runtimereportdaily")
+	deviceController.runtimereportdaily(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		// console.log(result)
+		// res.send(result)
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 router.post('/runtimereport', (req, res, next) => {
 	console.log("runtimereport")
 	deviceController.runtimereport(req.APP, req, (err, result) => {
