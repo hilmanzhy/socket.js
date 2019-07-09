@@ -1249,177 +1249,73 @@ exports.commandpanel = function (APP, req, callback) {
 };
 
 exports.sensordata = function (APP, req, callback) {
+	const params = req.body
+	const Device = APP.models.mysql.device
+	const DevicePIN = APP.models.mysql.device_pin
 
-	var datareq = req.body
+	let arrData = params.data	
+	
 	var response = {}
 	var pin
 	var switch_status
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.sensor_status) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
-
-	console.log(datareq)
-
-	if (datareq.device_type	 == '0')
-		{
-			pin = 'NULL'
+	query.options = {
+		where : {
+			user_id : params.user_id,
+			device_id : params.device_id
 		}
-	else
-		{
-			pin = datareq.pin
-		}
+	}
 
-	APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+	console.log(`===== FN SENSORDATA =====`);
+	console.log(params)
+	console.log(`===== == ========== =====`);
 
-	.then(device => {		
-		console.log('connection status updated')
-		
-		if (datareq.sensor_status == '0' && datareq.switch == '1')
-			{
-				switch_status = '0'
-				console.log('update sensor_status')
-	
-				APP.db.sequelize.query("update device_pin set sensor_status = 1 where device_id = '" + datareq.device_id + "' and pin = '" + datareq.pin + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {		
-					console.log('sensor_status updated')
-	
-					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)',
-						{ 
-							replacements: {
-								device_id: datareq.device_id,
-								user_id: datareq.user_id,
-								pin : pin,
-								switch: switch_status,
-								current_sensor: datareq.ampere,
-								watt: datareq.wattage,
-								date_device: datareq.date
-							}, 
-							type: APP.db.sequelize.QueryTypes.RAW 
-						}
-					)
-	
-					.then((rows) => {
-	
-						console.log(rows[0].message)
-						var spreturn = rows[0].message
-							
-						if (rows[0].message == '0')
-							{
-								response = {
-									code : 'OK',
-									error : 'true',
-									message : 'Device not activated yet'
-								}
-							}
-						else
-							{
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Data saved'
-								}
-							}
-						return callback(null, response);
-	
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-	
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			}
-		else
-			{
-				switch_status = datareq.switch
-				console.log('update sensor_status')
-	
-				APP.db.sequelize.query("update device_pin set sensor_status = 0 where device_id = '" + datareq.device_id + "' and pin = '" + datareq.pin + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {		
-					console.log('sensor_status updated')
-	
-					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :status_device, :current_sensor, :watt, :date_device)',
-						{ 
-							replacements: {
-								device_id: datareq.device_id,
-								user_id: datareq.user_id,
-								pin : pin,
-								status_device: switch_status,
-								current_sensor: datareq.ampere,
-								watt: datareq.wattage,
-								date_device: datareq.date
-							}, 
-							type: APP.db.sequelize.QueryTypes.RAW 
-						}
-					)
-	
-					.then((rows) => {
-	
-						console.log(rows[0].message)
-						var spreturn = rows[0].message
-							
-						if (rows[0].message == '0')
-							{
-								response = {
-									code : 'OK',
-									error : 'true',
-									message : 'Device not activated yet'
-								}
-							}
-						else
-							{
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Data saved'
-								}
-							}
-						return callback(null, response);
-	
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-	
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			}
-			
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+	async.waterfall([
+		function (callback) {
+			if(!params.user_id) callback({ code: 'MISSING_KEY', data: 'user_id' })
+			if(!params.device_id) callback({ code: 'MISSING_KEY', data: 'device_id' })
+			if(!params.device_type) callback({ code: 'MISSING_KEY', data: 'device_type' })
+			if(!params.date) callback({ code: 'MISSING_KEY', data: 'date' })
+			if(!params.data) callback({ code: 'MISSING_KEY', data: 'data' })
+
+			callback(null, true)
+		},
+		function (data, callback) {
+			Device.update({ is_connected: "1" }, query.options).then((resUpdated) => {
+				console.log(`..... CONNECTION STATUS UPDATED .....`)
+
+				callback(null, resUpdated)
+			}).catch((err) => {
+				callback(err)
+			});
+		},
+		function (data, callback) {
+			arrData.forEach(val => {
+				if(!val.pin) callback({ code: 'MISSING_KEY', data: 'pin' })
+				if(!val.ampere) callback({ code: 'MISSING_KEY', data: 'ampere' })
+				if(!val.wattage) callback({ code: 'MISSING_KEY', data: 'wattage' })
+				if(!val.switch) callback({ code: 'MISSING_KEY', data: 'switch' })
+				if(!val.sensor_status) callback({ code: 'MISSING_KEY', data: 'sensor_status' })
+				
+				if (params.device_type == '0') {
+					pin = null
+				} else {
+					pin = val.pin
+				}
+
+				if (val.sensor_status == '0' && val.switch == '1') {
+					switch_status = "0"
+
+					Device.update()
+				}
+			});
+			callback(null, true)
 		}
-		return callback(response);
-	});
-	
+	], function (err, res) {
+		if (err) return callback(err)
+
+		return callback(null, res)
+	})
 };
 
 exports.runtimereport = function (APP, req, callback) {
