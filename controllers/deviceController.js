@@ -1055,10 +1055,7 @@ exports.commandpanel = function (APP, req, callback) {
 	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.mode) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+	if(!datareq.date) return callback({ code: 'MISSING_KEY' })
 
 	query.where = {
 		device_id : datareq.device_id,
@@ -1120,13 +1117,11 @@ exports.commandpanel = function (APP, req, callback) {
 									device_name: pindevicename,
 									device_type: device_type,
 									pin: datareq.pin,
-									date: date,
-									created_at: date,
-									updated_at: date
+									date: datareq.date
 
 								}).then((rows) => {
 
-									console.log('execute singel ccu device')
+									console.log('checking all switch')
 									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
 										{ 
 											replacements: {
@@ -1138,7 +1133,7 @@ exports.commandpanel = function (APP, req, callback) {
 									)
 
 									.then(device => {
-										console.log(device)
+										//console.log(device)
 
 										response = {
 											code : 'OK',
