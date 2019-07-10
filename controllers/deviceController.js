@@ -1108,7 +1108,22 @@ exports.commandpanel = function (APP, req, callback) {
 							.then(device => {
 
 								console.log("add to history")
-								APP.models.mysql.device_history.create({
+
+								APP.db.sequelize.query('CALL sitadev_iot_2.create_device_history (:device_id, :user_id, :pin, :device_name, :switch, :date)',
+									{ 
+										replacements: {
+												device_id: datareq.device_id,
+												user_id: datareq.user_id,
+												pin: datareq.pin,
+												device_name: pindevicename,
+												switch: datareq.switch,
+												date: datareq.date
+											}, 
+										type: APP.db.sequelize.QueryTypes.RAW 
+									}
+								)
+
+								/* APP.models.mysql.device_history.create({
 
 									device_id: datareq.device_id,
 									user_id: datareq.user_id,
@@ -1117,9 +1132,9 @@ exports.commandpanel = function (APP, req, callback) {
 									device_name: pindevicename,
 									device_type: device_type,
 									pin: datareq.pin,
-									date: datareq.date
-
-								}).then((rows) => {
+									date: datareq.date}) */
+									
+								.then((rows) => {
 
 									console.log('checking all switch')
 									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
