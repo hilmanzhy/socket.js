@@ -166,6 +166,15 @@ router.post('/sensordata', (req, res, next) => {
 	});
 });
 
+router.post('/sensordata_v2', (req, res, next) => {
+	console.log("===== /sensordata_v2 ======")
+	deviceController.sensordata_v2(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 router.post('/runtimereportperday', (req, res, next) => {
 	console.log("runtimereportperday")
 	deviceController.runtimereportperday(req.APP, req, (err, result) => {
