@@ -1432,6 +1432,135 @@ exports.sensordata = function (APP, req, callback) {
 	
 };
 
+exports.sensordata_v2 = function (APP, req, callback) {
+	const params = req.body
+	const Device = APP.models.mysql.device
+	const DevicePIN = APP.models.mysql.device_pin
+
+	let arrData = params.data	
+	
+	var response = {}
+
+	query.options = {
+		where : {
+			user_id : params.user_id,
+			device_id : params.device_id
+		}
+	}
+
+	console.log(`===== FN SENSORDATA =====`);
+	console.log(params)
+	console.log(`===== == ========== =====`);
+
+	async.waterfall([
+		function (callback) {
+			if(!params.user_id) callback({ code: 'MISSING_KEY', data: 'user_id' })
+			if(!params.device_id) callback({ code: 'MISSING_KEY', data: 'device_id' })
+			if(!params.device_type) callback({ code: 'MISSING_KEY', data: 'device_type' })
+			if(!params.date) callback({ code: 'MISSING_KEY', data: 'date' })
+			if(!params.data) callback({ code: 'MISSING_KEY', data: 'data' })
+
+			callback(null, true)
+		},
+		function (data, callback) {
+			Device.update({ is_connected: "1" }, query.options).then((resUpdated) => {
+				console.log(`..... CONNECTION STATUS UPDATED .....`)
+
+				callback(null, resUpdated)
+			}).catch((err) => {
+				callback(err)
+			});
+		},
+		function (data, callback) {
+			let dataArray = [];
+			let counter = arrData.length;
+
+			arrData.forEach(val => {
+				if(!val.pin) callback({ code: 'MISSING_KEY', data: 'pin' })
+				if(!val.ampere) callback({ code: 'MISSING_KEY', data: 'ampere' })
+				if(!val.wattage) callback({ code: 'MISSING_KEY', data: 'wattage' })
+				if(!val.switch) callback({ code: 'MISSING_KEY', data: 'switch' })
+				if(!val.sensor_status) callback({ code: 'MISSING_KEY', data: 'sensor_status' })
+
+				let pin = val.pin
+				let switch_status = val.switch
+				let sensor_status = "0"
+				query.options.where.pin = val.pin
+				
+				if (params.device_type == '0') pin = null
+
+				if (val.sensor_status == '0' && val.switch == '1') {
+					sensor_status = "1"
+					switch_status = "0"
+				}
+
+				DevicePIN.update({ sensor_status: sensor_status }, query.options).then((resUpdated) => {
+					console.log(`..... SENSOR STATUS UPDATED .....`)
+
+					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)', { 
+						replacements: {
+							device_id: params.device_id,
+							user_id: params.user_id,
+							pin : pin,
+							switch: switch_status,
+							current_sensor: val.ampere,
+							watt: val.wattage,
+							date_device: params.date
+						}, type: APP.db.sequelize.QueryTypes.RAW 
+					}).then((rows) => {
+						if (rows[0].message == '0') {
+							response = {
+								pin : val.pin,
+								message : 'Device not activated yet'
+							}
+						} else {
+							response = {
+								pin : val.pin,
+								message : 'Data saved'
+							}
+						}
+						
+						dataArray.push(response)
+						counter--
+
+						if (counter == 0) {
+							callback(null, { code: 'OK', data: dataArray })
+						}
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						}
+
+						dataArray.push(response)
+						counter--
+
+						if (counter == 0) {
+							callback({ code: 'GENERAL_ERR', data: dataArray })
+						}
+					});
+				}).catch((err) => {
+					response = {
+						code: 'ERR_DATABASE',
+						data: JSON.stringify(err)
+					}
+					
+					dataArray.push(response)
+					counter--
+
+					if (counter == 0) {
+						callback({ code: 'GENERAL_ERR', data: dataArray })
+					}
+				});
+			});
+		}
+	], function (err, res) {
+		if (err) return callback(err)
+
+		return callback(null, res)
+	})
+};
+
 exports.runtimereport = function (APP, req, callback) {
 	
 	var datareq = req.body
