@@ -6,7 +6,10 @@ const environment = require('./app.json').env;
 require('env2')('.env.' + environment);
 const app = require('express')();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+	transports: ['polling'],
+	allowUpgrades: false
+});
 const async = require('async');
 
 const db = require('./config/db.js');
@@ -222,8 +225,9 @@ io.on('connection', (socket) => {
 		})
 	})
 	// Disconnect Device
-	socket.on('disconnect', function () {
+	socket.on('disconnect', function (reason) {
 		console.log(`===== SOCKET_ID ${socket.id} DISCONNECTED =====`);
+		console.log(reason);
 		
 		async.waterfall([
 			function (callback) {
@@ -259,6 +263,11 @@ io.on('connection', (socket) => {
 			if (err) return console.error(err);
 		});
 	});
+	socket.on('error', function (err) {
+		console.log(`===== SOCKET_ERR =====`);
+		console.error(err);
+		console.log(`===== ========== =====`);
+	})
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
 		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`);
