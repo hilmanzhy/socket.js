@@ -136,76 +136,76 @@ module.exports = function () {
     });
     
     // Scheduler Connected Device
-    scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
-        let Device = APP.models.mysql.device
-        let timeFormat = datetime.formatHMS(timeCron)
-        let dateFormat = datetime.formatYMD(timeCron)
+    // scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
+    //     let Device = APP.models.mysql.device
+    //     let timeFormat = datetime.formatHMS(timeCron)
+    //     let dateFormat = datetime.formatYMD(timeCron)
 
-        console.log(`=============== SCHEDULER CHECK DC DEVICE at ${dateFormat} ${timeFormat} ===============`)
+    //     console.log(`=============== SCHEDULER CHECK DC DEVICE at ${dateFormat} ${timeFormat} ===============`)
 
-        query.where = {
-            'switch': '1',
-            'is_connected': '1'
-        }
-        query.attributes = [ 'device_id' ]
+    //     query.where = {
+    //         'switch': '1',
+    //         'is_connected': '1'
+    //     }
+    //     query.attributes = [ 'device_id' ]
 
-        async.waterfall([
-            function getID(callback) {
-                Device.findAll(query).then((result) => {
-                    let deviceID = []
+    //     async.waterfall([
+    //         function getID(callback) {
+    //             Device.findAll(query).then((result) => {
+    //                 let deviceID = []
                     
-                    for (let i = 0; i < result.length; i++) {
-                        let res = result[i].toJSON()
+    //                 for (let i = 0; i < result.length; i++) {
+    //                     let res = result[i].toJSON()
 
-                        deviceID[i] = res.device_id
-                    }
+    //                     deviceID[i] = res.device_id
+    //                 }
                     
-                    callback(null, deviceID)
-                })
-                .catch((err) => {
-                    callback({
-                        code: 'ERR_DATABASE',
-                        data: JSON.stringify(err)
-                    })
-                })
-            },
+    //                 callback(null, deviceID)
+    //             })
+    //             .catch((err) => {
+    //                 callback({
+    //                     code: 'ERR_DATABASE',
+    //                     data: JSON.stringify(err)
+    //                 })
+    //             })
+    //         },
 
-            function getDataUpdate(data, callback) {
-                dcDevice(data, APP, timeFormat).then(device => {
-                    callback(null, device)
-                }).catch(err => {
-                    callback(err)
-                });
-            },
+    //         function getDataUpdate(data, callback) {
+    //             dcDevice(data, APP, timeFormat).then(device => {
+    //                 callback(null, device)
+    //             }).catch(err => {
+    //                 callback(err)
+    //             });
+    //         },
 
-            function updateData(data, callback) {
-                query.value = {
-                    is_connected : 0
-                }
-                query.options = {
-                    where : {
-                        device_id : data
-                    }
-                }
+    //         function updateData(data, callback) {
+    //             query.value = {
+    //                 is_connected : 0
+    //             }
+    //             query.options = {
+    //                 where : {
+    //                     device_id : data
+    //                 }
+    //             }
                 
-                Device.update(query.value, query.options).then((result) => {
-                    callback(null, {
-                        code : 'OK',
-                        message : `${result} Device Disconnected`,
-                        device_id : data
-                    })
-                }).catch((err) => {
-                    callback(err)
-                });
-            }
-        ], function (err, result) {
-            if (err) {
-                console.log(err)
-            } else {
-                console.log(result)
-            }
-        })
-    })
+    //             Device.update(query.value, query.options).then((result) => {
+    //                 callback(null, {
+    //                     code : 'OK',
+    //                     message : `${result} Device Disconnected`,
+    //                     device_id : data
+    //                 })
+    //             }).catch((err) => {
+    //                 callback(err)
+    //             });
+    //         }
+    //     ], function (err, result) {
+    //         if (err) {
+    //             console.log(err)
+    //         } else {
+    //             console.log(result)
+    //         }
+    //     })
+    // })
 
 	// Scheduler Retensi Device
 	/* scheduler.scheduleJob('0 * * * *', function(time) {
