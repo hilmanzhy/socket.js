@@ -1,7 +1,6 @@
 const async = require('async');
 const encrypt = require('../functions/encryption.js');
 const validation = require('../functions/validation.js');
-
 const session = require('../controllers/sessionController.js');
 
 var queries = {};
@@ -222,6 +221,91 @@ exports.updatekey = function (APP, req, callback) {
 			code : 'OK',
 			message : 'Update Key Success'
 		});
+	}).catch((err) => {
+		return callback({
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		});
+	});
+	
+};
+
+exports.updateuser = function (APP, req, callback) {
+    const User = APP.models.mysql.user
+
+    if(!req.body.name) return callback({ code: 'MISSING_KEY' })
+	if(!req.body.username) return callback({ code: 'MISSING_KEY' })
+	if(!req.body.tdl) return callback({ code: 'MISSING_KEY' })
+	if(!req.body.power) return callback({ code: 'MISSING_KEY' })
+
+    async.waterfall([
+        function validator(callback) {
+            if (validation.name(req.body.name) != true) return callback(validation.name(req.body.name))
+            callback(null, true)
+        },
+
+        function create(data, callback) {
+            const users = APP.models.mysql.user
+
+            query.value = {
+                name : req.body.name,
+                tdl : req.body.tdl,
+                power : req.body.power
+            }
+            query.options = {
+                where : {
+                    user_id : req.body.user_id
+                }
+            }
+
+            users.findAll(query.options).then((result) => {
+                if (result.length > 0) {
+                    users.update(query.value, query.options).then((resUpdate) => {
+                        console.log(`========== RESULT ==========`)
+                        console.log(resUpdate)
+                        
+                        return callback(null, {
+                            code : 'OK',
+                            message : 'Update User Success'
+                        });
+                    });
+                } else {
+                    return callback(null, {
+                        code : 'NOT_FOUND',
+                        message : 'User Not Found'
+                    });
+                }
+          }).catch((err) => {
+                return callback({
+                    code: 'ERR_DATABASE',
+                    data: JSON.stringify(err)
+                });
+            });
+        }
+
+    ], function (err, result) {
+        if (err) {
+            return callback(err)
+        }
+        return callback(null, result)
+    })
+}
+
+exports.getuser = function (APP, req, callback) {
+    const params = req.body
+    const users = APP.models.mysql.user
+    
+    if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+    
+    query.where = { user_id : params.user_id }
+		query.attributes = { exclude: ['created_at', 'updated_at', 'password', 'email'] }
+    
+        users.findAll(query).then((result) => {
+		return callback(null, {
+			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : result
+		});
+
 	}).catch((err) => {
 		return callback({
 			code: 'ERR_DATABASE',

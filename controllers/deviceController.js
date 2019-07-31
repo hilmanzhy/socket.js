@@ -361,7 +361,6 @@ exports.getdevice = function (APP, req, callback) {
 			data: JSON.stringify(err)
 		});
 	});
-	
 };
 
 exports.getpindevice = function (APP, req, callback) {
@@ -382,7 +381,7 @@ exports.getpindevice = function (APP, req, callback) {
 	query.where = { user_id : datareq.user_id, device_id : datareq.device_id}
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
     
-  Device.findAll(query).then((result) => {
+  	Device.findAll(query).then((result) => {
 		return callback(null, {
 			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
 			data : result

@@ -47,4 +47,20 @@ router.post('/generate-password', (req, res, next) => {
 	});
 });
 
+router.post('/updateuser', (req, res, next) => {
+	console.log("updateuser")
+	authController.updateuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		return req.APP.output.print(req, res, result);
+	});
+});
+
+router.post('/getuser', (req, res, next) => {
+	console.log("getuser")
+	authController.getuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 module.exports = router;
