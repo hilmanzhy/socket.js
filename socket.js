@@ -6,10 +6,7 @@ const environment = require('./app.json').env;
 require('env2')('.env.' + environment);
 const app = require('express')();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-	transports: ['polling'],
-	allowUpgrades: false
-});
+const io = require('socket.io')(http);
 const async = require('async');
 
 const db = require('./config/db.js');
