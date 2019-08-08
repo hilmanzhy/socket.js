@@ -69,10 +69,6 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: true
 		},
-		health_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
 		is_connected: {
 			type: Sequelize.INTEGER,
 			allowNull: true
