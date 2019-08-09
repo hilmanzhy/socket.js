@@ -93,7 +93,7 @@ app.use((req, res, next) => {
 	req.body.ip_address = ipAddress; */
 
 	var session = require('./controllers/sessionController.js')
-	var whitelist = ['/auth/login', '/auth/register', '/device/command']
+	var whitelist = ['/auth/login', '/auth/register', '/auth/checkuser', '/device/command']
 	
 	if (whitelist.indexOf(req.originalUrl) >= 0) {
 		return next();

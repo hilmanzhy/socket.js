@@ -314,3 +314,35 @@ exports.getuser = function (APP, req, callback) {
 	});
 	
 };
+
+exports.checkuser = function (APP, req, callback) {
+    const params = req.body
+    const User = APP.models.mysql.user
+
+    if(Object.keys(params).length!=1) return callback({ code: 'INVALID_REQUEST' })
+
+    if (params.username || params.email) {
+        query.where = params
+        
+        User.findOne(query).then((result) => {
+            if (result) {
+                callback({
+                    code : 'ERR_DUPLICATE',
+                    data : params
+                })
+            } else {
+                callback(null, {
+                    code : 'AVAILABLE',
+                    data : params
+                })
+            }
+        }).catch((err) => {
+            callback({
+                code: 'ERR_DATABASE',
+                data: JSON.stringify(err)
+            })
+        })
+    } else {
+        callback({ code: 'MISSING_KEY' })
+    }
+}

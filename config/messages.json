@@ -30,6 +30,17 @@
 		"data": {}
 	},
 
+	"AVAILABLE": {
+		"error": false,
+		"code": "AVAILABLE",
+		"name": "AVAILABLE",
+		"status": 200,
+		"from": "",
+		"info": {},
+		"message": "Available.",
+		"data": {}
+	},
+
 	"ERR_DUPLICATE": {
 		"error": true,
 		"code": "-01",
