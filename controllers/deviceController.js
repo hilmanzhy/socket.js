@@ -3,9 +3,10 @@
 const async = require('async');
 const md5 = require('md5');
 const unirest = require('unirest');
-const request = require('../functions/request.js');
+const sequelize = require('sequelize');
 const io = require('socket.io-client');
-//const Op = APP.db.sequelize.Op;
+
+const request = require('../functions/request.js');
 
 var socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
 var query = {};
@@ -1855,6 +1856,11 @@ exports.settimer = function (APP, req, callback) {
 	if(!params.timer_on) return callback({ code: 'MISSING_KEY' })
 	if(!params.timer_off) return callback({ code: 'MISSING_KEY' })
 	
+	if(typeof params.pin != "object") return callback({
+		code: 'INVALID_REQUEST',
+		message: 'Expected array of pin'
+	})	
+	
 	query.value = {
 		timer_on : params.timer_on,
 		timer_off : params.timer_off
@@ -1863,7 +1869,9 @@ exports.settimer = function (APP, req, callback) {
 		where : {
 			device_id : params.device_id,
 			user_id : params.user_id,
-			pin : params.pin
+			pin : {
+				[sequelize.Op.or]: params.pin	
+			}
 		}
 	}
 
@@ -1884,8 +1892,8 @@ exports.settimer = function (APP, req, callback) {
 				message : 'Device Not Found'
 			});
 		}
-  }).catch((err) => {
-        return callback({
+	}).catch((err) => {
+			return callback({
             code: 'ERR_DATABASE',
             data: JSON.stringify(err)
         });
