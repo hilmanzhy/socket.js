@@ -41,3 +41,13 @@ exports.name = function (str) {
 			}
 		} : true;
 };
+
+exports.phone = function (str) {
+	return (!str || str == '' || str.length < 10 || (str && typeof str !== 'string'))
+		? {
+			code: 'INVALID_REQUEST',
+			data: {
+				invalid_parameter: 'phone'
+			}
+		} : true;
+};

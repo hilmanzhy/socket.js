@@ -15,6 +15,7 @@ module.exports = function (sequelize, Sequelize) {
                 isEmail: true
             }
         },
+        phone: Sequelize.INTEGER,
         password: Sequelize.STRING,
         device_key: Sequelize.STRING,
         active_status: Sequelize.INTEGER,

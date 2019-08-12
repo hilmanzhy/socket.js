@@ -47,6 +47,7 @@ exports.insert = function (model, req, models) {
 				username: req.body.username,
 				email: req.body.email,
 				password: req.body.password,
+				phone: req.body.phone,
 				active_status: "1"
 			}
 
@@ -128,7 +129,8 @@ exports.select = function (model, req, models) {
 			query.where = {
 				[sequelize.Op.or]: [
 					{ username: req.body.username },
-					{ email: req.body.email }
+					{ email: req.body.email },
+					{ phone: req.body.phone }
 				]
 			}
 

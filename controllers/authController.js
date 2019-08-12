@@ -123,6 +123,7 @@ exports.register = function (APP, req, callback) {
             if (validation.username(req.body.username) != true) return callback(validation.username(req.body.username))
             if (validation.password(req.body.password) != true) return callback(validation.password(req.body.password))
             if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
+            if (validation.phone(req.body.phone) != true) return callback(validation.phone(req.body.phone))
             
             callback(null, true)
         },
@@ -233,22 +234,22 @@ exports.updatekey = function (APP, req, callback) {
 exports.updateuser = function (APP, req, callback) {
     const User = APP.models.mysql.user
 
+	if(!req.body.user_id) return callback({ code: 'MISSING_KEY' })
     if(!req.body.name) return callback({ code: 'MISSING_KEY' })
-	if(!req.body.username) return callback({ code: 'MISSING_KEY' })
 	if(!req.body.tdl) return callback({ code: 'MISSING_KEY' })
 	if(!req.body.power) return callback({ code: 'MISSING_KEY' })
 
     async.waterfall([
         function validator(callback) {
             if (validation.name(req.body.name) != true) return callback(validation.name(req.body.name))
+            
             callback(null, true)
         },
 
         function create(data, callback) {
-            const users = APP.models.mysql.user
-
             query.value = {
                 name : req.body.name,
+                phone : req.body.phone,
                 tdl : req.body.tdl,
                 power : req.body.power
             }
@@ -258,9 +259,9 @@ exports.updateuser = function (APP, req, callback) {
                 }
             }
 
-            users.findAll(query.options).then((result) => {
+            User.findAll(query.options).then((result) => {
                 if (result.length > 0) {
-                    users.update(query.value, query.options).then((resUpdate) => {
+                    User.update(query.value, query.options).then((resUpdate) => {
                         console.log(`========== RESULT ==========`)
                         console.log(resUpdate)
                         
