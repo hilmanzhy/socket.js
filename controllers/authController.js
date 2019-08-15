@@ -82,6 +82,7 @@ exports.register = function (APP, req, callback) {
             if (validation.password(req.body.password) != true) return callback(validation.password(req.body.password))
             if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
             if (validation.phone(req.body.phone) != true) return callback(validation.phone(req.body.phone))
+            if (!req.body.tdl_id) return callback({ code: 'MISSING_KEY', data: 'tdl_id' })
             
             callback(null, true)
         },

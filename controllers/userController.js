@@ -46,52 +46,40 @@ exports.get = function (APP, req, callback) {
 exports.update = function (APP, req, callback) {
     const User = APP.models.mysql.user
 
-	if(!req.body.user_id) return callback({ code: 'MISSING_KEY' })
-    if(!req.body.name) return callback({ code: 'MISSING_KEY' })
-	if(!req.body.tdl) return callback({ code: 'MISSING_KEY' })
-	if(!req.body.power) return callback({ code: 'MISSING_KEY' })
-
     async.waterfall([
         function validator(callback) {
             if (validation.name(req.body.name) != true) return callback(validation.name(req.body.name))
-            
-            callback(null, true)
+            if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
+            if (validation.phone(req.body.phone) != true) return callback(validation.phone(req.body.phone))
+            if (!req.body.tdl_id) return callback({ code: 'MISSING_KEY', data: 'tdl_id' })
+
+            session.check(APP, req, (err, result) => {
+                if (err) return callback({ code: err.code })
+                
+                callback(null, result)
+            })
         },
 
         function create(data, callback) {
-            query.value = {
-                name : req.body.name,
-                phone : req.body.phone,
-                tdl : req.body.tdl,
-                power : req.body.power
-            }
+            query.value = req.body
             query.options = {
                 where : {
-                    user_id : req.body.user_id
+                    username : data.username
                 }
             }
 
-            User.findAll(query.options).then((result) => {
-                if (result.length > 0) {
-                    User.update(query.value, query.options).then((resUpdate) => {
-                        console.log(`========== RESULT ==========`)
-                        console.log(resUpdate)
-                        
-                        return callback(null, {
-                            code : 'OK',
-                            message : 'Update User Success'
-                        });
-                    });
-                } else {
-                    return callback(null, {
-                        code : 'NOT_FOUND',
-                        message : 'User Not Found'
-                    });
-                }
-          }).catch((err) => {
-                return callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
+            User.update(query.value, query.options).then((resUpdate) => {
+                console.log(`========== RESULT ==========`)
+                console.log(resUpdate)
+                
+                callback(null, {
+                    code : 'OK',
+                    message : 'Update User Success'
+                });
+            }).catch(e => {
+                callback({
+                    code : 'ERR_DATABASE',
+                    message : JSON.stringify(e)
                 });
             });
         }

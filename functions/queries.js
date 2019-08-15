@@ -48,6 +48,7 @@ exports.insert = function (model, req, models) {
 				email: req.body.email,
 				password: req.body.password,
 				phone: req.body.phone,
+				tdl_id: req.body.tdl_id,
 				active_status: "1"
 			}
 

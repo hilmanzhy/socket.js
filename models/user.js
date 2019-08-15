@@ -19,6 +19,7 @@ module.exports = function (sequelize, Sequelize) {
         password: Sequelize.STRING,
         device_key: Sequelize.STRING,
         active_status: Sequelize.INTEGER,
+        tdl_id: Sequelize.INTEGER,
         tdl: Sequelize.INTEGER,
         power: Sequelize.INTEGER,
         action_by: Sequelize.INTEGER,
