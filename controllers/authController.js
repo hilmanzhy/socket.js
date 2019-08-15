@@ -1,51 +1,9 @@
 const async = require('async');
 const encrypt = require('../functions/encryption.js');
 const validation = require('../functions/validation.js');
-const session = require('../controllers/sessionController.js');
 
 var queries = {};
 var query = {};
-
-exports.user = function (APP, req, callback) {
-    const User = APP.models.mysql.user
-    
-    async.waterfall([
-        function (callback) {
-            session.check(APP, req, (err, result) => {
-                if (err) {
-                    callback({
-                        code: err.code
-                    })
-                } else {
-                    callback(null, result)
-                }
-            })
-        },
-
-        function (data, callback) {
-            req.body = { username : data.username }
-            queries = APP.queries.select('user.get', req, APP.models)
-
-            User.findOne(queries).then((result) => {
-                callback(null, {
-                    code : 'FOUND',
-                    data : result
-                })
-            }).catch((err) => {
-                callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
-                })
-            })
-        }
-    ], function (err, result) {
-        if (err) {
-            return callback(err)
-        } else {
-            return callback(null, result)
-        }
-    })
-}
 
 exports.login = function (APP, req, callback) {
     const User = APP.models.mysql.user
@@ -135,7 +93,7 @@ exports.register = function (APP, req, callback) {
                 if (result) {
                     callback({
                         code: 'ERR_DUPLICATE',
-                        message: 'Email or username has already been taken!'
+                        message: 'Credentials has already been taken!'
                     })
                 } else {
                     callback(null, true)
@@ -178,20 +136,6 @@ exports.register = function (APP, req, callback) {
     })
 }
 
-exports.generatePassword = function (APP, req, callback) {
-    if(!req.body.password) return callback({ code: 'INVALID_REQUEST' })
-
-    encrypted = encrypt.encrypt(req.body.password)
-
-    return callback(null, {
-        code: 'OK',
-        data: {
-            ori_password: req.body.password,
-            enc_password: encrypted
-        }
-    })
-}
-
 exports.updatekey = function (APP, req, callback) {
     const User = APP.models.mysql.user
 	let params = req.body
@@ -231,98 +175,16 @@ exports.updatekey = function (APP, req, callback) {
 	
 };
 
-exports.updateuser = function (APP, req, callback) {
-    const User = APP.models.mysql.user
-
-	if(!req.body.user_id) return callback({ code: 'MISSING_KEY' })
-    if(!req.body.name) return callback({ code: 'MISSING_KEY' })
-	if(!req.body.tdl) return callback({ code: 'MISSING_KEY' })
-	if(!req.body.power) return callback({ code: 'MISSING_KEY' })
-
-    async.waterfall([
-        function validator(callback) {
-            if (validation.name(req.body.name) != true) return callback(validation.name(req.body.name))
-            
-            callback(null, true)
-        },
-
-        function create(data, callback) {
-            query.value = {
-                name : req.body.name,
-                phone : req.body.phone,
-                tdl : req.body.tdl,
-                power : req.body.power
-            }
-            query.options = {
-                where : {
-                    user_id : req.body.user_id
-                }
-            }
-
-            User.findAll(query.options).then((result) => {
-                if (result.length > 0) {
-                    User.update(query.value, query.options).then((resUpdate) => {
-                        console.log(`========== RESULT ==========`)
-                        console.log(resUpdate)
-                        
-                        return callback(null, {
-                            code : 'OK',
-                            message : 'Update User Success'
-                        });
-                    });
-                } else {
-                    return callback(null, {
-                        code : 'NOT_FOUND',
-                        message : 'User Not Found'
-                    });
-                }
-          }).catch((err) => {
-                return callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
-                });
-            });
-        }
-
-    ], function (err, result) {
-        if (err) {
-            return callback(err)
-        }
-        return callback(null, result)
-    })
-}
-
-exports.getuser = function (APP, req, callback) {
-    const params = req.body
-    const users = APP.models.mysql.user
-    
-    if(!params.user_id) return callback({ code: 'MISSING_KEY' })
-    
-    query.where = { user_id : params.user_id }
-		query.attributes = { exclude: ['created_at', 'updated_at', 'password', 'email'] }
-    
-        users.findAll(query).then((result) => {
-		return callback(null, {
-			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : result
-		});
-
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-	
-};
-
 exports.checkuser = function (APP, req, callback) {
-    const params = req.body
-    const User = APP.models.mysql.user
+    const params    = req.body
+    const User      = APP.models.mysql.user
 
-    if(Object.keys(params).length!=1) return callback({ code: 'INVALID_REQUEST' })
+    if(Object.keys(params).length!=1) return callback({
+        code    : 'INVALID_REQUEST',
+        message : 'Input only 1 request.'
+    })
 
-    if (params.username || params.email) {
+    if (params.username || params.email || params.phone) {
         query.where = params
         
         User.findOne(query).then((result) => {
