@@ -1,9 +1,14 @@
 const async = require('async');
-const encrypt = require('../functions/encryption.js');
-const validation = require('../functions/validation.js');
+      datetime = require('../functions/datetime.js');
+      encrypt = require('../functions/encryption.js');
+      email = require('../functions/email.js');
+      validation = require('../functions/validation.js');
 
-var queries = {};
-var query = {};
+var date = new Date();
+    dateFormat = datetime.formatYMD(date)
+    queries = {};
+    query = {};
+
 
 exports.login = function (APP, req, callback) {
     const User = APP.models.mysql.user
@@ -25,16 +30,33 @@ exports.login = function (APP, req, callback) {
         },
 
         function attemptLogin(data, callback) {
-            User.findOne(query).then( (result) => {
+            User.findOne(query).then((result) => {
                 if (result) {
-                    callback(null, result.toJSON())            
+                    callback(null, result.toJSON())
+                    
+                    return result 
                 } else {
                     return callback({
                         code: 'INVALID_REQUEST',
                         message: 'Invalid username or password!'
                     })
                 }
-            }).catch(err => {
+            }).then((user) => {
+                if (user) {
+                    let emailPayload = {
+                        body : {
+                            email   : user.email,
+                            subject : `${ process.env.APP_NAME } Login on ${ dateFormat }`,
+                            message : `Hello, ${ user.name }. Your account just logged in a Devices`
+                        }
+                    }
+                    
+                    email.send(emailPayload, (err, res) => {
+                        if (err) console.error(err)
+                        if (res) console.log(res)
+                    })
+                }
+            }).catch((err) => {
                 callback({
                     code: 'ERR_DATABASE',
                     data: JSON.stringify(err)

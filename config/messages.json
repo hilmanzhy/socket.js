@@ -149,5 +149,16 @@
 		"info": {},
 		"message": "Socket Error!",
 		"data": {}
+	},
+
+	"MAIL_ERR": {
+		"error"	: true,
+		"code"	: "MAIL_ERR",
+		"name"	: "MAIL_ERR",
+		"status": 500,
+		"from"	: "",
+		"info"	: {},
+		"data"	: {},
+		"message": "Sending Email Error!"
 	}
 }
