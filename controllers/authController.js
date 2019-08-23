@@ -2,6 +2,7 @@ const async = require('async');
       datetime = require('../functions/datetime.js');
       encrypt = require('../functions/encryption.js');
       request = require('../functions/request.js');
+      session = require('../controllers/sessionController.js')
       validation = require('../functions/validation.js');
 
 var date = new Date();
@@ -62,7 +63,6 @@ exports.login = function (APP, req, callback) {
         },
 
         function putSession(data, callback) {
-            let session = require('../controllers/sessionController.js')            
             req.body = data
 
             session.put(APP, req, (err, res) => {
@@ -224,6 +224,67 @@ exports.verifyemail = function (APP, req, callback) {
             data: JSON.stringify(err)
         })
     });
+}
+
+exports.changepassword = function (APP, req, callback) {
+    async.waterfall([
+        function validateRequest(callback) {
+            if (validation.password(req.body.old_password) != true) return callback(validation.password(req.body.old_password))
+            if (validation.password(req.body.new_password) != true) return callback(validation.password(req.body.new_password))
+
+            callback(null, true)
+        },
+        function getSession(data, callback) {
+            session.check(APP, req, (err, result) => {
+                if (err) return callback(err)
+                
+                callback(null, result)
+            })
+        },
+        function encryptPassword(data, callback) {
+            data.encrypted = {
+                old_password : encrypt.encrypt(req.body.old_password),
+                new_password : encrypt.encrypt(req.body.new_password)
+            }
+
+            callback(null, data)
+        },
+        function checkPassword(data, callback) {
+            query.options = {
+                where : {
+                    username        : data.username,
+                    password        : data.encrypted.old_password
+                }
+            }
+
+            APP.models.mysql.user.findOne(query.options).then((user) => {
+                if (!user) return callback({ code: 'INVALID_REQUEST', message: 'Invalid old password!' })
+                if (data.encrypted.old_password == data.encrypted.new_password) return callback({ code : "INVALID_REQUEST", message : "New password cannot be the same as the Old password" })
+
+                callback(null, data)
+            })
+        },
+        function updateNewPassword(data, callback) {
+            query.value = { password : data.encrypted.new_password }
+
+            APP.models.mysql.user.update(query.value, query.options).then((user) => {
+                callback(null, {
+                    code    : 'OK',
+                    message : 'Success change password.'
+                })
+            }).catch((err) => {
+                callback({
+                    code    : 'ERR_DATABASE',
+                    message : 'Failed change password',
+                    data : JSON.stringify(err)
+                })
+            })
+        }
+    ], function (err, result) {
+        if (err) return callback(err)
+
+        return callback(null, result)
+    })
 }
 
 exports.updatekey = function (APP, req, callback) {
