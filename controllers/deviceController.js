@@ -2704,12 +2704,15 @@ exports.commandtest = function (APP, req, callback) {
 
 exports.commandsocket = function (APP, req, callback) {
 	const Device = APP.models.mysql.device;
-	const DevicePIN = APP.models.mysql.device_pin;
-	const DeviceHistory = APP.models.mysql.device_history;
-	const Sequelize = APP.db.sequelize;
+		  DevicePIN = APP.models.mysql.device_pin;
+		  DeviceHistory = APP.models.mysql.device_history;
+		  Sequelize = APP.db.sequelize;
 
 	let params = req.body
-	let output = {}
+		output = {}
+		date = new Date()
+	date.setHours(date.getHours())
+
 	var response = {}
 
 	if(!params.user_id) return callback({ code: 'MISSING_KEY' })
@@ -2729,7 +2732,6 @@ exports.commandsocket = function (APP, req, callback) {
 
 	Device.findOne(query.options).then(resDevice => {
 		if (resDevice) {
-
 			query.create = {		
 				device_id: params.device_id,
 				user_id: params.user_id,
@@ -2741,99 +2743,81 @@ exports.commandsocket = function (APP, req, callback) {
 
 			if (resDevice.is_connected == 0) return callback({ code : "DEVICE_DISSCONNECTED" })
 
-				switch(params.mode) {
-					case "1":
-						console.log(`/ COMMAND SINGLE CCU DEVICE /`)
+			switch(params.mode) {
+				case "1":
+					console.log(`/ COMMAND SINGLE CCU DEVICE /`)
 
-							Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)', { 
-								replacements: {
-									user_id: params.user_id,
-									device_id: params.device_id,
-									device_ip: 	resDevice.device_ip,				
-									switch: params.switch
-								}, 
-								type: Sequelize.QueryTypes.RAW 
-							})
+					Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)', { 
+						replacements: {
+							user_id: params.user_id,
+							device_id: params.device_id,
+							device_ip: 	resDevice.device_ip,				
+							switch: params.switch
+						}, 
+						type: Sequelize.QueryTypes.RAW 
+					}).then(device => {
+						response = {
+							code : 'OK',
+							error : 'false',
+							message : 'Command success and saved'
+						}
+						return callback(null, response);
+				
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						}
+						return callback(response);
+					});
 
-							.then(device => {
+					break;
+				case "2":
+					console.log(`/ COMMAND SINGLE CCU DEVICE PIN /`)
 
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Command success and saved'
-								}
-								return callback(null, response);
-						
-							}).catch((err) => {
-								response = {
-									code: 'ERR_DATABASE',
-									data: JSON.stringify(err)
-								}
-								return callback(response);
-							});
+					query.options.where.pin = params.pin
+					query.create.pin = params.pin
+					query.create.date = date
 
-						break;
-					case "2":
-						console.log(`/ COMMAND SINGLE CCU DEVICE PIN /`)
+					DevicePIN.findOne(query.options).then(resDevicePin => {
+						if (!resDevicePin) return callback({ "code": "NOT_FOUND" })
 
-						query.options.where.pin = params.pin
-						query.create.pin = params.pin
+						APP.db.sequelize.query("update device_pin set switch = '" + params.switch + "' where device_id = '" + params.device_id + "' and user_id = '" + params.user_id + "' and pin = '" + params.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW}).then(device => {
+							console.log("===== ADD COMMAND TO HISTORY =====")
 
-						DevicePIN.findOne(query.options).then(resDevicePin => {
-							if (!resDevicePin) return callback({ "code": "NOT_FOUND" })
+							DeviceHistory.create(query.create).then(rows => {
+								console.log('EXEC SINGLE CCU DEVICE')
 
-							APP.db.sequelize.query("update device_pin set switch = '" + params.switch + "' where device_id = '" + params.device_id + "' and user_id = '" + params.user_id + "' and pin = '" + params.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-							
-							.then(device => {
-					
-								console.log("add to history")
-								DeviceHistory.create(query.create).then(rows => {
-			
-									console.log('execute singel ccu device')
-									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
-										{ 
-											replacements: {
-												device_id: params.device_id,
-												user_id: params.user_id
-											}, 
-											type: APP.db.sequelize.QueryTypes.RAW 
-										}
-									)
-			
-									.then(device => {
-										
-										response = {
-											code : 'OK',
-											error : 'false',
-											message : 'Command success and saved'
-										}
-										return callback(null, response);
-			
-									}).catch((err) => {
-										response = {
-											code: 'ERR_DATABASE',
-											data: JSON.stringify(err)
-										}
-										return callback(response);
-									});
+								APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
+									replacements: {
+										device_id: params.device_id,
+										user_id: params.user_id
+									}, 
+									type: APP.db.sequelize.QueryTypes.RAW 
+								}).then(device => {	
+									response = {
+										code : 'OK',
+										error : 'false',
+										message : 'Command success and saved'
+									}
+
+									return callback(null, response);
 								}).catch((err) => {
 									response = {
 										code: 'ERR_DATABASE',
 										data: JSON.stringify(err)
 									}
-		
+
 									return callback(response);
 								});
-
 							}).catch((err) => {
 								response = {
 									code: 'ERR_DATABASE',
 									data: JSON.stringify(err)
 								}
-
+	
 								return callback(response);
 							});
-						
 						}).catch((err) => {
 							response = {
 								code: 'ERR_DATABASE',
@@ -2842,9 +2826,17 @@ exports.commandsocket = function (APP, req, callback) {
 
 							return callback(response);
 						});
+					}).catch((err) => {
+						response = {
+							code: 'ERR_DATABASE',
+							data: JSON.stringify(err)
+						}
 
-					break;
-				}
+						return callback(response);
+					});
+
+				break;
+			}
 			
 		} else {
 			return callback({ "code": "NOT_FOUND" })
