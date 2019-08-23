@@ -22,6 +22,11 @@ module.exports = function (sequelize, Sequelize) {
         tdl_id: Sequelize.INTEGER,
         tdl: Sequelize.INTEGER,
         power: Sequelize.INTEGER,
+        verify_status: {
+            type: Sequelize.INTEGER,
+            defaultValue: 0
+        },
+        verify_date: Sequelize.DATE,
         action_by: Sequelize.INTEGER,
         ip_address: Sequelize.STRING,
         created_at: {

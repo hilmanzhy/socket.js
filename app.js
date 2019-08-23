@@ -93,9 +93,13 @@ app.use((req, res, next) => {
 	req.body.ip_address = ipAddress; */
 
 	var session = require('./controllers/sessionController.js')
-	var whitelist = ['/auth/login', '/auth/register', '/auth/checkuser', '/device/command']
-	
+	var whitelist = ['/auth/login', '/auth/register', '/auth/verify', '/auth/checkuser', '/device/command']
+
+	if (req.query) req.queryUrl = req.originalUrl.split('?')
+
 	if (whitelist.indexOf(req.originalUrl) >= 0) {
+		return next();
+	} else if (req.queryUrl && whitelist.indexOf(req.queryUrl[0]) >= 0) {
 		return next();
 	} else if (req.headers['session-key'] && req.headers['session-key'] == 'device' ) {
 		return next();

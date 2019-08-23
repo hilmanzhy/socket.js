@@ -1,14 +1,13 @@
 const async = require('async');
       datetime = require('../functions/datetime.js');
       encrypt = require('../functions/encryption.js');
-      email = require('../functions/email.js');
+      request = require('../functions/request.js');
       validation = require('../functions/validation.js');
 
 var date = new Date();
     dateFormat = datetime.formatYMD(date)
     queries = {};
     query = {};
-
 
 exports.login = function (APP, req, callback) {
     const User = APP.models.mysql.user
@@ -43,17 +42,15 @@ exports.login = function (APP, req, callback) {
                 }
             }).then((user) => {
                 if (user) {
-                    let emailPayload = {
-                        body : {
-                            email   : user.email,
-                            subject : `${ process.env.APP_NAME } Login on ${ dateFormat }`,
-                            message : `Hello, ${ user.name }. Your account just logged in a Devices`
-                        }
+                    let payload = {
+                        to      : user.email,
+                        subject : `Your ${ process.env.APP_NAME } account, Login on ${ dateFormat }`,
+                        html    : `Hello, ${ user.name }. Your account just logged in`    
                     }
                     
-                    email.send(emailPayload, (err, res) => {
+                    request.sendEmail(payload, (err, res) => {
                         if (err) console.error(err)
-                        if (res) console.log(res)
+                        if (res) console.log(`EMAIL SENT!`)
                     })
                 }
             }).catch((err) => {
@@ -138,12 +135,48 @@ exports.register = function (APP, req, callback) {
         function create(data, callback) {
             var query = APP.queries.insert('user', req, APP.models)
 
-            APP.models.mysql.user.create(query).then( (result) => {
-                callback(null, {
-                    code: 'OK',
-                    message: 'Register success.'
-                })
-            }).catch(err => {
+            APP.models.mysql.user.create(query).then((user) => {
+                if (user) {
+                    user.token = encrypt.token()
+                    
+                    let urlToken = `${ process.env.APP_URL }auth/verify?token=${ user.token }`
+                    let payload = {
+                        to      : user.email,
+                        subject : `Verify your email address`,
+                        html    :
+                            `<p>To complete your sign up, please verify your email address</p>
+                            <a href=${urlToken}>VERIFY</a>`
+                    }
+                    
+                    request.sendEmail(payload, (err, res) => {
+                        if (err) console.error(err)
+                        if (res) console.log(`EMAIL SENT!`)
+                    })
+
+                    return user;
+                }
+            }).then((user) => {
+                console.log(user)
+                if (user) {
+                    let params = {
+                        user_id: user.user_id,
+                        token: user.token
+                    }
+                    APP.models.mongo.token_verification.create(params, (err, res) => {
+                        if (err) return callback({
+                            code: 'ERR_DATABASE',
+                            message: 'Err create token',
+                            data: JSON.stringify(err)
+                        })
+                        
+                        callback(null, {
+                            code: 'OK',
+                            message: 'Register success, please verify your email.'
+                        })
+                    })
+                }
+            })
+            .catch(err => {
                 callback({
                     code: 'ERR_DATABASE',
                     data: JSON.stringify(err)
@@ -157,6 +190,40 @@ exports.register = function (APP, req, callback) {
         }
         return callback(null, result)
     })
+}
+
+exports.verifyemail = function (APP, req, callback) {
+    query.where = req.query
+
+    APP.models.mongo.token_verification.findOne(query.where).then((result) => {
+        if (result) {
+            query = {
+                options : { where : { user_id : result.user_id } },
+                value : {
+                    verify_status : 1,
+                    verify_date : date
+                }
+            }
+            
+            APP.models.mysql.user.update(query.value, query.options).then((resUpdate) => {
+                return callback(null, {
+                    code : 'OK',
+                    message : 'Update Key Success'
+                });
+            }).catch((err) => {
+                return callback({
+                    code: 'ERR_DATABASE',
+                    data: JSON.stringify(err)
+                });
+            });
+        }
+    }).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            message: 'Err find token',
+            data: JSON.stringify(err)
+        })
+    });
 }
 
 exports.updatekey = function (APP, req, callback) {
@@ -196,7 +263,7 @@ exports.updatekey = function (APP, req, callback) {
 		});
 	});
 	
-};
+}
 
 exports.checkuser = function (APP, req, callback) {
     const params    = req.body

@@ -46,3 +46,7 @@ exports.validate = function (encrypted) {
 
 	return a[0];
 };
+
+exports.token = function () {
+	return crypto.randomBytes(16).toString('hex');
+}

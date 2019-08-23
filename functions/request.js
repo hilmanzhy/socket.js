@@ -36,28 +36,30 @@ exports.soa = function (url, key, callback){
 };
 
 exports.sendEmail = function (params, callback) {
-	const mailOptions = {
-        from: process.env.EMAIL_SENDER,
-        to: params.to,
-        subject: params.subject,
-        text: params.text,
-        html: params.html
-    };
+	let mailOptions = {
+            from    : process.env.EMAIL_SENDER,
+            to      : params.to,
+            subject : params.subject,
+            html    : params.html
+        };
+    let transport = {
+            host    : String(process.env.EMAIL_HOST),
+            port    : String(process.env.EMAIL_PORT),
+            secure  : (process.env.EMAIL_PORT == 465) ? true : false,
+            auth: {
+                user: String(process.env.EMAIL_USER),
+                pass: String(process.env.EMAIL_PASSWORD)
+            },
+            tls     : {
+                rejectUnauthorized: false
+            }
+        };
 
-	nodemailer.createTransport({
-        host: String(process.env.EMAIL_HOST),
-        port: String(process.env.EMAIL_PORT),
-        secure: false,
-        auth: {
-            user: String(process.env.EMAIL_USER),
-            pass: String(process.env.EMAIL_PASSWORD)
-	}, tls: {
-        rejectUnauthorized: true
-        }}).sendMail(mailOptions, (error, info) => {
-        if (error) return callback({
-            code: 'GENERAL_ERR',
+	nodemailer.createTransport(transport).sendMail(mailOptions, (err, info) => {
+        if (err) return callback({
+            code: 'MAIL_ERR',
             message: 'Failed to sent email.',
-            data: error
+            data: err
         });
 
         callback(null, {
