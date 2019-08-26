@@ -1,13 +1,14 @@
-const async = require('async');
-      datetime = require('../functions/datetime.js');
-      encrypt = require('../functions/encryption.js');
-      request = require('../functions/request.js');
-      session = require('../controllers/sessionController.js')
+const async = require('async'),
+      datetime = require('../functions/datetime.js'),
+      encrypt = require('../functions/encryption.js'),
+      otp = require('../functions/otp.js'),
+      request = require('../functions/request.js'),
+      session = require('../controllers/sessionController.js'),
       validation = require('../functions/validation.js');
 
-var date = new Date();
-    dateFormat = datetime.formatYMD(date)
-    queries = {};
+var date = new Date(),
+    dateFormat = datetime.formatYMD(date),
+    queries = {},
     query = {};
 
 exports.login = function (APP, req, callback) {
@@ -156,7 +157,6 @@ exports.register = function (APP, req, callback) {
                     return user;
                 }
             }).then((user) => {
-                console.log(user)
                 if (user) {
                     let params = {
                         user_id: user.user_id,
@@ -268,6 +268,98 @@ exports.changepassword = function (APP, req, callback) {
             query.value = { password : data.encrypted.new_password }
 
             APP.models.mysql.user.update(query.value, query.options).then((user) => {
+                callback(null, {
+                    code    : 'OK',
+                    message : 'Success change password.'
+                })
+            }).catch((err) => {
+                callback({
+                    code    : 'ERR_DATABASE',
+                    message : 'Failed change password',
+                    data : JSON.stringify(err)
+                })
+            })
+        }
+    ], function (err, result) {
+        if (err) return callback(err)
+
+        return callback(null, result)
+    })
+}
+
+exports.forgotpassword = function (APP, req, callback) {
+    async.waterfall([
+        function validateRequest(callback) {
+            if (!req.body.email) return callback({ code: 'MISSING_KEY', data: 'email' });
+
+            callback(null, true)
+        },
+
+        function createOTP(validate, callback) {
+            otp.create(APP, req, (err, result) => {
+                if (err) return callback(err)
+                
+                callback(null, result)
+            })
+        },
+
+        function sendOTP(otp, callback) {
+            let payload = {
+                to      : otp.email,
+                subject : `OTP Forgot Password`,
+                html    :
+                    `<p>Use this OTP to reset your password Account</p>
+                    <h6>${otp.otp}</h6>`
+            }
+
+            request.sendEmail(payload, (err, res) => {
+                if (err) console.error(err)
+                if (res) console.log(`EMAIL SENT!`)
+            })
+
+            callback(null, {
+                code: 'OK',
+                message: 'OTP Sent! Please check your email.'
+            })
+        }
+    ], function (err, result) {
+        if (err) return callback(err)
+
+        return callback(null, result)
+    })
+}
+
+exports.resetpassword = function (APP, req, callback) {
+    async.waterfall([
+        function validateRequest(callback) {
+            if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
+            if (validation.password(req.body.password) != true) return callback(validation.password(req.body.password))
+            if (!req.body.otp) return callback({ code : 'MISSING_KEY', data : 'otp' })
+
+            callback(null, true)
+        },
+
+        function validateOTP(validate, callback) {
+            otp.validate(APP, req, (err, result) => {
+                if (err) return callback(err)
+                                                
+                callback(null, result)
+            })
+        },
+
+        function updatePassword(otp, callback) {
+            query.value = {
+                password : encrypt.encrypt(req.body.password)
+            }
+            query.options = {
+                where : {
+                    email : req.body.email
+                }
+            }
+            
+            APP.models.mysql.user.update(query.value, query.options).then((user) => {
+                console.log(user);
+
                 callback(null, {
                     code    : 'OK',
                     message : 'Success change password.'

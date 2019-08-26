@@ -93,7 +93,15 @@ app.use((req, res, next) => {
 	req.body.ip_address = ipAddress; */
 
 	var session = require('./controllers/sessionController.js')
-	var whitelist = ['/auth/login', '/auth/register', '/auth/verify', '/auth/checkuser', '/device/command']
+	var whitelist = [
+		'/auth/login',
+		'/auth/register',
+		'/auth/forgotpassword',
+		'/auth/resetpassword',
+		'/auth/verify',
+		'/auth/checkuser',
+		'/device/command'
+	]
 
 	if (req.query) req.queryUrl = req.originalUrl.split('?')
 

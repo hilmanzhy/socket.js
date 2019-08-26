@@ -160,5 +160,16 @@
 		"info"	: {},
 		"data"	: {},
 		"message": "Sending Email Error!"
+	},
+
+	"OTP_ERR" : {
+		"error"	: true,
+		"code"	: "OTP_ERR",
+		"name"	: "OTP_ERR",
+		"status": 500,
+		"from"	: "",
+		"info"	: {},
+		"data"	: {},
+		"message": "OTP Error!"
 	}
 }
