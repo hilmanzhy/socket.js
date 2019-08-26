@@ -292,7 +292,18 @@ exports.forgotpassword = function (APP, req, callback) {
         function validateRequest(callback) {
             if (!req.body.email) return callback({ code: 'MISSING_KEY', data: 'email' });
 
-            callback(null, true)
+            query.options = {
+                where : req.body
+            }
+            
+            APP.models.mysql.user.findOne(query.options).then((user) => {
+                if (!user) {
+                    return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
+                }
+
+                callback(null, true)
+            })
+
         },
 
         function createOTP(validate, callback) {
@@ -309,7 +320,7 @@ exports.forgotpassword = function (APP, req, callback) {
                 subject : `OTP Forgot Password`,
                 html    :
                     `<p>Use this OTP to reset your password Account</p>
-                    <h6>${otp.otp}</h6>`
+                    <h2>${otp.otp}</h2>`
             }
 
             request.sendEmail(payload, (err, res) => {

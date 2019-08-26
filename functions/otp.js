@@ -1,4 +1,4 @@
-function generate() {
+function generateOTP() {
     let digits = '0123456789',
         OTPLength = 4,
         OTP = '';
@@ -11,7 +11,7 @@ function generate() {
 }
 
 exports.create = function (APP, req, callback) {
-    req.body.otp = generate()
+    req.body.otp = generateOTP()
 
     APP.models.mongo.otp.updateOne(
 		{ email : req.body.email },
@@ -31,16 +31,20 @@ exports.create = function (APP, req, callback) {
 }
 
 exports.validate = function (APP, req, callback) {
-    APP.models.mongo.otp.find({
+    APP.models.mongo.otp.findOne({
         email : req.body.email,
         otp : req.body.otp
-    }, function(err, result) {
-        if (err) {
-            return callback({ code : 'OTP_ERR', message : err });
-        } else if (result.length > 0) {
-            callback(null, result);
+    }).then((rows) => {
+        if (rows) {
+            APP.models.mongo.otp.deleteOne(rows, (err, info) => {
+                if (err) return callback({ code : 'DATABASE_ERR', message : 'Failed delete OTP!' })
+
+                callback(null, info);
+            })
+
         } else {
             return callback({ code : 'OTP_ERR', message : 'OTP not match!' })
         }
+
     })
 }
