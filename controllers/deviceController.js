@@ -2703,14 +2703,14 @@ exports.commandtest = function (APP, req, callback) {
 };
 
 exports.commandsocket = function (APP, req, callback) {
-	const Device = APP.models.mysql.device;
-		  DevicePIN = APP.models.mysql.device_pin;
-		  DeviceHistory = APP.models.mysql.device_history;
+	const Device = APP.models.mysql.device,
+		  DevicePIN = APP.models.mysql.device_pin,
+		  DeviceHistory = APP.models.mysql.device_history,
 		  Sequelize = APP.db.sequelize;
 
-	let params = req.body
-		output = {}
-		date = new Date()
+	let params = req.body,
+		output = {},
+		date = new Date();
 	date.setHours(date.getHours())
 
 	var response = {}
