@@ -6,7 +6,7 @@
 		"status": 200,
 		"from": "",
 		"info": {},
-		"message": "Ok.",
+		"message": "Ok",
 		"data": {}
 	},
 	"NOT_FOUND": {
@@ -16,7 +16,7 @@
 		"status": 404,
 		"from": "",
 		"info": {},
-		"message": "Not found.",
+		"message": "Not found",
 		"data": {}
 	},
 	"FOUND": {
@@ -26,7 +26,7 @@
 		"status": 200,
 		"from": "",
 		"info": {},
-		"message": "Found.",
+		"message": "Found",
 		"data": {}
 	},
 
@@ -37,7 +37,7 @@
 		"status": 200,
 		"from": "",
 		"info": {},
-		"message": "Available.",
+		"message": "Available",
 		"data": {}
 	},
 
@@ -136,7 +136,7 @@
 		"status": 408,
 		"from": "",
 		"info": {},
-		"message": "Device is not Connected",
+		"message": "Device is not Connected!",
 		"data": {}
 	},
 
