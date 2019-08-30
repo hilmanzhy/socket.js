@@ -991,39 +991,42 @@ exports.devicehistory = function (APP, req, callback) {
 	var datareq = req.body
 	var response = {}
 	console.log(datareq)
-	const Device = APP.models.mysql.device_history
+	const DeviceHistory = APP.models.mysql.device_history
 
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
 
-	/* query.options = {
+	query.options = {
+		attributes : { exclude: ['created_at', 'updated_at'] },
 		where : {
 			user_id : datareq.user_id,
 			date: {
-				[APP.db.sequelize.Op.between]: [datareq.date_from, datareq.date_to]
+				[APP.db.Sequelize.Op.between]: [datareq.date_from, `${datareq.date_to} 23:59:59`]
 			  }
 		}
-	} */
-
-	
-	var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
-
-	if (datareq.device_id != '')
-	{
-		query = query + " and device_id = '" + datareq.device_id + "'"
 	}
 
-	if (datareq.pin != '')
-	{
-		query = query + " and pin = '" + datareq.pin + "'"
-	}
+	if (datareq.device_id) query.options.where.device_id = datareq.device_id
+	if (datareq.pin) query.options.where.pin = datareq.pin
 	
-	APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
-	
-	.then(device => {
+	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
 
-	//Device.findAll(query.options).then((device) => {
+	// if (datareq.device_id != '')
+	// {
+	// 	query = query + " and device_id = '" + datareq.device_id + "'"
+	// }
+
+	// if (datareq.pin != '')
+	// {
+	// 	query = query + " and pin = '" + datareq.pin + "'"
+	// }
+	
+	// APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
+	
+	// .then(device => {
+
+	DeviceHistory.findAll(query.options).then((device) => {
 		console.log(device)
 		
 		response = {

@@ -1,4 +1,5 @@
 "use strict";
+const moment = require('moment');
 
 module.exports = function (sequelize, Sequelize) {
 	var device_history = sequelize.define('device_history', {
@@ -13,7 +14,10 @@ module.exports = function (sequelize, Sequelize) {
 		date: {
             type: Sequelize.DATE,
             allowNull: false,
-            defaultValue: Sequelize.NOW
+            defaultValue: Sequelize.NOW,
+            get: function () {
+                return moment(this.getDataValue('date')).format('DD-MM-YYYY HH:mm:ss')
+            }
         },
 		created_at: {
             allowNull: false,
