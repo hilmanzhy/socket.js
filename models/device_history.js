@@ -8,8 +8,8 @@ module.exports = function (sequelize, Sequelize) {
 		user_id: { type: Sequelize.STRING, allowNull: false},
 		device_ip: { type: Sequelize.STRING, allowNull: false},
 		pin: { type: Sequelize.STRING, allowNull: true},
-		switch: { type: Sequelize.BOOLEAN, allowNull: false},
-		device_type: { type: Sequelize.BOOLEAN, allowNull: false},
+		switch: { type: Sequelize.INTEGER, allowNull: false},
+		device_type: { type: Sequelize.INTEGER, allowNull: false},
 		device_name: { type: Sequelize.STRING, allowNull: false},
 		date: {
             type: Sequelize.DATE,
