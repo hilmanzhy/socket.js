@@ -1,5 +1,10 @@
-{
-	"front": [
-		"/user/register"
-	]
-}
+[
+	"/auth/login",
+	"/auth/register",
+	"/auth/forgotpassword",
+	"/auth/resetpassword",
+	"/auth/verify",
+	"/auth/checkuser",
+	"/user/pricing",
+	"/device/command"
+]
