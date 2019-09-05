@@ -81,7 +81,6 @@ module.exports = function () {
             'user_id',
             'device_ip',
             'device_name',
-            'device_type',
             'timer_on',
             'timer_off'
         ]
@@ -103,7 +102,6 @@ module.exports = function () {
                         "device_id" : device.device_id.toString(),
                         "device_ip" : device.device_ip.toString(),
                         "device_name" : device.device_name.toString(),
-                        "device_type" : device.device_type.toString(),
                         "mode" : "1",
                         "pin" : ""
                     }
