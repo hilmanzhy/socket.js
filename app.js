@@ -137,7 +137,7 @@ fs.readdir('./routes', (err, files) => {
 				app.listen(process.env.PORT, () => {
 					var cron = cronjob();
 					
-					return console.log(chalk.bold.green(
+					return console.log(chalk.bold.green('\n' +
 						'          ((\n' +
 						'         ((((       ((((\n' +
 						'         ((((  (((  ((((\n' +
@@ -152,7 +152,8 @@ fs.readdir('./routes', (err, files) => {
 						'         ////        //*\n') +
 						chalk.green(figlet.textSync('sitamoto', {
 							font: 'Dr Pepper',
-						}))
+						})) + '\n' +
+						chalk.blue(`////// CORE RUNNING ON PORT:${process.env.PORT} //////`) + '\n'
 					);
 				});
 			}

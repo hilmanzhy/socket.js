@@ -8,6 +8,8 @@ const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const async = require('async');
+const chalk = require('chalk');
+const figlet = require('figlet');
 
 const db = require('./config/db.js');
 const model = require('./config/model.js');
@@ -410,5 +412,22 @@ io.on('connection', (socket) => {
 });
 
 http.listen(process.env.SOCKET_PORT, function() {
-    return console.log(`Bismillah, Semoga Lancar. Socket ${process.env.SERVICE_NAME} Listen on Port ${process.env.SOCKET_PORT}`);
+    return console.log(chalk.bold.green('\n' +
+		'          ((\n' +
+		'         ((((       ((((\n' +
+		'         ((((  (((  ((((\n' +
+		'     #   (((((((((  ((((\n' +
+		'    (((( ((((  (((  ((//  ///\n' +
+		'(((((((( ((((  ((/  //////////////////\n') +
+		chalk.bold.blue(
+		'    (((( ((((  ///  //// (///\n' +
+		'    ((((/////  /////////  ///\n' +
+		'         ////  ///  ////\n' +
+		'         ////  ///  ////\n' +
+		'         ////        //*\n') +
+		chalk.green(figlet.textSync('sitamoto', {
+			font: 'Dr Pepper',
+		})) + '\n' +
+		chalk.blue(`///// SOCKET RUNNING ON PORT:${process.env.SOCKET_PORT} /////`) + '\n'
+	);
 });
