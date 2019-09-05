@@ -9,9 +9,9 @@ const name = process.env.MONGO_NAME;
 
 mongoose.connect('mongodb://' + host + '/' + name, { useNewUrlParser: true });
 mongoose.connection.on('error', console.error.bind(console, 'Database connection error!'));
-mongoose.connection.once('open', () => {
-	console.log('MongoDB Connected');
-});
+// mongoose.connection.once('open', () => {
+// 	console.log('MongoDB Connected');
+// });
 
 exports.mongo = mongoose;
 

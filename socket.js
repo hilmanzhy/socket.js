@@ -54,6 +54,7 @@ async function updateSession(query, callback) {
 }
 
 io.on('connection', (socket) => {
+	console.log(`SOCKET ID ${socket.id} CONNECTED`)
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
 		console.log(`===== SOCKET_ID ${socket.id} | DEVICE_ID ${device.device_id} CONNECTED =====`);

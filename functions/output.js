@@ -1,17 +1,23 @@
 "use strict";
 
-const async = require('async');
-const trycatch = require('trycatch');
-const messages = require('../config/messages.json');
-const log = require('../functions/log.js');
+const async = require('async'),
+	  chalk = require('chalk'),
+	  trycatch = require('trycatch'),
+	  vascommkit = require('vascommkit'),
+	  messages = require('../config/messages.json'),
+	  log = require('../functions/log.js');
+
 let output = {};
 
 exports.print = function (req, res, params) {
 	async.waterfall([
 		function generateMessage (callback) {
-			let message = {
-				company: {}
-			};
+			let ipAddress = req.get('x-forwarded-for') || req.connection.remoteAddress,
+				message = { company: {} };
+			
+			if (ipAddress.substr(0, 7) == "::ffff:") {
+				ipAddress = ipAddress.substr(7)
+			}
 
 			if (messages[params.code]) message.company = messages[params.code];
 
@@ -30,6 +36,17 @@ exports.print = function (req, res, params) {
 			// 		};
 			// 	}
 			// }
+
+			console.log(chalk.bold.blue('======================================================================')+'\n'+
+					'LEVEL     : '+(message.company.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) +'\n'+
+					'IP        : '+chalk.bold.yellow(ipAddress)+'\n'+
+					'ENDPOINT  : '+chalk.bold.yellow(req.originalUrl)+'\n'+
+					'DATE      : '+chalk.bold.yellow(vascommkit.time.now())+'\n'+
+					chalk.cyan('============================ REQUEST =================================')+'\n'+
+					JSON.stringify(req.body)+'\n'+
+					chalk.cyan('============================ RESPONSE ================================')+'\n'+
+					JSON.stringify(output)+'\n'+
+					chalk.bold.blue('======================================================================'))
 
 			callback(null, message);
 		},

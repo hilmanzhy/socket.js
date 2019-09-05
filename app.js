@@ -18,6 +18,8 @@ const trycatch = require('trycatch');
 const path = require('path');
 const vascommkit = require('vascommkit');
 const ip = require('ip');
+const chalk = require('chalk')
+const figlet = require('figlet')
 
 const output = require('./functions/output.js');
 const db = require('./config/db.js');
@@ -100,7 +102,7 @@ app.use((req, res, next) => {
 		return next();
 	} else if (req.queryUrl && whitelist.indexOf(req.queryUrl[0]) >= 0) {
 		return next();
-	} else if (req.headers['session-key'] && req.headers['session-key'] == 'device' ) {
+	} else if (req.get('session-key') && req.get('session-key') == 'device' ) {
 		return next();
 	} else {
 		session.check(req.APP, req, (err, result) => {
@@ -134,7 +136,24 @@ fs.readdir('./routes', (err, files) => {
 
 				app.listen(process.env.PORT, () => {
 					var cron = cronjob();
-					return console.log(process.env.SERVICE_NAME + ' start on port ' + process.env.PORT);
+					
+					return console.log(chalk.bold.green(
+						'          ((\n' +
+						'         ((((       ((((\n' +
+						'         ((((  (((  ((((\n' +
+						'     #   (((((((((  ((((\n' +
+						'    (((( ((((  (((  ((//  ///\n' +
+						'(((((((( ((((  ((/  //////////////////\n') +
+						chalk.bold.blue(
+						'    (((( ((((  ///  //// (///\n' +
+						'    ((((/////  /////////  ///\n' +
+						'         ////  ///  ////\n' +
+						'         ////  ///  ////\n' +
+						'         ////        //*\n') +
+						chalk.green(figlet.textSync('sitamoto', {
+							font: 'Dr Pepper',
+						}))
+					);
 				});
 			}
 		}
