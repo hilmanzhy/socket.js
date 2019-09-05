@@ -68,7 +68,7 @@ module.exports = function () {
 
     // Scheduler Device On Off
 	scheduler.scheduleJob('*/30 * * * *', function(time) {
-        let DevicePIN = APP.models.mysql.devicec_pin
+        let DevicePIN = APP.models.mysql.device_pin
         let hours = (time.getHours() < 10 ? '0' : '' ) + time.getHours()
 		let minutes = (time.getMinutes() < 10 ? '0' : '' ) + time.getMinutes()
 		let seconds = (time.getSeconds() < 10 ? '0' : '') + time.getSeconds()
