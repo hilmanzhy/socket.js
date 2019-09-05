@@ -1848,7 +1848,7 @@ exports.totalruntime = function (APP, req, callback) {
 
 exports.settimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_pin
+	const DevicePIN = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -1878,9 +1878,9 @@ exports.settimer = function (APP, req, callback) {
 		}
 	}
 
-	Device.findAll(query.options).then((result) => {
+	DevicePIN.findAll(query.options).then((result) => {
 		if (result.length > 0) {
-			Device.update(query.value, query.options).then((resUpdate) => {
+			DevicePIN.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
 				console.log(resUpdate)
 				
@@ -1905,7 +1905,7 @@ exports.settimer = function (APP, req, callback) {
 
 exports.switchtimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_pin
+	const DevicePIN = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -1926,12 +1926,12 @@ exports.switchtimer = function (APP, req, callback) {
 		}
 	}
 
-	Device.findAll(query.options).then((result) => {
+	DevicePIN.findAll(query.options).then((result) => {
 		if (result.length > 0) 
 		{
 			if (params.timer_status == '0')
 			{
-				Device.update(query.value, query.options).then((resUpdate) => {
+				DevicePIN.update(query.value, query.options).then((resUpdate) => {
 					console.log(`========== RESULT ==========`)
 					console.log(resUpdate)
 					
@@ -1951,7 +1951,7 @@ exports.switchtimer = function (APP, req, callback) {
 
 					if (device[0].device > 0)
 					{
-						Device.update(query.value, query.options).then((resUpdate) => {
+						DevicePIN.update(query.value, query.options).then((resUpdate) => {
 							console.log(`========== RESULT ==========`)
 							console.log(resUpdate)
 							
@@ -1995,7 +1995,7 @@ exports.switchtimer = function (APP, req, callback) {
 
 exports.removetimer = function (APP, req, callback) {
 	const params = req.body
-	const Device = APP.models.mysql.device_pin
+	const DevicePIN = APP.models.mysql.device_pin
 
 	console.log(`========== PARAMS ==========`)
 	console.log(params)
@@ -2017,9 +2017,9 @@ exports.removetimer = function (APP, req, callback) {
 		}
 	}
 
-	Device.findAll(query.options).then((result) => {
+	DevicePIN.findAll(query.options).then((result) => {
 		if (result.length > 0) {
-			Device.update(query.value, query.options).then((resUpdate) => {
+			DevicePIN.update(query.value, query.options).then((resUpdate) => {
 				console.log(`========== RESULT ==========`)
 				console.log(resUpdate)
 				
