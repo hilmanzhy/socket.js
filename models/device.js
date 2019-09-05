@@ -45,30 +45,6 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: false
 		},
-		timer_on: {
-			type: Sequelize.TIME,
-			allowNull: true
-		},
-		timer_off: {
-			type: Sequelize.TIME,
-			allowNull: true
-		},
-		timer_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_on: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_off: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
-		lumensensor_status: {
-			type: Sequelize.INTEGER,
-			allowNull: true
-		},
 		is_connected: {
 			type: Sequelize.INTEGER,
 			allowNull: true
