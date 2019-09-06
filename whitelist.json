@@ -6,5 +6,6 @@
 	"/auth/verify",
 	"/auth/checkuser",
 	"/user/pricing",
-	"/device/command"
+	"/device/command",
+	"/test/log"
 ]
