@@ -3,18 +3,17 @@
 const express = require('express');
 const router = express.Router();
 const testController = require('../controllers/testController.js');
-const testLog = require('../test');
-const vsckit  = require('vascommkit');
 
 router.post('/log', (req, res, next) => {
 	let payload = {
-		info	: 'SCHEDULER DEVICE ON/OFF',
-		res		: `TIMER OFF at ${vsckit.time.now()}` + '\n' +
-				  `DEVICE ID  : 1` + '\n' +
-				  `DEVICE PIN : 1`
+		info : 'TEST LOGGING',
+		message : "it just a logging test, don't worry!",
+		level : {
+			error : true
+		}
 	}
 
-	console.log(testLog(payload, payload.res))
+	return req.APP.output.log(payload)
 })
 
 router.post('/connection', (req, res, next) => {

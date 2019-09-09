@@ -7,7 +7,15 @@ const async = require('async'),
 	  messages = require('../config/messages.json'),
 	  log = require('../functions/log.js');
 
-let output = {};
+let output = {},
+	templateLog = {
+		header  : chalk.bold.blue('======================================================================'),
+		footer  : chalk.bold.blue('======================================================================'),
+		request : chalk.cyan('============================ REQUEST ================================='),
+		response: chalk.cyan('============================ RESPONSE ================================'),
+		message : chalk.cyan('============================ MESSAGE ================================='),
+		time    : 'DATETIME  : ' + chalk.bold.yellow(vascommkit.time.now())
+	}
 
 exports.print = function (req, res, params) {
 	async.waterfall([
@@ -75,3 +83,25 @@ exports.print = function (req, res, params) {
 		});
 	});
 };
+
+exports.log = function (req, res) {
+    templateLog.body =
+        (req.level ?		'LEVEL     : ' + (req.level.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) + '\n' : '') +
+        (req.ip ?			'IP        : ' + chalk.bold.yellow(req.ip) + '\n' : '') +
+        (req.originalUrl ?	'ENDPOINT  : ' + chalk.bold.yellow(req.originalUrl) + '\n' : '') +
+        (req.info ?			'INFO      : ' + chalk.bold.yellow(req.info) + '\n' : '') +
+        templateLog.time + '\n' +
+        (req.message ? templateLog.message + '\n' : '') +
+        (req.message ? req.message : '') +
+        (req.body ? templateLog.request + '\n' : '') +
+        (req.body ? JSON.stringify(req.body) + '\n' : '') +
+        (res ? templateLog.response + '\n' : '') +
+        (res ? ((typeof res == 'object') ? JSON.stringify(res) : res) : '')
+
+    let template =
+        templateLog.header + '\n' +
+        templateLog.body + '\n' +
+        templateLog.footer + '\n'
+
+    return console.log(template)
+}
