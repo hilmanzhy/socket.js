@@ -9,7 +9,6 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const async = require('async');
 const chalk = require('chalk');
-const figlet = require('figlet');
 
 const db = require('./config/db.js');
 const model = require('./config/model.js');
@@ -425,9 +424,11 @@ http.listen(process.env.SOCKET_PORT, function() {
 		'         ////  ///  ////\n' +
 		'         ////  ///  ////\n' +
 		'         ////        //*\n') +
-		chalk.green(figlet.textSync('sitamoto', {
-			font: 'Dr Pepper',
-		})) + '\n' +
+		chalk.green(
+			"     _    _                     _\n" + 
+			" ___<_> _| |_ ___ ._ _ _  ___ _| |_ ___\n" + 
+			"<_-<| |  | | <_> || ' ' |/ . \\ | | / . \\\n" +
+			"/__/|_|  |_| <___||_|_|_|\\___/ |_| \\___/\n") + '\n' +
 		chalk.blue(`///// SOCKET RUNNING ON PORT:${process.env.SOCKET_PORT} /////`) + '\n'
 	);
 });

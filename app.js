@@ -19,7 +19,6 @@ const path = require('path');
 const vascommkit = require('vascommkit');
 const ip = require('ip');
 const chalk = require('chalk')
-const figlet = require('figlet')
 
 const output = require('./functions/output.js');
 const db = require('./config/db.js');
@@ -150,9 +149,11 @@ fs.readdir('./routes', (err, files) => {
 						'         ////  ///  ////\n' +
 						'         ////  ///  ////\n' +
 						'         ////        //*\n') +
-						chalk.green(figlet.textSync('sitamoto', {
-							font: 'Dr Pepper',
-						})) + '\n' +
+						chalk.green(
+						"     _    _                     _\n" + 
+						" ___<_> _| |_ ___ ._ _ _  ___ _| |_ ___\n" + 
+						"<_-<| |  | | <_> || ' ' |/ . \\ | | / . \\\n" +
+						"/__/|_|  |_| <___||_|_|_|\\___/ |_| \\___/\n") + '\n' +
 						chalk.blue(`////// CORE RUNNING ON PORT:${process.env.PORT} //////`) + '\n'
 					);
 				});
