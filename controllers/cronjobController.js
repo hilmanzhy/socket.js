@@ -2,13 +2,15 @@ const async = require('async');
 const sequelize = require('sequelize');
 const scheduler = require('node-schedule');
 
-const db = require('../config/db.js');
-const model = require('../config/model.js');
-const request = require('../functions/request.js');
-const datetime = require('../functions/datetime.js');
+const db = require('../config/db.js'),
+      datetime = require('../functions/datetime.js'),
+      model = require('../config/model.js'),
+      output = require('../functions/output.js'),
+      request = require('../functions/request.js');
 
-var query = {};
-var APP = {};
+var APP = {},
+    payloadLog = {},
+    query = {};
 
 async function dcDevice(ids, app, time) {
     let Log = app.models.mongo.log;
@@ -39,7 +41,11 @@ async function dcDevice(ids, app, time) {
                 updateId.push(id);
             }
         } catch(e) {
-            console.log(e);
+            payloadLog.info = 'DEVICE CRON ERROR : DISCONNECTED DEVICE';
+            payloadLog.message = e;
+            payloadLog.level = { error : true }
+
+            output.log(payloadLog)
         }
     }
 
@@ -61,8 +67,11 @@ module.exports = function () {
 		}
     ], (err, result) => {
 		if (err) {
-            console.log("==========!!!!! TIMER CRON ERROR : INIT MODEL !!!!!==========")
-            console.log(err)
+            payloadLog.info = 'DEVICE CRON ERROR : INIT APP';
+            payloadLog.message = err;
+            payloadLog.level = { error : true }
+
+            return output.log(payloadLog)
         }
 	})
 
@@ -74,7 +83,8 @@ module.exports = function () {
 		let seconds = (time.getSeconds() < 10 ? '0' : '') + time.getSeconds()
         let convertedTime = [hours, minutes, seconds].join(':')
         
-		console.log(`=============== SCHEDULER DEVICE ON/OFF at ${convertedTime} ===============`)
+        payloadLog.info = `SCHEDULER DEVICE ON/OFF`
+        payloadLog.level = { error : false }
 
         query.attributes = [
             'device_id',
@@ -96,7 +106,7 @@ module.exports = function () {
             if (result.length > 0) {
                 for (let index = 0; index < result.length; index++) {
                     let device = result[index].toJSON()
-                    let url = `http://localhost:${process.env.PORT}/device/command`
+                    let url = `http://localhost:${process.env.PORT}/device/commandsocket`
                     let params = {
                         "user_id" : device.user_id.toString(),
                         "device_id" : device.device_id.toString(),
@@ -107,29 +117,46 @@ module.exports = function () {
                     }
 
                     if (device.timer_on == convertedTime) {
-                        console.log("=============== TIMER  ON ===============")
+                        payloadLog.message = `TIMER ON at ${convertedTime}` + '\n' +
+                                             `DEVICE ID : ${device.device_id}` + '\n' +
+                                             `DEVICE IP : ${device.device_ip}`
 
                         params.status = "1"
                     }
                     if (device.timer_off == convertedTime) {
-                        console.log("=============== TIMER OFF ===============")
+                        payloadLog.message = `TIMER OFF at ${convertedTime}` + '\n' +
+                                             `DEVICE ID : ${device.device_id}` + '\n' +
+                                             `DEVICE IP : ${device.device_ip}`
 
                         params.status = "0"
                     }
 
                     request.post(url, params, (err, result) => {
                         if (err) {
-                            console.log("==========!!!!! TIMER CRON ERROR : REQUEST !!!!!==========")
-                            console.log(err)
+                            payloadLog.info = 'DEVICE CRON ERROR : REQUEST';
+                            payloadLog.message = err;
+                            payloadLog.level = { error : true }
+
+                            return output.log(payloadLog)
                         } else {
-                            console.log(result)
+                            payloadLog.level = { error : false }
+
+                            return output.log(payloadLog)
                         }
                     })
                 }				
+            } else {
+                payloadLog.message = `NO SCHEDULED DEVICE AT THIS TIME`
+                payloadLog.level = { error : false }
+
+                return output.log(payloadLog)
             }
         }).catch((err) => {
-            console.log("==========!!!!! DEVICE CRON ERROR : DB !!!!!==========")
-            console.log(err)
+            payloadLog.info = 'DEVICE CRON ERROR : DB';
+            payloadLog.message = err;
+            payloadLog.level = { error : true }
+
+            return output.log(payloadLog)
         });
     });
     
