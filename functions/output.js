@@ -86,17 +86,17 @@ exports.print = function (req, res, params) {
 
 exports.log = function (req, res) {
     templateLog.body =
-        (req.level ?		'LEVEL     : ' + (req.level.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) + '\n' : '') +
-        (req.ip ?			'IP        : ' + chalk.bold.yellow(req.ip) + '\n' : '') +
-        (req.originalUrl ?	'ENDPOINT  : ' + chalk.bold.yellow(req.originalUrl) + '\n' : '') +
-        (req.info ?			'INFO      : ' + chalk.bold.yellow(req.info) + '\n' : '') +
-        templateLog.time + '\n' +
-        (req.message ? templateLog.message + '\n' : '') +
-        (req.message ? req.message : '') +
-        (req.body ? templateLog.request + '\n' : '') +
-        (req.body ? JSON.stringify(req.body) + '\n' : '') +
-        (res ? templateLog.response + '\n' : '') +
-        (res ? ((typeof res == 'object') ? JSON.stringify(res) : res) : '')
+        (req.level ?		'LEVEL     : ' + (req.level.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) : '') +
+        (req.ip ?			'\nIP        : ' + chalk.bold.yellow(req.ip) : '') +
+        (req.originalUrl ?	'\nENDPOINT  : ' + chalk.bold.yellow(req.originalUrl) : '') +
+        (req.info ?			'\nINFO      : ' + chalk.bold.yellow(req.info) : '') +
+        '\n' + templateLog.time +
+        (req.body ? '\n' + templateLog.request : '') +
+        (req.body ? '\n' + JSON.stringify(req.body) : '') +
+        (res ? '\n' + templateLog.response : '') +
+		(res ? '\n' + ((typeof res == 'object') ? JSON.stringify(res) : res) : '') +
+		(req.message ? '\n' + templateLog.message : '') +
+        (req.message ? '\n' + req.message : '')
 
     let template =
         templateLog.header + '\n' +

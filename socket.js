@@ -10,8 +10,9 @@ const io = require('socket.io')(http);
 const async = require('async');
 const chalk = require('chalk');
 
-const db = require('./config/db.js');
-const model = require('./config/model.js');
+const db = require('./config/db.js'),
+	  model = require('./config/model.js'),
+	  fnOutput = require('./functions/output.js');
 
 var output = {};
 var req = {};
@@ -25,7 +26,8 @@ const DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize);
 const deviceController = require('./controllers/deviceController.js');
 const DeviceSession = require('./models/mongo/device_session.js')(db.mongo);
 
-let query = {};
+var payloadLog = {},
+	query = {};
 
 async function updateSession(query, callback) {
 	DeviceSession.updateOne(
@@ -35,7 +37,7 @@ async function updateSession(query, callback) {
 	    function(err, result){
 	        if (err){
 				callback(err);
-	        }else{
+	        } else {
 	            callback(null, result);
 	        }
 	    }
@@ -55,13 +57,21 @@ async function updateSession(query, callback) {
 }
 
 io.on('connection', (socket) => {
-	console.log(`SOCKET ID ${socket.id} CONNECTED`)
+	payloadLog.info = `CONNECTION ESTABILISHED`
+	payloadLog.level = { error : false }
+	payloadLog.message = `SOCKET ID : ${socket.id}`
+	
+	fnOutput.log(payloadLog)
+	
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
-		console.log(`===== SOCKET_ID ${socket.id} | DEVICE_ID ${device.device_id} CONNECTED =====`);
+		payloadLog.info = `DEVICE HANDSHAKE`
+		payloadLog.body = req.body = device
+		payloadLog.level = { error : false }
+		payloadLog.message = payloadLog.message +
+							 `\nDEVICE ID : ${device.device_id}`
 
 		req.app.db = db;
-		req.body = device;
 
 		query.sql = {
 			where : { device_id : device.device_id },
@@ -78,7 +88,9 @@ io.on('connection', (socket) => {
 
 		async.waterfall([
 			function initializeModels(callback) {
-				console.log(`..... HANDSHAKE INITIALIZE MODEL .....`)
+				payloadLog.message = payloadLog.message +
+									 `\n> INITIALIZE MODEL`
+
 				model(db, (err, result) => {
 					if (err) {
 						callback(err);
@@ -91,15 +103,16 @@ io.on('connection', (socket) => {
 			},
 
 			function checkDevice(data, callback) {
-				console.log(`..... HANDSHAKE CHECK DEVICE .....`)
-
+				payloadLog.message = payloadLog.message +
+									 `\n> CHECK DEVICE`
+									 
 				deviceController.regischeck(req.app, req, (err, result) => {
 					if (err) { 
 						callback(err); 
 					} else {
 						switch (result.message) {
 							case '1':
-								console.log(`========== DEVICE_IP ${device.device_id} NOT MATCH ==========`);
+								payloadLog.message = payloadLog.message + ' : DEVICE_IP NOT MATCH'
 								
 								deviceController.ipupdate(req.app, req, (err, result) => {
 									if (err) {
@@ -111,8 +124,8 @@ io.on('connection', (socket) => {
 								break;
 							
 							case '2':
-								console.log(`========== DEVICE_ID ${device.device_id} NOT REGISTERED ==========`);
-			
+								payloadLog.message = payloadLog.message + ' : DEVICE_ID NOT REGISTERED'
+
 								deviceController.registerdevice(req.app, req, (err, result) => {
 									if (err) {
 										callback(err, result);
@@ -131,7 +144,8 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceStatus(data, callback) {
-				console.log(`..... HANDSHAKE UPDATE DEVICE STATUS .....`)
+				payloadLog.message = payloadLog.message +
+									 `\n> UPDATE DEVICE STATUS`
 
 				Device.update({ is_connected : 1 }, query.sql).then((result) => {
 					callback(null, data);
@@ -141,7 +155,8 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceSession(data, callback) {
-				console.log(`..... HANDSHAKE UPDATE DEVICE SESSION .....`)
+				payloadLog.message = payloadLog.message +
+									 `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
 					if (err) {
@@ -153,7 +168,8 @@ io.on('connection', (socket) => {
 			},
 
 			function getPinName(data, callback) {
-				console.log(`..... HANDSHAKE GET PIN NAME .....`)
+				payloadLog.message = payloadLog.message +
+									 `\n> GET PIN NAME`
 
 				query.sql.attributes = [ 'pin', 'device_name' ]
 
@@ -164,18 +180,28 @@ io.on('connection', (socket) => {
 
 		], function (err, res) {
 			if (err) {
-				console.error(`===== SOCKET_ERR =====`);
-				console.error(err);
-				console.error(`===== ========== =====`);
+				payloadLog.info = `${payloadLog.info} : ERROR`;
+				payloadLog.level = { error : true }
+				payloadLog.message = payloadLog.message +
+									 `\n${JSON.stringify(err)}`;
+
+				fnOutput.log(payloadLog)
 
 				return callback(err, res);
 			}
+			fnOutput.log(payloadLog, res)
 
 			return callback(null, res);
 		});
 	});
 	// Handshake Hub
 	socket.on('handshake-hub', (hub, callback) => {
+		payloadLog.info = `HANDSHAKE HUB`
+		payloadLog.body = req.body = device
+		payloadLog.level = { error : false }
+		payloadLog.message = payloadLog.message +
+							 `\nDEVICE ID : ${device.device_id}`
+
 		query.sql = {
 			where : { device_id : hub.device_id },
 			attributes : [ 'device_id' ]
@@ -190,9 +216,7 @@ io.on('connection', (socket) => {
 		};
 
 		async.waterfall([
-			function handshake(callback) {
-				console.log(`===== HANDSHAKE HUB ${socket.id} CONNECTED =====`);
-				
+			function handshake(callback) {				
 				query.sql = { 
 					where : { user_id : hub.user_id },
 					attributes : [
@@ -207,7 +231,8 @@ io.on('connection', (socket) => {
 				})
 			},
 			function session(data, callback) {
-				console.log(`..... HANDSHAKE UPDATE HUB SESSION .....`)
+				payloadLog.message = payloadLog.message +
+									 `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
 					if (err) {
@@ -218,28 +243,45 @@ io.on('connection', (socket) => {
 				})
 			}
 		], function (err, result) {
-			if (err) return callback(err, result);
+			if (err) {
+				payloadLog.info = `${payloadLog.info} : ERROR`;
+				payloadLog.level = { error : true }
+				payloadLog.message = payloadLog.message +
+									 `\n${JSON.stringify(err)}`;
+
+				fnOutput.log(payloadLog)
+				
+				return callback(err, result)
+			};
+
+			fnOutput.log(payloadLog, result)
 
 			return callback(null, result);
 		})
 	})
 	// Disconnect Device
 	socket.on('disconnect', function (reason) {
-		console.log(`===== SOCKET_ID ${socket.id} DISCONNECTED =====`);
-		console.log(reason);
+		payloadLog.info = `SOCKET DISCONNECTED`
+		payloadLog.level = { error : true }
+		payloadLog.level = { error : false }
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\n${reason}`
 		
 		async.waterfall([
 			function (callback) {
+				payloadLog.message = payloadLog.message +
+									 `\n> REMOVE SESSION`
+
 				DeviceSession.findOne({ session_id : socket.id }).then((result) => {
 					if (result) {
 						query.mongo = {
 							find : { device_id : result.device_id },
 							update : { status: 0 }
 						};
-	
+
 						callback(null, query.mongo);
 					} else {
-						callback(`Session Not Found`);
+						callback(`SESSION NOT FOUND`);
 					}
 				}).catch((err) => {
 					callback(err);
@@ -259,54 +301,82 @@ io.on('connection', (socket) => {
 				});
 			}
 		], function (err, res) {
-			if (err) return console.error(err);
+			if (err) {
+				payloadLog.info = `${payloadLog.info} : ERROR`;
+				payloadLog.level = { error : true }
+				payloadLog.message = payloadLog.message +
+									 `\n${JSON.stringify(err)}`;
+
+				return fnOutput.log(payloadLog)									 
+			}
+
+			return fnOutput.log(payloadLog, res)
 		});
 	});
 	socket.on('error', function (err) {
-		console.log(`===== SOCKET_ERR =====`);
-		console.error(err);
-		console.log(`===== ========== =====`);
+		payloadLog.info = 'SOCKET ERROR';
+		payloadLog.level = { error : true };
+		payloadLog.message = JSON.stringify(err);
+
+		return fnOutput.log(payloadLog)
 	})
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
-		console.log(`========== SOCKET SENSORDATA | DEVICE_ID ${params.device_id} ==========`);
-		console.log(params);
-		console.log(`=======================================================================`);
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'SENSORDATA';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}`;
 
 		req.app = { db : db };
-		req.body = params;
 
 		deviceController.sensordata(req.app, req, (err, result) => {
-			if (err) return callback(err, result);
+			if (err) {
+				payloadLog.info = `${payloadLog.info} : ERROR`;
+				payloadLog.level = { error : true }
+				payloadLog.message = payloadLog.message +
+									 `\n${JSON.stringify(err)}`;
 
-			return callback(null, result);
+				fnOutput.log(payloadLog)
+
+				return callback(err, result);
+			} else {
+				fnOutput.log(payloadLog, result)
+
+				return callback(null, result);
+			}
 		});
 	});
 	// Command API
 	socket.on('commandapi', function (params) {
-		console.log(`========== SOCKET COMMANDAPI ==========`);
-		console.log(params);
-		console.log(`========== ================= ==========`);
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'COMMANDAPI';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
 			io.to(result.session_id).emit('command', params);
-		}).catch((err) => {
-			output.err = {
-				"code": "SOCKET_ERR",
-				"message": err
-			};
 
-			console.error(output.err);
+			return fnOutput.log(payloadLog, result)
+		}).catch((err) => {
+			payloadLog.info = `${payloadLog.info} : ERROR`;
+			payloadLog.level = { error : true }
+			payloadLog.message = payloadLog.message +
+									`\n${JSON.stringify(err)}`;
+
+			fnOutput.log(payloadLog)
 		});
 	});
 	// Command Panel
 	socket.on('commandpanel', function (params, callback) {
-		console.log(`========== SOCKET COMMANDPANEL | DEVICE_ID ${params.device_id} ==========`);
-		console.log(params);
-		console.log(`=======================================================================`);
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'COMMANDPANEL';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}`;
 
 		req.app = { db : db };
-		req.body = params;
 
 		async.waterfall([
 			function (callback) {
@@ -331,35 +401,53 @@ io.on('connection', (socket) => {
 				});
 			}
 		], function (err, result) {
-			if (err) return callback(err, result);
+			if (err) {
+				payloadLog.info = `${payloadLog.info} : ERROR`;
+				payloadLog.level = { error : true }
+				payloadLog.message = payloadLog.message +
+									 `\n${JSON.stringify(err)}`;
 
-			return callback(null, result);
+				fnOutput.log(payloadLog)
+
+				return callback(err, result);
+			} else {
+				fnOutput.log(payloadLog, result)
+
+				return callback(null, result);
+			}
 		});
 	});
 	// Command Voice
 	socket.on('command-voice', function (params) {
-		console.log(`========== SOCKET COMMANDVOICE ==========`);
-		console.log(params);
-		console.log(`========== =================== ==========`);
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'COMMANDVOICE';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
-			console.log(`..... SENDING COMMANDVOICE TO ${result.device_id} .....`);
-
+			payloadLog.message = payloadLog.message +
+								 `\n> SENDING COMMANDVOICE TO ${result.device_id}`
+			
 			io.to(result.session_id).emit('command', params);
-		}).catch((err) => {
-			output = {
-				"code": "SOCKET_ERR",
-				"message": err
-			};
 
-			console.error(output);
+			return fnOutput.log(payloadLog, result)
+		}).catch((err) => {
+			payloadLog.info = `${payloadLog.info} : ERROR`;
+			payloadLog.level = { error : true }
+			payloadLog.message = payloadLog.message +
+									`\n${JSON.stringify(err)}`;
+
+			fnOutput.log(payloadLog)
 		});
 	})
 	// Response Command
 	socket.on('res-command', function (params) {
-		console.log(`========== SOCKET RES-COMMAND ==========`);
-		console.log(params);
-		console.log(`========== ================== ==========`);
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'RES-COMMAND';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}`;
 
 		query.value = { switch : params.switch };
 		query.options = {
@@ -369,27 +457,32 @@ io.on('connection', (socket) => {
 		};
 
 		Device.update(query.value, query.options).then((resDevice) => {
-			output.code = `OK`;
-
 			if (resDevice > 0) {
-				output.message = `Switch updated`;
+				payloadLog.message = payloadLog.message +
+									 `\n> SWITCH UPDATED`
 			} else {
-				output.message = `Switch not updated`;
+				payloadLog.message = payloadLog.message +
+									 `\n> SWITCH NOT UPDATED`
 			}
 
-			return console.log(output);
+			return fnOutput.log(payloadLog, resDevice);
 		}).catch((err) => {
-			output = {
-				code : `GENERAL_ERR`,
-				message : err
-			};
+			payloadLog.info = `${payloadLog.info} : ERROR`;
+			payloadLog.level = { error : true }
+			payloadLog.message = payloadLog.message +
+									`\n${JSON.stringify(err)}`;
 
-			return console.error(output);
+			fnOutput.log(payloadLog)
 		});
 	});
 	// Update Pin Name
 	socket.on('update-pin', function (params) {
-		console.log(`..... GET PIN NAME .....`)
+		payloadLog.body = req.body = params;
+		payloadLog.info = 'UPDATE PIN';
+		payloadLog.level = { error : false };
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
+							 `\nDEVICE ID : ${params.device_id}` +
+							 `\nGET PIN NAME`;
 
 		query.sql.where = { device_id : params.device_id }
 
@@ -399,13 +492,15 @@ io.on('connection', (socket) => {
 			DevicePIN.findAll(query.sql).then( (result) => {
 				io.to(resultSession.session_id).emit('sync-pin', result);
 			})
+			
+			return fnOutput.log(payloadLog, resultSession)
 		}).catch((err) => {
-			output.err = {
-				code: "SOCKET_ERR",
-				message: err
-			};
+			payloadLog.info = `${payloadLog.info} : ERROR`;
+			payloadLog.level = { error : true }
+			payloadLog.message = payloadLog.message +
+									`\n${JSON.stringify(err)}`;
 
-			console.error(output.err);
+			fnOutput.log(payloadLog)
 		});
 	})
 });
