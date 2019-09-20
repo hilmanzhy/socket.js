@@ -102,7 +102,7 @@ exports.register = function (APP, req, callback) {
             if (validation.password(req.body.password) != true) return callback(validation.password(req.body.password))
             if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
             if (validation.phone(req.body.phone) != true) return callback(validation.phone(req.body.phone))
-            if (!req.body.tdl_id) return callback({ code: 'MISSING_KEY', data: 'tdl_id' })
+            if (!req.body.tdl_id) return callback({ code: 'MISSING_KEY', data: { parameter : 'tdl_id' } })
             
             callback(null, true)
         },
@@ -112,13 +112,20 @@ exports.register = function (APP, req, callback) {
             
             User.findOne(queries).then((result) => {
                 if (result) {
-                    callback({
+                    let output = {
                         code: 'ERR_DUPLICATE',
-                        message: 'Credentials has already been taken!'
-                    })
-                } else {
-                    callback(null, true)
+                        message: 'Credentials has already been taken!',
+                        data : {}
+                    }
+
+                    if (result.username == req.body.username) output.data.parameter = 'username'
+                    if (result.email == req.body.email) output.data.parameter = 'email'
+                    if (result.phone == req.body.phone) output.data.parameter = 'phone'
+                    
+                    return callback(output)
                 }
+
+                callback(null, true)
             }).catch((err) => {
                 callback({
                     code: 'ERR_DATABASE',
@@ -319,7 +326,7 @@ exports.forgotpassword = function (APP, req, callback) {
                 to      : otp.email,
                 subject : `OTP Forgot Password`,
                 html    :
-                    `<p>Use this OTP to reset your password Account</p>
+                    `<p>Use this OTP to reset your password account</p>
                     <h2>${otp.otp}</h2>`
             }
 
@@ -350,10 +357,12 @@ exports.resetpassword = function (APP, req, callback) {
             callback(null, true)
         },
 
-        function validateOTP(validate, callback) {
+        function checkOTP(validate, callback) {
+            req.body.otp_checked = true
+
             otp.validate(APP, req, (err, result) => {
                 if (err) return callback(err)
-                                                
+                
                 callback(null, result)
             })
         },
@@ -386,6 +395,17 @@ exports.resetpassword = function (APP, req, callback) {
     ], function (err, result) {
         if (err) return callback(err)
 
+        return callback(null, result)
+    })
+}
+
+exports.checkotp = function (APP, req, callback) {
+    if (!req.body.email) return callback({ code : 'MISSING_KEY', data: { parameter: 'email' } })
+    if (!req.body.otp) return callback({ code : 'MISSING_KEY', data: { parameter: 'otp' } })
+    
+    otp.validate(APP, req, (err, result) => {
+        if (err) return callback(err)
+        
         return callback(null, result)
     })
 }
