@@ -8,27 +8,26 @@ exports.formatHMS = function (datetime) {
     return [hours, minutes, seconds].join(':')
 }
 
-exports.isToday = function (datetime) {
-    let today = moment()
-    let params = moment(datetime)
-    let diff = today.diff(params, 'days')
-
-    if (diff > 0) {
-        return false
-    }
-    
-    return true
-}
-
 exports.formatYMD = function (datetime) {
     return moment(datetime).format("YYYY-MM-DD")
 }
 
-exports.timeDiff = function (start, end) {
-    let startTime = moment(start, "HH:mm:ss");
-    let endTime = moment(end, "HH:mm:ss");
-    let duration = moment.duration(endTime.diff(startTime)).as('minutes');
+exports.isToday = function (datetime) {
+    let today = moment()
+    let params = moment(datetime)
 
+    if (today.year() != params.year()) return false
+    if (today.month() != params.month()) return false
+    if (today.date() != params.date()) return false
+    
+    return true
+}
+
+exports.timeDiff = function (start, end, unit) {
+    let startTime = moment(start);
+    let endTime = moment(end);
+    let duration = moment.duration(endTime.diff(startTime)).as(unit);
+    
     return duration.toFixed()
 }
 

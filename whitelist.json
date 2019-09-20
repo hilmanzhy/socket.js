@@ -5,6 +5,7 @@
 	"/auth/resetpassword",
 	"/auth/verify",
 	"/auth/checkuser",
+	"/auth/checkotp",
 	"/user/pricing",
 	"/device/command",
 	"/device/commandsocket",

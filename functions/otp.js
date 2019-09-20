@@ -1,3 +1,6 @@
+const vascommkit = require('vascommkit'),
+      datetime = require('../functions/datetime.js');
+
 function generateOTP() {
     let digits = '0123456789',
         OTPLength = 4,
@@ -11,11 +14,12 @@ function generateOTP() {
 }
 
 exports.create = function (APP, req, callback) {
-    req.body.otp = generateOTP()
-
     APP.models.mongo.otp.updateOne(
 		{ email : req.body.email },
-		{ $set : { otp : req.body.otp } },
+		{
+            otp : generateOTP(),
+            date : vascommkit.time.now()
+        },
 		{ upsert : true },
 	    function(err, result){
 	        if (err){
@@ -35,16 +39,35 @@ exports.validate = function (APP, req, callback) {
         email : req.body.email,
         otp : req.body.otp
     }).then((rows) => {
-        if (rows) {
-            APP.models.mongo.otp.deleteOne(rows, (err, info) => {
-                if (err) return callback({ code : 'DATABASE_ERR', message : 'Failed delete OTP!' })
+        if (!rows) return callback({ code : 'OTP_ERR', message : 'OTP not match!' })
 
-                callback(null, info);
-            })
+        let today = new Date(),
+            expiredDuration = parseInt(process.env.OTP_EXPIRED_DURATION),
+            expiredUnit = process.env.OTP_EXPIRED_UNIT,
+            timeDiff = parseInt(datetime.timeDiff(rows.date, today, expiredUnit));
 
-        } else {
-            return callback({ code : 'OTP_ERR', message : 'OTP not match!' })
+        if (timeDiff > expiredDuration) {
+            deleteOTP(APP, rows, (err, res) => { if (err) return callback(err) })
+
+            return callback({ code : 'OTP_ERR', message : 'OTP Expired!' })
         }
-
+        if (req.body.otp_checked) deleteOTP(APP, rows, (err, res) => { if (err) return callback(err) })
+                
+        return callback(null, {
+            code    : 'OK',
+            message : 'OTP match',
+            data    : {
+                "email" : req.body.email,
+                "otp"   : req.body.otp
+            }
+        })        
     })
+}
+
+function deleteOTP(APP, params, callback) {
+    APP.models.mongo.otp.deleteOne(params, (err, info) => {
+        if (err) return callback({ code : 'DATABASE_ERR', message : 'Failed delete OTP!' })
+    })
+
+    return callback(null, true)
 }

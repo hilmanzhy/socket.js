@@ -63,6 +63,14 @@ router.post('/resetpassword', (req, res, next) => {
 	});
 });
 
+router.post('/checkotp', (req, res, next) => {
+	authController.checkotp(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 router.post('/updatekey', (req, res, next) => {
 	console.log("updatekey")
 	authController.updatekey(req.APP, req, (err, result) => {

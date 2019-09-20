@@ -28,7 +28,7 @@ async function dcDevice(ids, app, time) {
             
             if (rows) {
                 let isToday = datetime.isToday(rows.date)
-                let timeDiff = datetime.timeDiff(rows.time, time)
+                let timeDiff = datetime.timeDiff(rows.time, time, 'minutes')
 
                 if (isToday) {
                     if (timeDiff >= 5) {
