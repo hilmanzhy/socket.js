@@ -14,10 +14,12 @@ function generateOTP() {
 }
 
 exports.create = function (APP, req, callback) {
+    req.body.otp = generateOTP()
+    
     APP.models.mongo.otp.updateOne(
 		{ email : req.body.email },
 		{
-            otp : generateOTP(),
+            otp : req.body.otp,
             date : vascommkit.time.now()
         },
 		{ upsert : true },
@@ -46,11 +48,8 @@ exports.validate = function (APP, req, callback) {
             expiredUnit = process.env.OTP_EXPIRED_UNIT,
             timeDiff = parseInt(datetime.timeDiff(rows.date, today, expiredUnit));
 
-        if (timeDiff > expiredDuration) {
-            deleteOTP(APP, rows, (err, res) => { if (err) return callback(err) })
-
-            return callback({ code : 'OTP_ERR', message : 'OTP Expired!' })
-        }
+        if (timeDiff > expiredDuration) return callback({ code : 'OTP_ERR', message : 'OTP Expired!' })
+        
         if (req.body.otp_checked) deleteOTP(APP, rows, (err, res) => { if (err) return callback(err) })
                 
         return callback(null, {
