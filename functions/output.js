@@ -84,6 +84,22 @@ exports.print = function (req, res, params) {
 	});
 };
 
+exports.insert = function (req, res, params) {
+	let body = {
+		request: req.body ? req.body : null,
+		response: res ? res : null,
+		date: req.customDate,
+		time: req.customTime
+	}
+
+	if (req.originalUrl) body.endpoint = req.originalUrl
+	if (req.event) body.event = req.event
+
+	log.insert(req.APP, { body }, (err, result) => {
+		callback(null, message);
+	});
+};
+
 exports.log = function (req, res) {
     templateLog.body =
         (req.level ?		'LEVEL     : ' + (req.level.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) : '') +
@@ -104,4 +120,4 @@ exports.log = function (req, res) {
         templateLog.footer + '\n'
 
     return console.log(template)
-}
+};

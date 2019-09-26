@@ -30,19 +30,32 @@ exports.find = function (APP, req, callback) {
 exports.insert = function (APP, req, callback) {
 	req.body.date = vascommkit.time.date();
 	req.body.time = vascommkit.time.time();
-	var params = APP.queries.insert('log.mongo', req, APP.models);
+	var params = {};
 
-	APP.models.mongo.log.create(params, (err, result) => {
-    if (err) return callback({
+	if (req.body.endpoint) {
+		params = APP.queries.insert('log.mongo', req, APP.models);
+
+		APP.models.mongo.log.create(params, (err, result) => {
+			if (err) return callback({
 				code: 'ERR_DATABASE',
 				data: JSON.stringify(err)
 			});
+	
+			return callback(null, {
+				code: 'LOG_INSERT_SUCCESS',
+				data: result
+			});
+		});
+	}
 
-    return callback(null, {
-    	code: 'LOG_INSERT_SUCCESS',
-    	data: result
-    });
-  });
+	if (req.body.event) {
+		params = req.body
+
+		APP.models.mongo.log_socket.create(params, (err, result) => {
+			
+		})
+	}
+	
 };
 
 exports.delete = function (APP, req, callback) {
