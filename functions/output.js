@@ -96,7 +96,7 @@ exports.insert = function (req, res, params) {
 	if (req.event) body.event = req.event
 
 	log.insert(req.APP, { body }, (err, result) => {
-		callback(null, message);
+		if (result) return this.log(params, res)
 	});
 };
 

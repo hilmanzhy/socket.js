@@ -16,7 +16,7 @@ const db = require('./config/db.js'),
 
 var output = {};
 var req = {};
-req.app = {};
+req.APP = {};
 
 /**
  * SOCKET ON
@@ -65,13 +65,14 @@ io.on('connection', (socket) => {
 	
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
+		req.event = `handshake`
 		payloadLog.info = `DEVICE HANDSHAKE`
 		payloadLog.body = req.body = device
 		payloadLog.level = { error : false }
 		payloadLog.message = payloadLog.message +
 							 `\nDEVICE ID : ${device.device_id}`
 
-		req.app.db = db;
+		req.APP.db = db;
 
 		query.sql = {
 			where : { device_id : device.device_id },
@@ -95,7 +96,7 @@ io.on('connection', (socket) => {
 					if (err) {
 						callback(err);
 					} else {
-						req.app.models = result;
+						req.APP.models = result;
 		
 						callback(null, true);
 					}
@@ -106,7 +107,7 @@ io.on('connection', (socket) => {
 				payloadLog.message = payloadLog.message +
 									 `\n> CHECK DEVICE`
 									 
-				deviceController.regischeck(req.app, req, (err, result) => {
+				deviceController.regischeck(req.APP, req, (err, result) => {
 					if (err) { 
 						callback(err); 
 					} else {
@@ -114,7 +115,7 @@ io.on('connection', (socket) => {
 							case '1':
 								payloadLog.message = payloadLog.message + ' : DEVICE_IP NOT MATCH'
 								
-								deviceController.ipupdate(req.app, req, (err, result) => {
+								deviceController.ipupdate(req.APP, req, (err, result) => {
 									if (err) {
 										callback(err, result);
 									} else {
@@ -126,7 +127,7 @@ io.on('connection', (socket) => {
 							case '2':
 								payloadLog.message = payloadLog.message + ' : DEVICE_ID NOT REGISTERED'
 
-								deviceController.registerdevice(req.app, req, (err, result) => {
+								deviceController.registerdevice(req.APP, req, (err, result) => {
 									if (err) {
 										callback(err, result);
 									} else {
@@ -185,17 +186,18 @@ io.on('connection', (socket) => {
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(payloadLog)
+				fnOutput.insert(req, err, payloadLog)
 
-				return callback(err, res);
+				return insert(err, res);
 			}
-			fnOutput.log(payloadLog, res)
+			fnOutput.insert(req, res, payloadLog)
 
 			return callback(null, res);
 		});
 	});
 	// Handshake Hub
 	socket.on('handshake-hub', (hub, callback) => {
+		req.event = `handshake-hub`
 		payloadLog.info = `HANDSHAKE HUB`
 		payloadLog.body = req.body = device
 		payloadLog.level = { error : false }
@@ -242,25 +244,26 @@ io.on('connection', (socket) => {
 					}
 				})
 			}
-		], function (err, result) {
+		], function (err, res) {
 			if (err) {
 				payloadLog.info = `${payloadLog.info} : ERROR`;
 				payloadLog.level = { error : true }
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(payloadLog)
+				fnOutput.insert(req, res, payloadLog)
 				
-				return callback(err, result)
+				return callback(err, res)
 			};
 
-			fnOutput.log(payloadLog, result)
+			fnOutput.insert(req, res, payloadLog)
 
-			return callback(null, result);
+			return callback(null, res);
 		})
-	})
+	});
 	// Disconnect Device
 	socket.on('disconnect', function (reason) {
+		req.event = `disconnect`
 		payloadLog.info = `SOCKET DISCONNECTED`
 		payloadLog.level = { error : true }
 		payloadLog.level = { error : false }
@@ -307,41 +310,43 @@ io.on('connection', (socket) => {
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
-				return fnOutput.log(payloadLog)									 
+				return fnOutput.insert(req, err, payloadLog)							 
 			}
 
-			return fnOutput.log(payloadLog, res)
+			return fnOutput.insert(req, res, payloadLog)
 		});
 	});
 	socket.on('error', function (err) {
+		req.event = `disconnect`
 		payloadLog.info = 'SOCKET ERROR';
 		payloadLog.level = { error : true };
 		payloadLog.message = JSON.stringify(err);
 
-		return fnOutput.log(payloadLog)
-	})
+		return fnOutput.insert(req, err, payloadLog)
+	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
+		req.event = `sensordata`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'SENSORDATA';
 		payloadLog.level = { error : false };
 		payloadLog.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
-		req.app = { db : db };
+		req.APP.db = db
 
-		deviceController.sensordata(req.app, req, (err, result) => {
+		deviceController.sensordata(req.APP, req, (err, result) => {
 			if (err) {
 				payloadLog.info = `${payloadLog.info} : ERROR`;
 				payloadLog.level = { error : true }
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(payloadLog)
+				fnOutput.insert(req, err, payloadLog)
 
 				return callback(err, result);
 			} else {
-				fnOutput.log(payloadLog, result)
+				fnOutput.insert(req, result, payloadLog)
 
 				return callback(null, result);
 			}
@@ -349,6 +354,7 @@ io.on('connection', (socket) => {
 	});
 	// Command API
 	socket.on('commandapi', function (params) {
+		req.event = `commandapi`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDAPI';
 		payloadLog.level = { error : false };
@@ -358,60 +364,37 @@ io.on('connection', (socket) => {
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
 			io.to(result.session_id).emit('command', params);
 
-			return fnOutput.log(payloadLog, result)
+			return fnOutput.insert(req, result, payloadLog)
 		}).catch((err) => {
 			payloadLog.info = `${payloadLog.info} : ERROR`;
 			payloadLog.level = { error : true }
 			payloadLog.message = payloadLog.message +
 									`\n${JSON.stringify(err)}`;
 
-			fnOutput.log(payloadLog)
+			return fnOutput.insert(req, err, payloadLog)
 		});
 	});
 	// Command Panel
 	socket.on('commandpanel', function (params, callback) {
+		req.event = `commandpanel`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDPANEL';
 		payloadLog.level = { error : false };
 		payloadLog.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
-		req.app = { db : db };
-
-		async.waterfall([
-			function (callback) {
-				model(db, (err, result) => {
-					if (err) {
-						callback(err);
-					} else {
-						req.app.models = result;
-		
-						callback(null, true);
-					}
-				});
-			},
-
-			function (data, callback) {
-				deviceController.commandpanel(req.app, req, (err, res) => {
-					if (err) {
-						callback(err);
-					} else {
-						callback(null, res);
-					}
-				});
-			}
-		], function (err, result) {
+		deviceController.commandpanel(req.APP, req, (err, result) => {
 			if (err) {
 				payloadLog.info = `${payloadLog.info} : ERROR`;
 				payloadLog.level = { error : true }
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(payloadLog)
+				fnOutput.insert(req, err, payloadLog)
 
 				return callback(err, result);
 			} else {
-				fnOutput.log(payloadLog, result)
+				fnOutput.insert(req, result, payloadLog)
 
 				return callback(null, result);
 			}
@@ -431,14 +414,14 @@ io.on('connection', (socket) => {
 			
 			io.to(result.session_id).emit('command', params);
 
-			return fnOutput.log(payloadLog, result)
+			return fnOutput.insert(req, result, payloadLog)
 		}).catch((err) => {
 			payloadLog.info = `${payloadLog.info} : ERROR`;
 			payloadLog.level = { error : true }
 			payloadLog.message = payloadLog.message +
 									`\n${JSON.stringify(err)}`;
 
-			fnOutput.log(payloadLog)
+			fnOutput.insert(req, err, payloadLog)
 		});
 	})
 	// Response Command
@@ -493,14 +476,14 @@ io.on('connection', (socket) => {
 				io.to(resultSession.session_id).emit('sync-pin', result);
 			})
 			
-			return fnOutput.log(payloadLog, resultSession)
+			return fnOutput.insert(req, resultSession, payloadLog)
 		}).catch((err) => {
 			payloadLog.info = `${payloadLog.info} : ERROR`;
 			payloadLog.level = { error : true }
 			payloadLog.message = payloadLog.message +
 									`\n${JSON.stringify(err)}`;
 
-			fnOutput.log(payloadLog)
+			return fnOutput.insert(req, err, payloadLog)
 		});
 	})
 });

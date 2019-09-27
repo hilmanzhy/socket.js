@@ -52,7 +52,15 @@ exports.insert = function (APP, req, callback) {
 		params = req.body
 
 		APP.models.mongo.log_socket.create(params, (err, result) => {
-			
+			if (err) return callback({
+				code: 'ERR_DATABASE',
+				data: JSON.stringify(err)
+			});
+	
+			return callback(null, {
+				code: 'LOG_INSERT_SUCCESS',
+				data: result
+			});
 		})
 	}
 	
