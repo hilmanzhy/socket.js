@@ -331,13 +331,12 @@ exports.forgotpassword = function (APP, req, callback) {
             }
 
             request.sendEmail(payload, (err, res) => {
-                if (err) console.error(err)
-                if (res) console.log(`EMAIL SENT!`)
-            })
+                if (err) return callback({ code : 'OTP_ERR', message : err })
 
-            callback(null, {
-                code: 'OK',
-                message: 'OTP Sent! Please check your email.'
+                callback(null, {
+                    code: 'OK',
+                    message: 'OTP Sent! Please check your email.'
+                })
             })
         }
     ], function (err, result) {
