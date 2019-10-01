@@ -1199,12 +1199,11 @@ exports.commandpanel = function (APP, req, callback) {
 				else if (datareq.mode == '1')
 				{
 					console.log('execute single device')
-					APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)',
+					APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)',
 						{ 
 							replacements: {
 								device_id: datareq.device_id,
 								user_id: datareq.user_id,
-								device_ip: device_ip,					
 								switch: datareq.switch
 							}, 
 							type: APP.db.sequelize.QueryTypes.RAW 
@@ -2415,12 +2414,11 @@ exports.command = function (APP, req, callback) {
 							});
 			
 							console.log('execute all pin')
-							APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch_status)',
+							APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch_status)',
 								{ 
 									replacements: {
 										device_id: datareq.device_id,
 										user_id: datareq.user_id,
-										device_ip: device_ip,					
 										switch_status: datareq.switch
 									}, 
 									type: APP.db.sequelize.QueryTypes.RAW 
@@ -2653,12 +2651,11 @@ exports.commandtest = function (APP, req, callback) {
 		Device.findAll(query.options).then((result) => {
 			if (result.length > 0) {
 				console.log('execute all pin')
-				APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :device_ip, :status_saklar)',
+				APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:id_akun, :id_device, :status_saklar)',
 					{
 						replacements: {
 							id_device: datareq.device_id,
 							id_akun: datareq.user_id,
-							device_ip: datareq.device_ip,
 							status_saklar: datareq.status
 						},
 						type: APP.db.sequelize.QueryTypes.RAW
@@ -2750,11 +2747,10 @@ exports.commandsocket = function (APP, req, callback) {
 				case "1":
 					console.log(`/ COMMAND SINGLE CCU DEVICE /`)
 
-					Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :device_ip, :switch)', { 
+					Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)', { 
 						replacements: {
 							user_id: params.user_id,
 							device_id: params.device_id,
-							device_ip: 	resDevice.device_ip,				
 							switch: params.switch
 						}, 
 						type: Sequelize.QueryTypes.RAW 
