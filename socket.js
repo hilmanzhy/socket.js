@@ -2,33 +2,36 @@
  * SETUP DEPENDENCIES
  */
 
+ /* PACKAGE */
 const environment = require('./app.json').env;
 require('env2')('.env.' + environment);
-const app = require('express')();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const async = require('async');
-const chalk = require('chalk');
-
+const app = require('express')(),
+	  http = require('http').createServer(app),
+	  io = require('socket.io')(http),
+	  async = require('async'),
+	  chalk = require('chalk'),
+	  vascommkit = require('vascommkit');
+/* CONFIG & FUNCTIONS */
 const db = require('./config/db.js'),
 	  model = require('./config/model.js'),
 	  fnOutput = require('./functions/output.js');
-
-var output = {};
-var req = {};
+	  fnRequest = require('./functions/request.js');
+/* MODEL & CONTROLLER */
+const Device = require('./models/device.js')(db.sequelize, db.Sequelize),
+	  DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize),
+	  User = require('./models/user.js')(db.sequelize, db.Sequelize),
+	  DeviceSession = require('./models/mongo/device_session.js')(db.mongo),
+	  deviceController = require('./controllers/deviceController.js');
+/* DECLARATION */
+var output = {},
+	payloadLog = {},
+	query = {},
+	req = {};
 req.APP = {};
 
 /**
  * SOCKET ON
  */
-const Device = require('./models/device.js')(db.sequelize, db.Sequelize);
-const DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize);
-const deviceController = require('./controllers/deviceController.js');
-const DeviceSession = require('./models/mongo/device_session.js')(db.mongo);
-
-var payloadLog = {},
-	query = {};
-
 async function updateSession(query, callback) {
 	DeviceSession.updateOne(
 		query.mongo.find,
@@ -42,21 +45,10 @@ async function updateSession(query, callback) {
 	        }
 	    }
 	);
-
-	/*DeviceSession.find(query.mongo.find).then((result) => {				
-		if (result.length) {
-			DeviceSession.updateOne(query.mongo.find, query.mongo.update, function (err, session) {});
-		} else {
-			DeviceSession.create(query.mongo.create, function (err, session) {});
-		}
-
-		callback(null, result);
-	}).catch((err) => {
-		callback(err);
-	});*/
 }
 
 io.on('connection', (socket) => {
+	payloadLog = {}
 	payloadLog.info = `CONNECTION ESTABILISHED`
 	payloadLog.level = { error : false }
 	payloadLog.message = `SOCKET ID : ${socket.id}`
@@ -65,6 +57,7 @@ io.on('connection', (socket) => {
 	
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
+		payloadLog = {}
 		req.event = `handshake`
 		payloadLog.info = `DEVICE HANDSHAKE`
 		payloadLog.body = req.body = device
@@ -197,6 +190,7 @@ io.on('connection', (socket) => {
 	});
 	// Handshake Hub
 	socket.on('handshake-hub', (hub, callback) => {
+		payloadLog = {}
 		req.event = `handshake-hub`
 		payloadLog.info = `HANDSHAKE HUB`
 		payloadLog.body = req.body = device
@@ -263,47 +257,83 @@ io.on('connection', (socket) => {
 	});
 	// Disconnect Device
 	socket.on('disconnect', function (reason) {
+		payloadLog = {}
 		req.event = `disconnect`
 		payloadLog.info = `SOCKET DISCONNECTED`
-		payloadLog.level = { error : true }
 		payloadLog.level = { error : false }
 		payloadLog.message = `SOCKET ID : ${socket.id}` +
-							 `\n${reason}`
-		
+							 `\nREASON : ${reason}`
+		 
 		async.waterfall([
 			function (callback) {
 				payloadLog.message = payloadLog.message +
 									 `\n> REMOVE SESSION`
 
-				DeviceSession.findOne({ session_id : socket.id }).then((result) => {
-					if (result) {
-						query.mongo = {
-							find : { device_id : result.device_id },
-							update : { status: 0 }
-						};
+				DeviceSession.findOneAndDelete({ session_id: socket.id }, (err, res) => {
+					if (err) return callback(err)
 
-						callback(null, query.mongo);
+					if (res) {
+						callback(null, { device_id: res.device_id })
 					} else {
-						callback(`SESSION NOT FOUND`);
+						return callback(`SESSION NOT FOUND`);
 					}
+				})
+			},
+
+			function (device, callback) {
+				query.update = { is_connected: 0 };
+				query.find = { where: device };
+
+				Device.findOne(query.find).then((res) => {
+					device = {
+						device_id: res.device_id,
+						device_name: res.device_name,
+						user_id: res.user_id,
+					}
+					
+					Device.update(query.update, query.find).then((res) => {
+						callback(null, device);
+					})
 				}).catch((err) => {
-					callback(err);
+					return callback(err);
 				});
 			},
 
-			function (data, callback) {
-				query.update = { is_connected : data.update.status };
-				query.find = {
-					where : { device_id : data.find.device_id } 
-				};
-		
-				Device.update(query.update, query.find).then((res) => {
-					callback(null, res);
+			function (device, callback) {
+				User.findOne({ where : { user_id: device.user_id } }).then((user) => {
+					callback(null, {
+						device_id: device.device_id,
+						device_key: user.device_key
+					})
 				}).catch((err) => {
-					callback(err);
+					return callback(err);
 				});
+			},
+
+			function (device, callback) {
+				let params = {
+					'url'	: 'https://fcm.googleapis.com/fcm/send',
+					'notif'	: {
+						'title'	: 'Device Disconnected',
+						'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`
+					},
+					'data'	: {
+						'device_id' : `${device.device_id}`,
+						'device_key' : `${device.device_key}`
+					},
+					'auth' : { 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ' }
+				}
+
+				fnRequest.sendNotif(params, (err, res) => {
+					if (err) return callback(err);
+
+					payloadLog.message = payloadLog.message +
+									 `\n> PUSH NOTIFICATION`
+
+					callback(null, res)
+				})
 			}
-		], function (err, res) {
+		], (err, res) => {
 			if (err) {
 				payloadLog.info = `${payloadLog.info} : ERROR`;
 				payloadLog.level = { error : true }
@@ -314,10 +344,11 @@ io.on('connection', (socket) => {
 			}
 
 			return fnOutput.insert(req, res, payloadLog)
-		});
+		})
 	});
 	socket.on('error', function (err) {
-		req.event = `disconnect`
+		payloadLog = {}
+		req.event = `error`
 		payloadLog.info = 'SOCKET ERROR';
 		payloadLog.level = { error : true };
 		payloadLog.message = JSON.stringify(err);
@@ -326,6 +357,7 @@ io.on('connection', (socket) => {
 	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
+		payloadLog = {}
 		req.event = `sensordata`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'SENSORDATA';
@@ -354,6 +386,7 @@ io.on('connection', (socket) => {
 	});
 	// Command API
 	socket.on('commandapi', function (params) {
+		payloadLog = {}
 		req.event = `commandapi`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDAPI';
@@ -376,6 +409,7 @@ io.on('connection', (socket) => {
 	});
 	// Command Panel
 	socket.on('commandpanel', function (params, callback) {
+		payloadLog = {}
 		req.event = `commandpanel`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDPANEL';
@@ -402,6 +436,7 @@ io.on('connection', (socket) => {
 	});
 	// Command Voice
 	socket.on('command-voice', function (params) {
+		payloadLog = {}
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDVOICE';
 		payloadLog.level = { error : false };
@@ -426,6 +461,7 @@ io.on('connection', (socket) => {
 	})
 	// Response Command
 	socket.on('res-command', function (params) {
+		payloadLog = {}
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'RES-COMMAND';
 		payloadLog.level = { error : false };
@@ -460,6 +496,7 @@ io.on('connection', (socket) => {
 	});
 	// Update Pin Name
 	socket.on('update-pin', function (params) {
+		payloadLog = {}
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'UPDATE PIN';
 		payloadLog.level = { error : false };

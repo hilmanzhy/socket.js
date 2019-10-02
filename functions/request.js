@@ -4,8 +4,19 @@ const unirest = require('unirest');
 const nodemailer = require('nodemailer');
 
 exports.post = function (url, params, callback) {
-	unirest.post(url)
-		.headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'cache-control': 'no-cache'})
+    let headers = {
+        'Accept': 'application/json',
+        'Content-Type':  'application/json',
+        'cache-control': 'no-cache'
+    }
+
+    if (params.headers) {
+        headers = Object.assign(headers, params.headers)
+        delete params.headers
+    }
+
+    unirest.post(url)
+		.headers(headers)
 		.send(params)
 		.end(function (response) {
             if (response.error) return callback({
@@ -69,3 +80,22 @@ exports.sendEmail = function (params, callback) {
         });
     });
 };
+
+exports.sendNotif = function (payload, callback) {
+    let url = payload.url,
+        params = {
+            'to'	: payload.data.device_key,
+            'notification'	: {
+                'title'	: payload.notif.title,
+                'body'	: payload.notif.body
+            },
+            'data'	: payload.data,
+            'headers'	: payload.auth
+        }
+
+	this.post(url, params, (err, res) => {
+		if (err) return callback(err);
+
+		return callback(null, res)
+	})
+}
