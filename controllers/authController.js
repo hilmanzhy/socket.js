@@ -3,7 +3,7 @@ const async = require('async'),
       encrypt = require('../functions/encryption.js'),
       otp = require('../functions/otp.js'),
       request = require('../functions/request.js'),
-      session = require('../controllers/sessionController.js'),
+      session = require('../functions/session.js'),
       validation = require('../functions/validation.js');
 
 var date = new Date(),
@@ -76,7 +76,7 @@ exports.login = function (APP, req, callback) {
 
                 let output = {
                     code: '00',
-                    message: 'Login success.',
+                    message: 'Login success',
                     data: data
                 }
                 output.data.session_id = res.data.session_id;
@@ -89,6 +89,49 @@ exports.login = function (APP, req, callback) {
             return callback(err)
         }
         return callback(null, result)
+    })
+}
+
+exports.logout = function (APP, req, callback) {
+    const User = APP.models.mysql.user
+
+    async.waterfall([
+        function checkExisting(callback) {
+            session.check(APP, req, (err, res) => {
+                if (err) { return callback(err) }
+
+                callback(null, res)
+            })
+        },
+
+        function deleteSession(data, callback) {
+            session.delete(APP, req, (err, res) => {
+                if (err) { return callback(err) }
+
+                callback(null, data)
+            })
+        },
+
+        function removeDeviceKey(data, callback) {
+            query.find = {
+                where : { username: data.username }
+            }
+            query.update = { device_key: null }
+
+            User.update(query.update, query.find).then((result) => {
+                callback(null, {
+                    code: '00',
+                    message: 'Logout success'
+                })
+            }).catch((e) => {
+                return callback(e)
+            })
+        }
+    ], function (err, res) {
+        if (err) {
+            return callback(err)
+        }
+        return callback(null, res)
     })
 }
 

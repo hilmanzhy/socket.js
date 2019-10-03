@@ -75,3 +75,27 @@ exports.check = function (APP, req, callback) {
         })
     });
 }
+
+exports.delete = function (APP, req, callback) {
+    if(!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
+
+    var params = {
+        session_id : req.headers['session-id'],
+        session_key: req.headers['session-key']
+    }
+
+    APP.models.mongo.session.deleteOne(params).then((result) => {
+        if (result) {
+            return callback(null, result)
+        } else {
+            return callback({
+                code: 'UNAUTHORIZED'
+            })
+        }
+    }).catch((err) => {
+        return callback({
+            code: 'ERR_DATABASE',
+            data: JSON.stringify(err)
+        })
+    });
+}

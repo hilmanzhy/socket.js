@@ -1,5 +1,5 @@
 const async = require('async')
-      session = require('../controllers/sessionController.js');
+      session = require('../functions/session.js');
       validation = require('../functions/validation.js');
 
 let query   = {}

@@ -11,6 +11,14 @@ router.post('/login', (req, res, next) => {
 	});
 });
 
+router.post('/logout', (req, res, next) => {
+	authController.logout(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err)
+
+		return req.APP.output.print(req, res, result)
+	});
+});
+
 router.post('/register', (req, res, next) => {
 	authController.register(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err)

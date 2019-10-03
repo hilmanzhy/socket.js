@@ -93,7 +93,7 @@ app.use((req, res, next) => {
 	req.body.action_by = actionBy;
 	req.body.ip_address = ipAddress; */
 
-	var session = require('./controllers/sessionController.js')
+	var session = require('./functions/session.js')
 
 	if (req.query) req.queryUrl = req.originalUrl.split('?')
 
