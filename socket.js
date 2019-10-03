@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 		payloadLog.info = `DEVICE HANDSHAKE`
 		payloadLog.body = req.body = device
 		payloadLog.level = { error : false }
-		payloadLog.message = payloadLog.message +
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${device.device_id}`
 
 		req.APP.db = db;
@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
 		payloadLog.info = `HANDSHAKE HUB`
 		payloadLog.body = req.body = device
 		payloadLog.level = { error : false }
-		payloadLog.message = payloadLog.message +
+		payloadLog.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${device.device_id}`
 
 		query.sql = {
