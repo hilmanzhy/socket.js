@@ -3,17 +3,35 @@
 const express = require('express');
 const router = express.Router();
 const testController = require('../controllers/testController.js');
+const encryption = require('../functions/encryption.js');
 
-router.post('/log', (req, res, next) => {
-	let payload = {
-		info : 'TEST LOGGING',
-		message : "it just a logging test, don't worry!",
-		level : {
-			error : true
-		}
-	}
+router.post('/generate-keys', (req, res, next) => {
+	encryption.generateRSA((err, result) => {
+		return req.APP.output.print(req, res, {
+			code: 'OK',
+			data: result
+		});
+	})	
+})
 
-	return req.APP.output.log(payload)
+router.post('/encrypt', (req, res, next) => {
+	let encrypted = encryption.encryptRSA(req.body)
+	
+	return req.APP.output.print(req, res, {
+		code: 'OK',
+		data: encrypted
+	});
+})
+
+router.post('/decrypt', (req, res, next) => {
+	if (!req.body.data) return req.APP.output.print(req, res, { code: 'MISSING_KEY' });
+	
+	let decrypted = encryption.decryptRSA(req.body.data)
+	
+	return req.APP.output.print(req, res, {
+		code: 'OK',
+		data: decrypted
+	});
 })
 
 router.post('/connection', (req, res, next) => {
