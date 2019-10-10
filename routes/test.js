@@ -24,9 +24,9 @@ router.post('/encrypt', (req, res, next) => {
 })
 
 router.post('/decrypt', (req, res, next) => {
-	if (!req.body.data) return req.APP.output.print(req, res, { code: 'MISSING_KEY' });
+	if (!req.body.encrypted) return req.APP.output.print(req, res, { code: 'MISSING_KEY' });
 	
-	let decrypted = encryption.decryptRSA(req.body.data)
+	let decrypted = encryption.decryptRSA(req.body.encrypted)
 	
 	return req.APP.output.print(req, res, {
 		code: 'OK',
