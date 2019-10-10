@@ -181,7 +181,7 @@ io.on('connection', (socket) => {
 
 				fnOutput.insert(req, err, payloadLog)
 
-				return fnOutput.insert(err, res);
+				return callback(err, res);
 			}
 			fnOutput.insert(req, res, payloadLog)
 
