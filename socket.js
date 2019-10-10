@@ -179,10 +179,12 @@ io.on('connection', (socket) => {
 				payloadLog.message = payloadLog.message +
 									 `\n${JSON.stringify(err)}`;
 
+				fnOutput.log(payloadLog, err)
 				fnOutput.insert(req, err, payloadLog)
 
 				return callback(err, res);
 			}
+			fnOutput.log(payloadLog, res)
 			fnOutput.insert(req, res, payloadLog)
 
 			return callback(null, res);

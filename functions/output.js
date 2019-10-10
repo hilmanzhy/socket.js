@@ -5,6 +5,7 @@ const async = require('async'),
 	  trycatch = require('trycatch'),
 	  vascommkit = require('vascommkit'),
 	  messages = require('../config/messages.json'),
+	  encryption = require('../functions/encryption.js'),
 	  log = require('../functions/log.js');
 
 let output = {},
@@ -76,6 +77,11 @@ exports.print = function (req, res, params) {
 		trycatch(() => {
 			output.data.ip_address = undefined;
 			output.data.action_by = undefined;
+
+			if (req.encrypted && output.data) {
+				let encrypted = encryption.encryptRSA(output.data)
+				output.data = encrypted
+			}
 			
 			return res.status(message.company.status || 200).json(output);
 		}, () => {

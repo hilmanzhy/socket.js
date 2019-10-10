@@ -93,7 +93,15 @@ app.use((req, res, next) => {
 	req.body.action_by = actionBy;
 	req.body.ip_address = ipAddress; */
 
-	var session = require('./functions/session.js')
+	var session = require('./functions/session.js'),
+		encryption = require('./functions/encryption.js')
+
+	if (req.body.data) {
+		let decrypted = encryption.decryptRSA(req.body.data)
+
+		req.body = decrypted
+		req.encrypted = true
+	}
 
 	if (req.query) req.queryUrl = req.originalUrl.split('?')
 
