@@ -168,8 +168,15 @@ io.on('connection', (socket) => {
 				query.sql.attributes = [ 'pin', 'device_name' ]
 
 				DevicePIN.findAll(query.sql).then( (result) => {
+					if (!result) return callback(null, {
+						code : 'NOT_FOUND',
+						message : 'Device Pin Not Found'
+					})
+					
 					callback(null, result)
-				})
+				}).catch((err) => {
+					callback(err);
+				});
 			}
 
 		], function (err, res) {
