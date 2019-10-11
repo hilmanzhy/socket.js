@@ -1004,7 +1004,8 @@ exports.devicehistory = function (APP, req, callback) {
 			date: {
 				[APP.db.Sequelize.Op.between]: [datareq.date_from, `${datareq.date_to} 23:59:59`]
 			  }
-		}
+		},
+		raw : true
 	}
 
 	if (datareq.device_id) query.options.where.device_id = datareq.device_id
@@ -1027,8 +1028,6 @@ exports.devicehistory = function (APP, req, callback) {
 	// .then(device => {
 
 	DeviceHistory.findAll(query.options).then((device) => {
-		console.log(device)
-		
 		response = {
 			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
 			data : device
