@@ -88,9 +88,9 @@ exports.encryptRSA = function (toEncrypt) {
 			private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
 		}
 		var buffer = Buffer.from(strEncrypt),
-			byteLength = Buffer.byteLength(buffer);
+			isArray = Array.isArray(toEncrypt)
 
-		if (byteLength > 256) {
+		if (isArray) {
 			encrypted = toEncrypt.map(data => this.encryptRSA(data));
 		} else {
 			encrypted = crypto.publicEncrypt(keys.public, buffer);
