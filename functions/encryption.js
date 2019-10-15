@@ -77,9 +77,39 @@ exports.generateRSA = function (callback) {
 		return callback(null, keys);
 	});
 }
+/**
+ * ENCRYPT RSA PER INDEX ARRAY
+ */
+// exports.encryptRSA = function (toEncrypt) {
+// 	var encrypted,
+// 		strEncrypt = JSON.stringify(toEncrypt);
 
+// 	try {
+// 		let keys = {
+// 			public: fs.readFileSync(path.resolve('./storage/keys', 'public.pem'), "utf8"),
+// 			private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
+// 		}
+// 		var buffer = Buffer.from(strEncrypt),
+// 			isArray = Array.isArray(toEncrypt)
+
+// 		if (isArray) {
+// 			encrypted = toEncrypt.map(data => this.encryptRSA(data));
+// 		} else {
+// 			encrypted = crypto.publicEncrypt(keys.public, buffer);
+// 			encrypted = encrypted.toString('base64');
+// 		}
+
+// 		return encrypted;
+// 	} catch (error) {
+// 		console.log(error)
+// 		throw (error);
+// 	}
+// }
+/**
+ * ENCRYPT RSA PER BYTES
+ */
 exports.encryptRSA = function (toEncrypt) {
-	var encrypted,
+	var encrypted, defaultLength = 470,
 		strEncrypt = JSON.stringify(toEncrypt);
 
 	try {
@@ -88,16 +118,27 @@ exports.encryptRSA = function (toEncrypt) {
 			private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
 		}
 		var buffer = Buffer.from(strEncrypt),
-			isArray = Array.isArray(toEncrypt)
+			byteLength = Buffer.byteLength(buffer);
 
-		if (isArray) {
-			encrypted = toEncrypt.map(data => this.encryptRSA(data));
+		if (byteLength > defaultLength) {
+			let encrypting, encrypted = [],
+				interval = byteLength / defaultLength;
+
+			for (let i = 0; i < interval; i++) {
+				var start = (i * defaultLength),
+					end = start + defaultLength,
+					sliced = buffer.slice(start, end);
+
+				encrypting = crypto.publicEncrypt(keys.public, sliced)
+				encrypted.push(encrypting.toString('base64'))
+			}			
+
+			return encrypted;
 		} else {
 			encrypted = crypto.publicEncrypt(keys.public, buffer);
-			encrypted = encrypted.toString('base64');
+			
+			return encrypted.toString('base64');
 		}
-
-		return encrypted;
 	} catch (error) {
 		console.log(error)
 		throw (error);
@@ -105,12 +146,17 @@ exports.encryptRSA = function (toEncrypt) {
 }
 
 exports.decryptRSA = function (toDecrypt) {
-	let keys = {
-		public: fs.readFileSync(path.resolve('./storage/keys', 'public.pem'), "utf8"),
-		private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
-	}
-	var buffer = Buffer.from(toDecrypt, 'base64'),
-		decrypted = crypto.privateDecrypt(keys.private, buffer);
+	try {
+		let keys = {
+			public: fs.readFileSync(path.resolve('./storage/keys', 'public.pem'), "utf8"),
+			private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
+		}
+		var buffer = Buffer.from(toDecrypt, 'base64'),
+			decrypted = crypto.privateDecrypt(keys.private, buffer);
 
-	return JSON.parse(decrypted.toString('utf8'));
+			return JSON.parse(decrypted.toString('utf8'));
+			
+	} catch (error) {		
+		return decrypted.toString('utf8');
+	}
 }
