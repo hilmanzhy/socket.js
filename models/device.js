@@ -49,6 +49,10 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: true
 		},
+		icon_id: {
+			type: Sequelize.INTEGER,
+			allowNull: true
+		},
 		created_at: {
             allowNull: false,
             type: Sequelize.DATE,
