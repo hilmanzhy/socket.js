@@ -53,19 +53,33 @@ io.on('connection', (socket) => {
 	payloadLog.level = { error : false }
 	payloadLog.message = `SOCKET ID : ${socket.id}`
 	
-	fnOutput.log(payloadLog)
+	req.APP.db = db;
 	
+	model(db, (err, result) => {
+		if (err) {
+			payloadLog.info = `${payloadLog.info} : ERROR`;
+			payloadLog.level = { error : true }
+			payloadLog.message = payloadLog.message +
+									`\n${JSON.stringify(err)}`;
+		} else {
+			req.APP.models = result;
+			payloadLog.message = payloadLog.message +
+									`\n> INIT CONNECTION SUCCESS`;
+		}
+
+		fnOutput.log(payloadLog)
+	});
+
+
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
-		payloadLog = {}
+		let log = {}
 		req.event = `handshake`
-		payloadLog.info = `DEVICE HANDSHAKE`
-		payloadLog.body = req.body = device
-		payloadLog.level = { error : false }
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.info = `DEVICE HANDSHAKE`
+		log.body = req.body = device
+		log.level = { error : false }
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${device.device_id}`
-
-		req.APP.db = db;
 
 		query.sql = {
 			where : { device_id : device.device_id },
@@ -81,23 +95,8 @@ io.on('connection', (socket) => {
 		};
 
 		async.waterfall([
-			function initializeModels(callback) {
-				payloadLog.message = payloadLog.message +
-									 `\n> INITIALIZE MODEL`
-
-				model(db, (err, result) => {
-					if (err) {
-						callback(err);
-					} else {
-						req.APP.models = result;
-		
-						callback(null, true);
-					}
-				});
-			},
-
 			function checkDevice(data, callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> CHECK DEVICE`
 									 
 				deviceController.regischeck(req.APP, req, (err, result) => {
@@ -106,7 +105,7 @@ io.on('connection', (socket) => {
 					} else {
 						switch (result.message) {
 							case '1':
-								payloadLog.message = payloadLog.message + ' : DEVICE_IP NOT MATCH'
+								log.message = log.message + ' : DEVICE_IP NOT MATCH'
 								
 								deviceController.ipupdate(req.APP, req, (err, result) => {
 									if (err) {
@@ -118,7 +117,7 @@ io.on('connection', (socket) => {
 								break;
 							
 							case '2':
-								payloadLog.message = payloadLog.message + ' : DEVICE_ID NOT REGISTERED'
+								log.message = log.message + ' : DEVICE_ID NOT REGISTERED'
 
 								deviceController.registerdevice(req.APP, req, (err, result) => {
 									if (err) {
@@ -138,7 +137,7 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceStatus(data, callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> UPDATE DEVICE STATUS`
 
 				Device.update({ is_connected : 1 }, query.sql).then((result) => {
@@ -149,7 +148,7 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceSession(data, callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
@@ -162,13 +161,13 @@ io.on('connection', (socket) => {
 			},
 
 			function getPinName(data, callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> GET PIN NAME`
 
 				query.sql.attributes = [ 'pin', 'device_name' ]
 
 				DevicePIN.findAll(query.sql).then( (result) => {
-					if (!result) return callback(null, {
+					if (!result) return callback({
 						code : 'NOT_FOUND',
 						message : 'Device Pin Not Found'
 					})
@@ -181,20 +180,23 @@ io.on('connection', (socket) => {
 
 		], function (err, res) {
 			if (err) {
-				payloadLog.info = `${payloadLog.info} : ERROR`;
-				payloadLog.level = { error : true }
-				payloadLog.message = payloadLog.message +
+				log.info = `${log.info} : ERROR`;
+				log.level = { error : true }
+				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(payloadLog, err)
-				fnOutput.insert(req, err, payloadLog)
+				fnOutput.log(log, err)
+				fnOutput.insert(req, err, log)
 
-				return callback(err, res);
+				if (device.device_type == '1') {
+					return callback(err, res);
+				}
 			}
-			fnOutput.log(payloadLog, res)
-			fnOutput.insert(req, res, payloadLog)
+			fnOutput.insert(req, res, log)
 
-			return callback(null, res);
+			if (device.device_type == '1') {
+				return callback(null, res);
+			}
 		});
 	});
 	// Handshake Hub
@@ -366,30 +368,34 @@ io.on('connection', (socket) => {
 	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
-		payloadLog = {}
+		let log = {}
 		req.event = `sensordata`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'SENSORDATA';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'SENSORDATA';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
 		req.APP.db = db
 
 		deviceController.sensordata(req.APP, req, (err, result) => {
 			if (err) {
-				payloadLog.info = `${payloadLog.info} : ERROR`;
-				payloadLog.level = { error : true }
-				payloadLog.message = payloadLog.message +
+				log.info = `${log.info} : ERROR`;
+				log.level = { error : true }
+				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.insert(req, err, payloadLog)
+				fnOutput.insert(req, err, log)
 
-				return callback(err, result);
+				if (params.device_type == '1') {
+					return callback(err, result);
+				}
 			} else {
-				fnOutput.insert(req, result, payloadLog)
+				fnOutput.insert(req, result, log)
 
-				return callback(null, result);
+				if (params.device_type == '1') {
+					return callback(null, result);
+				}
 			}
 		});
 	});
@@ -446,6 +452,7 @@ io.on('connection', (socket) => {
 	// Command Voice
 	socket.on('command-voice', function (params) {
 		payloadLog = {}
+		req.event = `command-voice`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'COMMANDVOICE';
 		payloadLog.level = { error : false };
@@ -471,6 +478,7 @@ io.on('connection', (socket) => {
 	// Response Command
 	socket.on('res-command', function (params) {
 		payloadLog = {}
+		req.event = `res-command`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'RES-COMMAND';
 		payloadLog.level = { error : false };
@@ -506,23 +514,28 @@ io.on('connection', (socket) => {
 	// Update Pin Name
 	socket.on('update-pin', function (params) {
 		payloadLog = {}
+		req.event = `update-pin`
 		payloadLog.body = req.body = params;
 		payloadLog.info = 'UPDATE PIN';
 		payloadLog.level = { error : false };
 		payloadLog.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}` +
 							 `\nGET PIN NAME`;
 
-		query.sql.where = { device_id : params.device_id }
-
 		DeviceSession.findOne({ device_id : params.device_id }).then((resultSession) => {
-			query.sql.attributes = [ 'pin', 'device_name' ]
-
-			DevicePIN.findAll(query.sql).then( (result) => {
-				io.to(resultSession.session_id).emit('sync-pin', result);
-			})
+			query = {
+				sql : {
+					where: { device_id : params.device_id },
+					attributes: [ 'pin', 'device_name' ]
+				}
+			}
 			
-			return fnOutput.insert(req, resultSession, payloadLog)
+			if (resultSession) {
+				DevicePIN.findAll(query.sql).then( (result) => {
+					io.to(resultSession.session_id).emit('sync-pin', result);
+				})
+			}
+			
+			return fnOutput.insert(req, null, payloadLog)
 		}).catch((err) => {
 			payloadLog.info = `${payloadLog.info} : ERROR`;
 			payloadLog.level = { error : true }
