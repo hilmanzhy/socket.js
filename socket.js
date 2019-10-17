@@ -95,7 +95,7 @@ io.on('connection', (socket) => {
 		};
 
 		async.waterfall([
-			function checkDevice(data, callback) {
+			function checkDevice(callback) {
 				log.message = log.message +
 									 `\n> CHECK DEVICE`
 									 
@@ -185,7 +185,6 @@ io.on('connection', (socket) => {
 				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.log(log, err)
 				fnOutput.insert(req, err, log)
 
 				if (device.device_type == '1') {
