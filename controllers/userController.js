@@ -100,25 +100,45 @@ exports.pricing = function (APP, req, callback) {
 
     async.waterfall([
         function (callback) {
-            if (!params.meter_type) return callback({ code : 'MISSING_KEY', data : 'meter_type' })
-            if (!params.allocation) return callback({ code : 'MISSING_KEY', data : 'allocation' })
-
-            query = { where : params }
+            if (params.meter_type && params.allocation) {
+                query.where = {
+                    meter_type: params.meter_type,
+                    allocation: params.allocation
+                }
+            } else if (params.tdl_id) {
+                query.where = { id: params.tdl_id }
+            } else {
+                return callback({ code : 'MISSING_KEY'})
+            }
 
             callback(null, query)
         },
         function (query, callback) {
-            Pricing.findAll(query).then(dataPricing => {
-                callback(null, {
-                    code    : (dataPricing && (dataPricing.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-                    data    : dataPricing
-                });
-            }).catch(e => {
-                callback({
-                    code    : 'ERR_DATABASE',
-                    data    : JSON.stringify(e)
+            if (query.where.id) {
+                Pricing.findOne(query).then(dataPricing => {
+                    callback(null, {
+                        code    : (dataPricing) ? 'FOUND' : 'NOT_FOUND',
+                        data    : dataPricing
+                    });
+                }).catch(e => {
+                    callback({
+                        code    : 'ERR_DATABASE',
+                        data    : JSON.stringify(e)
+                    })
                 })
-            })
+            } else {
+                Pricing.findAll(query).then(dataPricing => {
+                    callback(null, {
+                        code    : (dataPricing && (dataPricing.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+                        data    : dataPricing
+                    });
+                }).catch(e => {
+                    callback({
+                        code    : 'ERR_DATABASE',
+                        data    : JSON.stringify(e)
+                    })
+                })
+            }
         }
     ], (err, result) => {
         if (err) return callback(err)
