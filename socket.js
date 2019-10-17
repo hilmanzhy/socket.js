@@ -24,10 +24,8 @@ const Device = require('./models/device.js')(db.sequelize, db.Sequelize),
 	  deviceController = require('./controllers/deviceController.js');
 /* DECLARATION */
 var output = {},
-	payloadLog = {},
 	query = {},
-	req = {};
-req.APP = {};
+	APP = {};
 
 /**
  * SOCKET ON
@@ -48,32 +46,33 @@ async function updateSession(query, callback) {
 }
 
 io.on('connection', (socket) => {
-	payloadLog = {}
-	payloadLog.info = `CONNECTION ESTABILISHED`
-	payloadLog.level = { error : false }
-	payloadLog.message = `SOCKET ID : ${socket.id}`
+	let log = {}
+	log.info = `CONNECTION ESTABILISHED`
+	log.level = { error : false }
+	log.message = `SOCKET ID : ${socket.id}`
 	
-	req.APP.db = db;
+	APP.db = db;
 	
 	model(db, (err, result) => {
 		if (err) {
-			payloadLog.info = `${payloadLog.info} : ERROR`;
-			payloadLog.level = { error : true }
-			payloadLog.message = payloadLog.message +
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
 									`\n${JSON.stringify(err)}`;
 		} else {
-			req.APP.models = result;
-			payloadLog.message = payloadLog.message +
+			APP.models = result;
+			log.message = log.message +
 									`\n> INIT CONNECTION SUCCESS`;
 		}
 
-		fnOutput.log(payloadLog)
+		fnOutput.log(log)
 	});
 
 
 	// Handshake Device
 	socket.on('handshake', (device, callback) => {
-		let log = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `handshake`
 		log.info = `DEVICE HANDSHAKE`
 		log.body = req.body = device
@@ -191,6 +190,7 @@ io.on('connection', (socket) => {
 					return callback(err, res);
 				}
 			}
+			
 			fnOutput.insert(req, res, log)
 
 			if (device.device_type == '1') {
@@ -200,12 +200,13 @@ io.on('connection', (socket) => {
 	});
 	// Handshake Hub
 	socket.on('handshake-hub', (hub, callback) => {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `handshake-hub`
-		payloadLog.info = `HANDSHAKE HUB`
-		payloadLog.body = req.body = device
-		payloadLog.level = { error : false }
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.info = `HANDSHAKE HUB`
+		log.body = req.body = device
+		log.level = { error : false }
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${device.device_id}`
 
 		query.sql = {
@@ -237,7 +238,7 @@ io.on('connection', (socket) => {
 				})
 			},
 			function session(data, callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
@@ -250,33 +251,34 @@ io.on('connection', (socket) => {
 			}
 		], function (err, res) {
 			if (err) {
-				payloadLog.info = `${payloadLog.info} : ERROR`;
-				payloadLog.level = { error : true }
-				payloadLog.message = payloadLog.message +
+				log.info = `${log.info} : ERROR`;
+				log.level = { error : true }
+				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.insert(req, res, payloadLog)
+				fnOutput.insert(req, res, log)
 				
 				return callback(err, res)
 			};
 
-			fnOutput.insert(req, res, payloadLog)
+			fnOutput.insert(req, res, log)
 
 			return callback(null, res);
 		})
 	});
 	// Disconnect Device
 	socket.on('disconnect', function (reason) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `disconnect`
-		payloadLog.info = `SOCKET DISCONNECTED`
-		payloadLog.level = { error : false }
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.info = `SOCKET DISCONNECTED`
+		log.level = { error : false }
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nREASON : ${reason}`
 		 
 		async.waterfall([
 			function (callback) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> REMOVE SESSION`
 
 				DeviceSession.findOneAndDelete({ session_id: socket.id }, (err, res) => {
@@ -337,7 +339,7 @@ io.on('connection', (socket) => {
 				fnRequest.sendNotif(params, (err, res) => {
 					if (err) return callback(err);
 
-					payloadLog.message = payloadLog.message +
+					log.message = log.message +
 									 `\n> PUSH NOTIFICATION`
 
 					callback(null, res)
@@ -345,29 +347,31 @@ io.on('connection', (socket) => {
 			}
 		], (err, res) => {
 			if (err) {
-				payloadLog.info = `${payloadLog.info} : ERROR`;
-				payloadLog.level = { error : true }
-				payloadLog.message = payloadLog.message +
+				log.info = `${log.info} : ERROR`;
+				log.level = { error : true }
+				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				return fnOutput.insert(req, err, payloadLog)							 
+				return fnOutput.insert(req, err, log)							 
 			}
 
-			return fnOutput.insert(req, res, payloadLog)
+			return fnOutput.insert(req, res, log)
 		})
 	});
 	socket.on('error', function (err) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `error`
-		payloadLog.info = 'SOCKET ERROR';
-		payloadLog.level = { error : true };
-		payloadLog.message = JSON.stringify(err);
+		log.info = 'SOCKET ERROR';
+		log.level = { error : true };
+		log.message = JSON.stringify(err);
 
-		return fnOutput.insert(req, err, payloadLog)
+		return fnOutput.insert(req, err, log)
 	});
 	// Sensor Data
 	socket.on('sensordata', function (params, callback) {
-		let log = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `sensordata`
 		log.body = req.body = params;
 		log.info = 'SENSORDATA';
@@ -375,9 +379,9 @@ io.on('connection', (socket) => {
 		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
-		req.APP.db = db
+		APP.db = db
 
-		deviceController.sensordata(req.APP, req, (err, result) => {
+		deviceController.sensordata(APP, req, (err, result) => {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
@@ -400,49 +404,51 @@ io.on('connection', (socket) => {
 	});
 	// Command API
 	socket.on('commandapi', function (params) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `commandapi`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'COMMANDAPI';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'COMMANDAPI';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
 			io.to(result.session_id).emit('command', params);
 
-			return fnOutput.insert(req, result, payloadLog)
+			return fnOutput.insert(req, result, log)
 		}).catch((err) => {
-			payloadLog.info = `${payloadLog.info} : ERROR`;
-			payloadLog.level = { error : true }
-			payloadLog.message = payloadLog.message +
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
 									`\n${JSON.stringify(err)}`;
 
-			return fnOutput.insert(req, err, payloadLog)
+			return fnOutput.insert(req, err, log)
 		});
 	});
 	// Command Panel
 	socket.on('commandpanel', function (params, callback) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `commandpanel`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'COMMANDPANEL';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'COMMANDPANEL';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
-		deviceController.commandpanel(req.APP, req, (err, result) => {
+		deviceController.commandpanel(APP, req, (err, result) => {
 			if (err) {
-				payloadLog.info = `${payloadLog.info} : ERROR`;
-				payloadLog.level = { error : true }
-				payloadLog.message = payloadLog.message +
+				log.info = `${log.info} : ERROR`;
+				log.level = { error : true }
+				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.insert(req, err, payloadLog)
+				fnOutput.insert(req, err, log)
 
 				return callback(err, result);
 			} else {
-				fnOutput.insert(req, result, payloadLog)
+				fnOutput.insert(req, result, log)
 
 				return callback(null, result);
 			}
@@ -450,38 +456,40 @@ io.on('connection', (socket) => {
 	});
 	// Command Voice
 	socket.on('command-voice', function (params) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `command-voice`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'COMMANDVOICE';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'COMMANDVOICE';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
-			payloadLog.message = payloadLog.message +
+			log.message = log.message +
 								 `\n> SENDING COMMANDVOICE TO ${result.device_id}`
 			
 			io.to(result.session_id).emit('command', params);
 
-			return fnOutput.insert(req, result, payloadLog)
+			return fnOutput.insert(req, result, log)
 		}).catch((err) => {
-			payloadLog.info = `${payloadLog.info} : ERROR`;
-			payloadLog.level = { error : true }
-			payloadLog.message = payloadLog.message +
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
 									`\n${JSON.stringify(err)}`;
 
-			fnOutput.insert(req, err, payloadLog)
+			fnOutput.insert(req, err, log)
 		});
 	})
 	// Response Command
 	socket.on('res-command', function (params) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `res-command`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'RES-COMMAND';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'RES-COMMAND';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nDEVICE ID : ${params.device_id}`;
 
 		query.value = { switch : params.switch };
@@ -493,31 +501,32 @@ io.on('connection', (socket) => {
 
 		Device.update(query.value, query.options).then((resDevice) => {
 			if (resDevice > 0) {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> SWITCH UPDATED`
 			} else {
-				payloadLog.message = payloadLog.message +
+				log.message = log.message +
 									 `\n> SWITCH NOT UPDATED`
 			}
 
-			return fnOutput.log(payloadLog, resDevice);
+			return fnOutput.log(log, resDevice);
 		}).catch((err) => {
-			payloadLog.info = `${payloadLog.info} : ERROR`;
-			payloadLog.level = { error : true }
-			payloadLog.message = payloadLog.message +
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
 									`\n${JSON.stringify(err)}`;
 
-			fnOutput.log(payloadLog)
+			fnOutput.log(log)
 		});
 	});
 	// Update Pin Name
 	socket.on('update-pin', function (params) {
-		payloadLog = {}
+		let log = {}, req = {};
+		req.APP = APP
 		req.event = `update-pin`
-		payloadLog.body = req.body = params;
-		payloadLog.info = 'UPDATE PIN';
-		payloadLog.level = { error : false };
-		payloadLog.message = `SOCKET ID : ${socket.id}` +
+		log.body = req.body = params;
+		log.info = 'UPDATE PIN';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}` +
 							 `\nGET PIN NAME`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((resultSession) => {
@@ -534,14 +543,14 @@ io.on('connection', (socket) => {
 				})
 			}
 			
-			return fnOutput.insert(req, null, payloadLog)
+			return fnOutput.insert(req, null, log)
 		}).catch((err) => {
-			payloadLog.info = `${payloadLog.info} : ERROR`;
-			payloadLog.level = { error : true }
-			payloadLog.message = payloadLog.message +
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
 									`\n${JSON.stringify(err)}`;
 
-			return fnOutput.insert(req, err, payloadLog)
+			return fnOutput.insert(req, err, log)
 		});
 	})
 });
