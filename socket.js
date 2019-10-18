@@ -184,14 +184,24 @@ io.on('connection', (socket) => {
 				log.message = log.message +
 									 `\n${JSON.stringify(err)}`;
 
-				fnOutput.insert(req, err, log)
+				output = {
+					code: 'SOCKET_ERR',
+					message: JSON.stringify(err)
+				}
+
+				fnOutput.insert(req, output, log)
 
 				if (device.device_type == '1') {
 					return callback(err, res);
 				}
 			}
+
+			output = {
+				code: (res) ? 'FOUND' : 'NOT_FOUND',
+				data: JSON.stringify(res)
+			}
 			
-			fnOutput.insert(req, res, log)
+			fnOutput.insert(req, output, log)
 
 			if (device.device_type == '1') {
 				return callback(null, res);
