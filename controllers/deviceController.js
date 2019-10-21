@@ -3026,67 +3026,6 @@ exports.regischeck = function (APP, req, callback) {
 
 };
 
-exports.updateusertdl = function (APP, req, callback) {
-
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
-	const User = APP.models.mysql.user
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.username) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.tdl) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.power) return callback({ code: 'MISSING_KEY' })
-
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	query.options = {
-		where : {
-			user_id : datareq.user_id,
-			username : datareq.username
-		}
-	}
-
-	User.findAll(query.options).then((result) => {
-		if (result.length > 0)
-		{
-			console.log("updatetdl");
-			APP.db.sequelize.query("update users set tdl = '" + datareq.tdl + "', power = '" + datareq.power + "' where user_id = '" + datareq.user_id + "' and username = '" + datareq.username + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-	
-			.then(device => {
-
-				response = {
-					code : 'OK',	
-					message : 'Update success'
-				}
-				return callback(null, response);
-
-			}).catch((err) => {
-				response = {
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				}
-				return callback(response);
-			});
-		} 
-		else 
-		{
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'User Not Found'
-			});
-		}
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-
-};
-
 exports.activateallpin = function (APP, req, callback) {
 
 	var datareq = req.body
