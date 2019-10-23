@@ -44,7 +44,7 @@ var options = {
 	pool: mysqlPool,
 	// dialectOptions: mysqlDialectOptions,
 	define: define,
-	logging: false
+	logging: true
 };
 const sequelize = new Sequelize(process.env.MYSQL_NAME, process.env.MYSQL_USER, process.env.MYSQL_PASS, options);
 
