@@ -2763,28 +2763,28 @@ exports.commandsocket = function (APP, req, callback) {
 							DeviceHistory.create(query.create).then(rows => {
 								console.log('EXEC SINGLE CCU DEVICE')
 
-								// APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
-								// 	replacements: {
-								// 		device_id: params.device_id,
-								// 		user_id: params.user_id
-								// 	}, 
-								// 	type: APP.db.sequelize.QueryTypes.RAW 
-								// }).then(device => {	
-								// 	response = {
-								// 		code : 'OK',
-								// 		error : 'false',
-								// 		message : 'Command success and saved'
-								// 	}
+								APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
+									replacements: {
+										device_id: params.device_id,
+										user_id: params.user_id
+									}, 
+									type: APP.db.sequelize.QueryTypes.RAW 
+								}).then(device => {	
+									response = {
+										code : 'OK',
+										error : 'false',
+										message : 'Command success and saved'
+									}
 
-								// 	return callback(null, response);
-								// }).catch((err) => {
-								// 	response = {
-								// 		code: 'ERR_DATABASE',
-								// 		data: JSON.stringify(err)
-								// 	}
+									return callback(null, response);
+								}).catch((err) => {
+									response = {
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									}
 
-								// 	return callback(response);
-								// });
+									return callback(response);
+								});
 							}).catch((err) => {
 								response = {
 									code: 'ERR_DATABASE',
