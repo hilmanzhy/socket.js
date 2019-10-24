@@ -491,43 +491,6 @@ io.on('connection', (socket) => {
 			fnOutput.insert(req, err, log)
 		});
 	})
-	// Response Command
-	socket.on('res-command', function (params) {
-		let log = {}, req = {};
-		req.APP = APP
-		req.event = `res-command`
-		log.body = req.body = params;
-		log.info = 'RES-COMMAND';
-		log.level = { error : false };
-		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}`;
-
-		query.value = { switch : params.switch };
-		query.options = {
-			where : {
-				device_id : params.device_id
-			}
-		};
-
-		Device.update(query.value, query.options).then((resDevice) => {
-			if (resDevice > 0) {
-				log.message = log.message +
-									 `\n> SWITCH UPDATED`
-			} else {
-				log.message = log.message +
-									 `\n> SWITCH NOT UPDATED`
-			}
-
-			return fnOutput.log(log, resDevice);
-		}).catch((err) => {
-			log.info = `${log.info} : ERROR`;
-			log.level = { error : true }
-			log.message = log.message +
-									`\n${JSON.stringify(err)}`;
-
-			fnOutput.log(log)
-		});
-	});
 	// Update Pin Name
 	socket.on('update-pin', function (params) {
 		let log = {}, req = {};
