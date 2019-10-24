@@ -19,7 +19,7 @@ development:
   tags:
     - development
   only:
-    - development
+    - sita_dev
 production:
   stage: production
   script:
