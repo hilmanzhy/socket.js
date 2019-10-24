@@ -1,0 +1,11 @@
+{
+	"apps": [
+	{
+		"name": "sita_core",
+		"script": "app.js",
+	},
+	{
+		"name": "sita_socker",
+		"script": "socket.js",
+	}]
+}
