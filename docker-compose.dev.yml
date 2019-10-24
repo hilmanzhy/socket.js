@@ -1,0 +1,28 @@
+version: '3.7'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
+      # digunakan untuk backend cdn (simpan gambar)
+      #- /home/devops/image:/usr/src/app/public
+    ports:
+      - "5000:5000"
+      - "5005:5005"
+    tty: true
+    container_name: "dev-sita"
+    image: gitlab.vascomm.co.id:4567/iot_ceria/sita_dev:latest_dev
+    networks:
+      sita :
+        aliases:
+          - sita_core
+    restart: always
+
+networks:
+  sita:
+    name: sita
+    driver: bridge
