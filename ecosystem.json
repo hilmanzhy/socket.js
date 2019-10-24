@@ -2,10 +2,10 @@
 	"apps": [
 	{
 		"name": "sita_core",
-		"script": "app.js",
+		"script": "app.js"
 	},
 	{
-		"name": "sita_socker",
-		"script": "socket.js",
+		"name": "sita_socket",
+		"script": "socket.js"
 	}]
 }
