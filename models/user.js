@@ -20,8 +20,6 @@ module.exports = function (sequelize, Sequelize) {
         device_key: Sequelize.STRING,
         active_status: Sequelize.INTEGER,
         tdl_id: Sequelize.INTEGER,
-        tdl: Sequelize.INTEGER,
-        power: Sequelize.INTEGER,
         verify_status: {
             type: Sequelize.INTEGER,
             defaultValue: 0
