@@ -87,7 +87,8 @@ exports.sendNotif = function (payload, callback) {
             'to'	: payload.data.device_key,
             'notification'	: {
                 'title'	: payload.notif.title,
-                'body'	: payload.notif.body
+                'body'	: payload.notif.body,
+                'tag'   : payload.notif.tag ? payload.notif.tag : 'Default'
             },
             'data'	: payload.data,
             'headers'	: payload.auth

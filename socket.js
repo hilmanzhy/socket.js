@@ -337,7 +337,8 @@ io.on('connection', (socket) => {
 					'url'	: 'https://fcm.googleapis.com/fcm/send',
 					'notif'	: {
 						'title'	: 'Device Disconnected',
-						'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`
+						'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`,
+						'tag'	: device.device_id
 					},
 					'data'	: {
 						'device_id' : `${device.device_id}`,
