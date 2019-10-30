@@ -11,6 +11,26 @@ const request = require('../functions/request.js');
 var socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
 var query = {};
 
+function updateSaklar(Sequelize, params, callback) {
+	Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)', {
+		replacements: params,
+		type: Sequelize.QueryTypes.RAW
+	}).then(device => {
+		callback(null, {
+			code: 'OK',
+			error: 'false',
+			message: 'Command success and saved'
+		})
+		return
+	}).catch(err => {
+		callback({
+			code: 'ERR_DATABASE',
+			data: JSON.stringify(err)
+		});
+		return
+	});
+}
+
 exports.mysqlGet = function (APP, req, callback) {
 	var params = APP.queries.select('test', req, APP.models);
 
@@ -2691,8 +2711,6 @@ exports.commandsocket = function (APP, req, callback) {
 	if (!params.user_id) return callback({ code: 'MISSING_KEY' })
 	if (!params.device_id) return callback({ code: 'MISSING_KEY' })
 	if (!params.switch) return callback({ code: 'MISSING_KEY' })
-	if (!params.mode) return callback({ code: 'MISSING_KEY' })
-	if (!params.pin) return callback({ code: 'MISSING_KEY' })
 
 	socket.emit('commandapi', params)
 
@@ -2713,138 +2731,145 @@ exports.commandsocket = function (APP, req, callback) {
 			switch: params.switch
 		}
 
-		switch (params.mode) {
-			case "1":
-				console.log(`/ COMMAND SINGLE CCU DEVICE /`)
+		if (resDevice.device_type == 0) {
+			console.log(`/ COMMAND MINI CCU DEVICE /`)
 
-				Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)', {
-					replacements: query.insert,
-					type: Sequelize.QueryTypes.RAW
-				}).then(device => {
-					callback(null, {
-						code: 'OK',
-						error: 'false',
-						message: 'Command success and saved'
+			updateSaklar(Sequelize, query.insert, (err, response) => {
+				if (err) {
+					return callback(err)
+				} else {
+					return callback(null, response)
+				}
+			})
+		} else if (resDevice.device_type == 1) {
+			if (!params.mode) return callback({ code: 'MISSING_KEY' })
+			if (!params.pin) return callback({ code: 'MISSING_KEY' })
+		
+			console.log(`/ COMMAND SINGLE CCU DEVICE /`)
+
+			switch (params.mode) {
+				case "1":
+					console.log(`/...ALL PIN.../`)
+
+					updateSaklar(Sequelize, query.insert, (err, response) => {
+						if (err) {
+							return callback(err)
+						} else {
+							return callback(null, response)
+						}
 					})
-					return
-				}).catch(err => {
-					callback({
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					});
-					return
-				});
-
-				break;
-			case "2":
-				console.log(`/ COMMAND SINGLE CCU DEVICE PIN /`)
-
-				async.waterfall([
-					function generatingQuery(callback) {
-						console.log(`/... GENERATE QUERY .../`)
-						// where
-						query.options.where.pin = params.pin
-						// insert
-						query.insert.device_ip = resDevice.device_ip
-						query.insert.device_type = resDevice.device_type
-						query.insert.pin = params.pin
-						query.insert.date = date
-						// update
-						query.update = { switch: params.switch }
-
-						callback(null, query)
-						return
-					},
-
-					function gettingData(query, callback) {
-						console.log(`/... GET DATA DEVICE PIN .../`)
-
-						DevicePIN.findOne(query.options)
-							.then(resDevicePIN => {
-								if (!resDevicePIN) return callback({
-									code: "NOT_FOUND",
-									message: "Device PIN not found!"
-								})
-
-								query.insert.device_name = (resDevicePIN.device_name) ? resDevicePIN.device_name : resDevice.device_name
-
-								callback(null, query)
-								return
-							})
-							.catch(err => {
-								callback({
-									code: 'ERR_DATABASE',
-									data: JSON.stringify(err)
-								})
-								return
-							})
-					},
-
-					function updatingData(query, callback) {
-						console.log(`/... UPDATE DATA DEVICE PIN .../`)
-
-						DevicePIN.update(query.update, query.options)
-							.then(updatedDevicePIN => {
-								callback(null, query)
-								return
-							})
-							.catch(e => {
-								callback({
-									code: 'ERR_DATABASE',
-									data: JSON.stringify(err)
-								})
-								return
-							})
-					},
-
-					function creatingData(query, callback) {
-						console.log(`/... CREATE DATA DEVICE HISTORY .../`)
-
-						DeviceHistory.create(query.insert)
-							.then(resultInsert => {
-								callback(null, query)
-								return
-							})
-							.catch((err) => {
-								callback({
-									code: 'ERR_DATABASE',
-									data: JSON.stringify(err)
-								})
-								return
-							})
-					},
-
-					function checkSwitchPIN(query, callback) {
-						APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
-							replacements: {
-								device_id: params.device_id,
-								user_id: params.user_id
-							},
-							type: APP.db.sequelize.QueryTypes.RAW
-						}).then(device => {
-							callback(null, true)
+	
+					break;
+				case "2":
+					console.log(`/...PIN ${params.pin}/`)
+	
+					async.waterfall([
+						function generatingQuery(callback) {
+							console.log(`/... GENERATE QUERY .../`)
+							// where
+							query.options.where.pin = params.pin
+							// insert
+							query.insert.device_ip = resDevice.device_ip
+							query.insert.device_type = resDevice.device_type
+							query.insert.pin = params.pin
+							query.insert.date = date
+							// update
+							query.update = { switch: params.switch }
+	
+							callback(null, query)
 							return
-						}).catch((err) => {
-							callback({
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							});
-							return
-						})
-					}
-				], function (err, res) {
-					if (err) {
-						return callback(err)
-					} else {
-						return callback(null, {
-							code: 'OK',
-							error: 'false',
-							message: 'Command success and saved'
-						})
-					}
-				})
-
-				break;
+						},
+	
+						function gettingData(query, callback) {
+							console.log(`/... GET DATA DEVICE PIN .../`)
+	
+							DevicePIN.findOne(query.options)
+								.then(resDevicePIN => {
+									if (!resDevicePIN) return callback({
+										code: "NOT_FOUND",
+										message: "Device PIN not found!"
+									})
+	
+									query.insert.device_name = (resDevicePIN.device_name) ? resDevicePIN.device_name : resDevice.device_name
+	
+									callback(null, query)
+									return
+								})
+								.catch(err => {
+									callback({
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									})
+									return
+								})
+						},
+	
+						function updatingData(query, callback) {
+							console.log(`/... UPDATE DATA DEVICE PIN .../`)
+	
+							DevicePIN.update(query.update, query.options)
+								.then(updatedDevicePIN => {
+									callback(null, query)
+									return
+								})
+								.catch(e => {
+									callback({
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									})
+									return
+								})
+						},
+	
+						function creatingData(query, callback) {
+							console.log(`/... CREATE DATA DEVICE HISTORY .../`)
+	
+							DeviceHistory.create(query.insert)
+								.then(resultInsert => {
+									callback(null, query)
+									return
+								})
+								.catch((err) => {
+									callback({
+										code: 'ERR_DATABASE',
+										data: JSON.stringify(err)
+									})
+									return
+								})
+						},
+	
+						function checkSwitchPIN(query, callback) {
+							APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
+								replacements: {
+									device_id: params.device_id,
+									user_id: params.user_id
+								},
+								type: APP.db.sequelize.QueryTypes.RAW
+							}).then(device => {
+								callback(null, true)
+								return
+							}).catch((err) => {
+								callback({
+									code: 'ERR_DATABASE',
+									data: JSON.stringify(err)
+								});
+								return
+							})
+						}
+					], function (err, res) {
+						if (err) {
+							return callback(err)
+						} else {
+							return callback(null, {
+								code: 'OK',
+								error: 'false',
+								message: 'Command success and saved'
+							})
+						}
+					})
+	
+					break;
+			}
 		}
 
 	}).catch((err) => {
