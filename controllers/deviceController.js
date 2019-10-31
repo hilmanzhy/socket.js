@@ -3294,3 +3294,47 @@ exports.getpaginghistory = function (APP, req, callback) {
 	
 };
 
+exports.reset = function (APP, req, callback) {
+	async.waterfall([
+		function generatingQuery(callback) {
+			query.where = {
+				user_id: req.body.user_id,
+				device_id: req.body.device_id
+			}
+
+			callback(null, query)
+			return
+		},
+
+		function existingDeviceCheck(query, callback) {
+			APP.models.mysql.device.findOne(query).then(resultDevice => {
+				if (!resultDevice) return callback({
+					code: 'NOT_FOUND',
+					message: 'Device Not Found!'
+				})
+				// if (resultDevice.device_type != 0) return callback({
+				// 	code: 'INVALID_REQUEST',
+				// 	message: 'Reset Device only for Mini CCU!'
+				// })
+				if (resultDevice.is_connected == 0) return callback({ code: 'DEVICE_DISSCONNECTED' })
+
+				callback(null, query.where)
+				return
+			})
+		},
+
+		function sendingCommand(query, callback) {
+			socket.emit('resetapi', query)
+
+			callback(null, {
+				code: 'OK',
+				message: 'Reset Device success'
+			})
+			return
+		}
+	], function (err, result) {
+		if (err) return callback(err)
+
+		return callback(null, result)
+	})
+}

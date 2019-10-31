@@ -522,6 +522,34 @@ io.on('connection', (socket) => {
 			return fnOutput.insert(req, err, log)
 		});
 	})
+	// Command Reset
+	socket.on('resetapi', function (params) {
+		let log = {}, req = {};
+		req.APP = APP;
+		req.event = `resetapi`
+		log.body = req.body = params;
+		log.info = 'RESETAPI';
+		log.level = { error : false };
+		log.message = `SOCKET ID : ${socket.id}`;
+
+		DeviceSession.findOne(params).then(resultSession => {
+			if (resultSession) {
+				log.message = log.message +
+							  `\nSending Reset Command to Device ID : ${params.device_id}`;
+				
+				io.to(resultSession.session_id).emit('reset', { reset: '1' });
+
+				return fnOutput.insert(req, resultSession, log)
+			}
+		}).catch((err) => {
+			log.info = `${log.info} : ERROR`;
+			log.level = { error : true }
+			log.message = log.message +
+						  `\n${JSON.stringify(err)}`;
+
+			return fnOutput.insert(req, err, log)
+		});
+	})
 });
 
 http.listen(process.env.SOCKET_PORT, function() {
