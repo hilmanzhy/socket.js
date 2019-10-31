@@ -85,12 +85,11 @@ io.on('connection', (socket) => {
 			attributes : [ 'device_id' ]
 		};
 		query.mongo = {
-			find : { device_id : device.device_id },
-			update : { session_id : socket.id },
-			create : {
-				device_id : device.device_id,
-				session_id : socket.id,
-			}
+			find : {
+				device_id: device.device_id,
+				user_id: device.user_id
+			},
+			update : { session_id : socket.id }
 		};
 
 		async.waterfall([
@@ -225,11 +224,7 @@ io.on('connection', (socket) => {
 		};
 		query.mongo = {
 			find : { device_id : hub.device_id },
-			update : { session_id : socket.id },
-			create : {
-				device_id : hub.device_id,
-				session_id : socket.id,
-			}
+			update : { session_id : socket.id }
 		};
 
 		async.waterfall([

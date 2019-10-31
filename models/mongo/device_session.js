@@ -5,6 +5,7 @@ module.exports = function (mongo) {
 
     const ModelSchema = mongo.Schema({
         device_id: String,
+        user_id: String,
         session_id: String
     }, {
         timestamps: true
