@@ -803,11 +803,6 @@ exports.updatename = function (APP, req, callback) {
 			invalid_parameter: 'type'
 		}
 	})
-	if (!datareq.pin) return callback({
-		code: 'MISSING_KEY', data: {
-			invalid_parameter: 'pin'
-		}
-	})
 	if (!datareq.device_name) return callback({
 		code: 'MISSING_KEY', data: {
 			invalid_parameter: 'device_name'
@@ -851,6 +846,12 @@ exports.updatename = function (APP, req, callback) {
 			break;
 
 		case '1':
+			if (!datareq.pin) return callback({
+				code: 'MISSING_KEY', data: {
+					invalid_parameter: 'pin'
+				}
+			})
+
 			Device = APP.models.mysql.device_pin
 			query.options.where.pin = datareq.pin
 			output.data.pin = datareq.pin
@@ -882,105 +883,6 @@ exports.updatename = function (APP, req, callback) {
 	})
 
 	socket.emit('update-pin', { device_id: datareq.device_id })
-};
-
-exports.deletedevice = function (APP, req, callback) {
-	
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	//if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
-
-	console.log(datareq)
-
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-
-	query.options = {
-		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
-		}
-	}
-
-	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) 
-		{
-			/* if (datareq.device_type == '0')
-			{
-				APP.db.sequelize.query("delete from device where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {
-					console.log("delete device")
-
-					response = {
-						code : 'OK',
-						error : 'false',
-						message : 'Delete success'
-					}
-					return callback(null, response);
-					
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			}
-			else
-			{ */
-				APP.db.sequelize.query("delete from device where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {
-					console.log("delete device")
-
-					APP.db.sequelize.query("delete from device_pin where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-					.then(device => {
-						console.log("delete pin")
-
-						response = {
-							code : 'OK',
-							message : 'Delete device ' + datareq.device_id +  ' success'
-						}
-						return callback(null, response);
-						
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-					
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			//}
-		} 
-		else 
-		{
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'Device Not Found'
-			});
-		}
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-	
 };
 
 exports.devicehistory = function (APP, req, callback) {
@@ -3294,6 +3196,57 @@ exports.getpaginghistory = function (APP, req, callback) {
 	
 };
 
+exports.delete = function (APP, req, callback) {
+	const Device = APP.models.mysql.device
+	const DevicePIN = APP.models.mysql.device_pin
+
+	async.waterfall([
+		function generatingQuery(callback) {
+			query.options = {
+				where: {
+					user_id: req.body.user_id,
+					device_id: req.body.device_id
+				}
+			}
+
+			callback(null, query)
+		},
+		function resetDevice(query, callback) {
+			module.exports.reset(APP, req, (err, res) => {
+				if (err) return callback(err)
+
+				callback(null, query)
+			})
+		},
+		function deletingData(query, callback) {
+			Device.destroy(query.options)
+			.then(resultDevice => {
+				console.log('resultDevice', resultDevice)
+
+				return DevicePIN.destroy(query.options)
+			}).then(resultDevicePIN => {
+				console.log('resultDevicePIN', resultDevicePIN)
+
+				callback(null, {
+					code: 'OK',
+					message: 'Success delete device'
+				})
+				return
+			}).catch((err) => {
+				callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				})
+				return
+			});
+		}
+	], function (err, result) {
+		if (err) return callback(err)
+
+		return callback(null, result)
+	})
+}
+
 exports.reset = function (APP, req, callback) {
 	async.waterfall([
 		function generatingQuery(callback) {
@@ -3312,15 +3265,17 @@ exports.reset = function (APP, req, callback) {
 					code: 'NOT_FOUND',
 					message: 'Device Not Found!'
 				})
-				// if (resultDevice.device_type != 0) return callback({
-				// 	code: 'INVALID_REQUEST',
-				// 	message: 'Reset Device only for Mini CCU!'
-				// })
 				if (resultDevice.is_connected == 0) return callback({ code: 'DEVICE_DISSCONNECTED' })
 
 				callback(null, query.where)
 				return
-			})
+			}).catch((err) => {
+				callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
+				})
+				return
+			});
 		},
 
 		function sendingCommand(query, callback) {

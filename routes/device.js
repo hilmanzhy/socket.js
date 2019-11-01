@@ -98,14 +98,6 @@ router.post('/updatename', (req, res, next) => {
 	});
 });
 
-router.post('/deletedevice', (req, res, next) => {
-	deviceController.deletedevice(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
 router.post('/devicehistory', (req, res, next) => {
 	deviceController.devicehistory(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
@@ -313,6 +305,24 @@ router.post('/reset', (req, res, next) => {
 	})
 
 	deviceController.reset(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+
+		return req.APP.output.print(req, res, result);
+	});
+});
+
+/* Route Delete Device */
+router.post('/delete', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+
+	deviceController.delete(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 
 		return req.APP.output.print(req, res, result);

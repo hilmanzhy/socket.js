@@ -119,6 +119,8 @@ app.use((req, res, next) => {
 				})
 			}
 			if (result) {
+				req.auth = result
+				
 				return next();
 			}
 		})
