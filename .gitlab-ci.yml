@@ -2,31 +2,35 @@ stages:
   - development
   - production
 
+cache:
+  paths:
+    - node_modules/
+    
 before_script:
-  - export http_proxy=http://192.168.13.6:3128
-  - export https_proxy=http://192.168.13.6:3128
+  #- export http_proxy=http://192.168.13.6:3128
+  #- export https_proxy=http://192.168.13.6:3128
 
 after_script:
   - docker image prune -f
-  - docker push gitlab.vascomm.co.id:4567/iot_ceria/sita_dev
   - echo "done"
 
 development:
   stage: development
   script:
-    - docker-compose -f docker-compose.dev.yml build
-    - docker-compose -f docker-compose.dev.yml up -d --force-recreate
+    - git-docker -c dev-sita -i gitlab.vascomm.co.id:4567/iot_ceria/sita_dev:latest_dev
   tags:
     - development
   only:
-    - sita_dev
+    - development
+
 production:
   stage: production
   script:
+    # to set environtment production / testing
+    - sed -i 's/development/production/' app.json
     - docker-compose -f docker-compose.prod.yml build
     - docker-compose -f docker-compose.prod.yml up -d --force-recreate
   tags:
     - production
   only:
     - master
-
