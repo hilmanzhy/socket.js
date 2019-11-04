@@ -94,8 +94,7 @@ exports.registerdevice = function (APP, req, callback) {
 
 	query.options = {
 		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
+			device_id : datareq.device_id
 		}
 	}
 
