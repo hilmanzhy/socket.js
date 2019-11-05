@@ -329,7 +329,6 @@ io.on('connection', (socket) => {
 
 			function (device, callback) {
 				let params = {
-					'url'	: 'https://fcm.googleapis.com/fcm/send',
 					'notif'	: {
 						'title'	: 'Device Disconnected',
 						'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`,
@@ -338,8 +337,7 @@ io.on('connection', (socket) => {
 					'data'	: {
 						'device_id' : `${device.device_id}`,
 						'device_key' : `${device.device_key}`
-					},
-					'auth' : { 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ' }
+					}
 				}
 
 				fnRequest.sendNotif(params, (err, res) => {
