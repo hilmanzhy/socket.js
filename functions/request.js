@@ -82,7 +82,7 @@ exports.sendEmail = function (params, callback) {
 };
 
 exports.sendNotif = function (payload, callback) {
-    let url = payload.url,
+    let url = "https://fcm.googleapis.com/fcm/send",
         params = {
             'to'	: payload.data.device_key,
             'notification'	: {
@@ -91,7 +91,7 @@ exports.sendNotif = function (payload, callback) {
                 'tag'   : payload.notif.tag ? payload.notif.tag : 'Default'
             },
             'data'	: payload.data,
-            'headers'	: payload.auth
+            'headers'	: { 'Authorization': "key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ" }
         }
 
 	this.post(url, params, (err, res) => {

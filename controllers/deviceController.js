@@ -5,6 +5,7 @@ const md5 = require('md5');
 const unirest = require('unirest');
 const sequelize = require('sequelize');
 const io = require('socket.io-client');
+const vascommkit = require('vascommkit');
 
 const request = require('../functions/request.js');
 
@@ -1157,177 +1158,90 @@ exports.commandpanel = function (APP, req, callback) {
 };
 
 exports.sensordata = function (APP, req, callback) {
+	let params = req.body,
+		User = APP.models.mysql.user,
+		DevicePIN = APP.models.mysql.device_pin
 
-	var datareq = req.body
-	var response = {}
-	var pin
-	var switch_status
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.ampere) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.wattage) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.switch) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.sensor_status) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
-
-	console.log(datareq)
-
-	if (datareq.device_type	 == '0')
-		{
-			pin = 'NULL'
-		}
-	else
-		{
-			pin = datareq.pin
-		}
-
-	APP.db.sequelize.query("update device set is_connected = 1 where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-
-	.then(device => {		
-		console.log('connection status updated')
-		
-		if (datareq.sensor_status == '0' && datareq.switch == '1')
-			{
-				switch_status = '0'
-				console.log('update sensor_status')
-	
-				APP.db.sequelize.query("update device_pin set sensor_status = 1 where device_id = '" + datareq.device_id + "' and pin = '" + datareq.pin + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {		
-					console.log('sensor_status updated')
-	
-					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)',
-						{ 
-							replacements: {
-								device_id: datareq.device_id,
-								user_id: datareq.user_id,
-								pin : pin,
-								switch: switch_status,
-								current_sensor: datareq.ampere,
-								watt: datareq.wattage,
-								date_device: datareq.date
-							}, 
-							type: APP.db.sequelize.QueryTypes.RAW 
-						}
-					)
-	
-					.then((rows) => {
-	
-						console.log(rows[0].message)
-						var spreturn = rows[0].message
-							
-						if (rows[0].message == '0')
-							{
-								response = {
-									code : 'OK',
-									error : 'true',
-									message : 'Device not activated yet'
-								}
-							}
-						else
-							{
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Data saved'
-								}
-							}
-						return callback(null, response);
-	
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-	
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
+	query = {
+		options: {
+			where: {
+				user_id: params.user_id
 			}
-		else
-			{
-				switch_status = datareq.switch
-				console.log('update sensor_status')
-	
-				APP.db.sequelize.query("update device_pin set sensor_status = 0 where device_id = '" + datareq.device_id + "' and pin = '" + datareq.pin + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-			
-				.then(device => {		
-					console.log('sensor_status updated')
-	
-					console.log('sp_datasensor')
-					APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :status_device, :current_sensor, :watt, :date_device)',
-						{ 
-							replacements: {
-								device_id: datareq.device_id,
-								user_id: datareq.user_id,
-								pin : pin,
-								status_device: switch_status,
-								current_sensor: datareq.ampere,
-								watt: datareq.wattage,
-								date_device: datareq.date
-							}, 
-							type: APP.db.sequelize.QueryTypes.RAW 
+		},
+	}
+
+	async.waterfall([
+		function generatingParams(callback) {
+			if (params.sensor_status == '0') params.switch == '0'
+			if (params.device_type == '0') params.pin == '1'
+
+			callback(null, params)
+		},
+
+		function updatingSensorStatus(params, callback) {
+			query.update = { sensor_status: params.sensor_status }
+
+			User.findOne(query.options).then(resultDevice => {
+				params.device_key = resultDevice.device_key
+				query.options.device_id = params.device_id
+
+				return DevicePIN.update(query.update, query.options)
+			}).then(updated => {
+				if (params.sensor_status == '0' && updated[0] > 0) {
+					let notif = {
+						'notif': {
+							'title': 'Sensor Problem',
+							'body': `Sensor Problem on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
+							'tag': params.device_id
+						},
+						'data': {
+							'device_id': `${params.device_id}`,
+							'device_key': `${params.device_key}`
 						}
-					)
-	
-					.then((rows) => {
-	
-						console.log(rows[0].message)
-						var spreturn = rows[0].message
-							
-						if (rows[0].message == '0')
-							{
-								response = {
-									code : 'OK',
-									error : 'true',
-									message : 'Device not activated yet'
-								}
-							}
-						else
-							{
-								response = {
-									code : 'OK',
-									error : 'false',
-									message : 'Data saved'
-								}
-							}
-						return callback(null, response);
-	
-					}).catch((err) => {
-						response = {
-							code: 'ERR_DATABASE',
-							data: JSON.stringify(err)
-						}
-						return callback(response);
-					});
-	
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
 					}
-					return callback(response);
+
+					APP.request.sendNotif(notif, (err, res) => {
+						if (err) return callback(err);
+
+						console.log(`/ SENDING PUSH NOTIFICATION /`)
+					})
+				}
+
+				callback(null, params)
+			})
+		},
+
+		function callSP(params, callback) {
+			APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)',
+				{
+					replacements: {
+						device_id: params.device_id,
+						user_id: params.user_id,
+						pin: params.pin,
+						switch: params.switch,
+						current_sensor: params.ampere,
+						watt: params.wattage,
+						date_device: params.date
+					}, type: APP.db.sequelize.QueryTypes.RAW
+				}
+			).then(rows => {
+				callback(null, {
+					code: 'OK',
+					message: (rows[0].message == '0') ? 'Device not activated yet' : 'Data saved'
+				})
+				return
+			}).catch((err) => {
+				return callback({
+					code: 'ERR_DATABASE',
+					data: JSON.stringify(err)
 				});
-			}
-			
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+			});
 		}
-		return callback(response);
-	});
-	
+	], function (err, result) {
+		if (err) return callback(err)
+
+		return callback(null, result)
+	})
 };
 
 exports.sensordata_v2 = function (APP, req, callback) {

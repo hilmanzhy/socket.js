@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require('express');
+const vascommkit = require('vascommkit');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
@@ -123,6 +124,40 @@ router.post('/status', (req, res, next) => {
 });
 
 router.post('/sensordata', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+	if (!req.body.device_type) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_type' }
+	})
+	if (!req.body.pin) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'pin' }
+	})
+	if (!req.body.sensor_status) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'sensor_status' }
+	})
+	if (!req.body.switch) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'switch' }
+	})
+	if (!req.body.ampere) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'ampere' }
+	})
+	if (!req.body.wattage) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'wattage' }
+	})
+	if (!req.body.date) req.body.date = vascommkit.time.now()
+	
 	deviceController.sensordata(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
