@@ -2,6 +2,7 @@
 
 const express = require('express');
 const vascommkit = require('vascommkit');
+const moment = require('moment');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
@@ -363,5 +364,29 @@ router.post('/delete', (req, res, next) => {
 		return req.APP.output.print(req, res, result);
 	});
 });
+
+/* Route Generate Device ID */
+router.post('/generate_id', (req, res, next) => {
+	if (req.get('session-key') != 'apps') return req.APP.output.print(req, res, {
+		code: 'INVALID_HEADERS',
+		message: 'Only Apps allowed!'
+	})
+
+	req.APP.models.mysql.device.findAndCountAll({ where: {
+		user_id: req.auth.user_id
+	} }).then(device => {
+		let generated = `SitamotoDevice-${process.env.HW_VER}_${req.auth.user_id}-${(device.count)+1}` // FORMAT : SitamotoDevice-HWversion_userid-indexdevice
+		
+		return req.APP.output.print(req, res, {
+			code: 'OK',
+			data: { device_id: generated }
+		});
+	}).catch(err => {
+		return req.APP.output.print(req, res, {
+			code: 'DATABASE_ERR',
+			message: err
+		})
+	})
+})
 
 module.exports = router;

@@ -5,6 +5,7 @@ exports.put = function (APP, req, callback) {
     if(!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
 
     var params = {
+        user_id: req.body.user_id,
         username: req.body.username,
         session_key: req.headers['session-key']
     }
@@ -53,7 +54,7 @@ exports.put = function (APP, req, callback) {
 }
 
 exports.check = function (APP, req, callback) {
-    if(!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
+    if(!req.headers['session-key'] || !req.headers['session-id']) return callback({ code: 'INVALID_HEADERS' })
 
     var params = {
         session_id : req.headers['session-id'],

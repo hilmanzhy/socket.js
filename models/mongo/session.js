@@ -4,6 +4,7 @@ module.exports = function (mongo) {
     if (mongo.models.Session) return mongo.models.Session;
 
     const ModelSchema = mongo.Schema({
+        user_id: Number,
         username: String,
         session_id: String,
         session_key: String,
