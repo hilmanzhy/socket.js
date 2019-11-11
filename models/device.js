@@ -49,6 +49,10 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: true
 		},
+		is_deleted: {
+			type: Sequelize.BOOLEAN,
+			allowNull: true
+		},
 		icon_id: {
 			type: Sequelize.INTEGER,
 			allowNull: true

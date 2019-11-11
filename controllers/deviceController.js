@@ -3114,8 +3114,10 @@ exports.getpaginghistory = function (APP, req, callback) {
 };
 
 exports.delete = function (APP, req, callback) {
-	const Device = APP.models.mysql.device
-	const DevicePIN = APP.models.mysql.device_pin
+	const Device = APP.models.mysql.device,
+		  DevicePIN = APP.models.mysql.device_pin
+	
+	var response = {}
 
 	async.waterfall([
 		function generatingQuery(callback) {
@@ -3130,32 +3132,54 @@ exports.delete = function (APP, req, callback) {
 		},
 		function resetDevice(query, callback) {
 			module.exports.reset(APP, req, (err, res) => {
-				if (err) return callback(err)
+				if (err && err.code == 'DEVICE_DISSCONNECTED') {
+					response.code = 'SOFT'
+				} else if (err) {
+					return callback(err)
+				} else {
+					response.code = 'HARD'
+				}
 
-				callback(null, query)
+				callback(null, response)
 			})
 		},
-		function deletingData(query, callback) {
-			Device.destroy(query.options)
-			.then(resultDevice => {
-				console.log('resultDevice', resultDevice)
+		function deletingData(response, callback) {
+			if (response.code == 'SOFT') {
+				Device.update({ is_deleted: '1' }, query.options)
+				.then( resUpdated => {
+					response.code = 'OK'
 
-				return DevicePIN.destroy(query.options)
-			}).then(resultDevicePIN => {
-				console.log('resultDevicePIN', resultDevicePIN)
+					if (resUpdated[0] > 0) {
+						response.message = 'Success delete device'
+					} else {
+						response.message = 'Device already deleted'
+					}
 
-				callback(null, {
-					code: 'OK',
-					message: 'Success delete device'
+					return callback(null, response)
 				})
-				return
-			}).catch((err) => {
-				callback({
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				})
-				return
-			});
+			}
+			if (response.code == 'HARD') {
+				Device.destroy(query.options)
+				.then(resultDevice => {
+					console.log('resultDevice', resultDevice)
+
+					return DevicePIN.destroy(query.options)
+				}).then(resultDevicePIN => {
+					console.log('resultDevicePIN', resultDevicePIN)
+
+					callback(null, {
+						code: 'OK',
+						message: 'Success delete device'
+					})
+					return
+				}).catch((err) => {
+					callback({
+						code: 'ERR_DATABASE',
+						data: JSON.stringify(err)
+					})
+					return
+				});
+			}
 		}
 	], function (err, result) {
 		if (err) return callback(err)
