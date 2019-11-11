@@ -254,8 +254,21 @@ router.post('/ipupdate', (req, res, next) => {
 	});
 });
 
-router.post('/regischeck', (req, res, next) => {
-	deviceController.regischeck(req.APP, req, (err, result) => {
+router.post('/check', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+	if (!req.body.device_ip) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_ip' }
+	})
+
+	deviceController.check(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

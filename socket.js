@@ -92,39 +92,44 @@ io.on('connection', (socket) => {
 			function checkDevice(callback) {
 				log.message = log.message + `\n> CHECK DEVICE`
 									 
-				deviceController.regischeck(req.APP, req, (err, result) => {
-					if (err) { 
-						callback(err); 
-					} else {
-						switch (result.message) {
-							case '1':
-								log.message = log.message + ' : DEVICE_IP NOT MATCH'
-								
-								deviceController.ipupdate(req.APP, req, (err, result) => {
-									if (err) {
-										callback(err, result);
-									} else {
-										callback(null, result);
-									}
-								});
-								break;
-							
-							case '2':
-								log.message = log.message + ' : DEVICE_ID NOT REGISTERED'
+				deviceController.check(req.APP, req, (err, result) => {
+					if (err) return callback(err);
 
-								deviceController.registerdevice(req.APP, req, (err, result) => {
-									if (err) {
-										callback(err, result);
-									} else {
-										callback(null, result);
-									}
-								});
-			
-								break;
-			
-							default:
-								callback(null, { code: 'OK' });
-						}						
+					switch (result.data) {
+						case '1':
+							log.message = log.message + ' : DEVICE_ID NOT REGISTERED'
+
+							deviceController.registerdevice(req.APP, req, (err, result) => {
+								if (err) return callback(err, result);
+								
+								callback(null, result);
+							});
+
+							break;
+						
+						case '2':
+							log.message = log.message + ' : DEVICE DELETED' +
+														`\nSending Reset Command to Device ID : ${params.device_id}`;
+
+							io.to(socket.id).emit('reset', { reset: '1' });
+		
+							callback(null, true)
+
+							break;
+
+						case '3':
+							log.message = log.message + ' : DEVICE_IP NOT MATCH'
+							
+							deviceController.ipupdate(req.APP, req, (err, result) => {
+								if (err) return callback(err, result);
+								
+								callback(null, result);
+							});
+		
+							break;
+		
+						default:
+							callback(null, { code: 'OK' });
 					}
 				});
 			},

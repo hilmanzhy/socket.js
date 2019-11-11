@@ -2822,76 +2822,81 @@ exports.ipupdate = function (APP, req, callback) {
 	//}
 };
 
-exports.regischeck = function (APP, req, callback) {
-
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
-	const Device = APP.models.mysql.device
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_ip) return callback({ code: 'MISSING_KEY' })
-
+exports.check = function (APP, req, callback) {
+	let response = {}, params = req.body,
+		Device = APP.models.mysql.device
+	
 	var date = new Date();
 	date.setHours(date.getHours());
 	console.log(date);
 
 	query.options = {
 		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
+			device_id : params.device_id,
+			user_id : params.user_id
 		}
 	}
 	
-	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) 
-		{
-			console.log("ipcheck");
-			APP.db.sequelize.query("select count(*) as ip from device where user_id = '" + datareq.user_id + "' and device_id = '" + datareq.device_id + "' and device_ip = '"  + datareq.device_ip + "'", { type: APP.db.sequelize.QueryTypes.SELECT})
-			
-			.then(ip => {
-				console.log(ip)
+	Device.findOne(query.options).then(result => {
+		if (!result) throw new Error('1') // Device ID not Registered
 
-				if (ip[0].ip > 0)
-				{
-					response = {
-						code : 'OK',
-						message : '0'
-					}
-					return callback(null, response);
-				}
-				else	
-				{
-					response = {
-						code : 'OK',
-						message : '1'
-					}
-					return callback(null, response);
-				}
-			}).catch((err) => {
-				response = {
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				}
-				return callback(response);
-			});		
-		}
-		else 
-		{
-			response = {
-				code : 'OK',
-				message : '2'
+		return APP.db.sequelize.query('CALL sitadev_iot_2.cek_mac_address (:device_id, :mac_address)',
+			{
+				replacements: {
+					device_id: params.device_id,
+					mac_address: params.mac_address ? params.mac_address : 'NULL'
+				}, type: APP.db.sequelize.QueryTypes.RAW
 			}
-			return callback(null, response);
-		}
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
+		)
+	}).then(resultSP => {
+		if (resultSP[0].message == '1') throw new Error('2') // Device Deleted
 
+		query.options.where.device_ip = params.device_ip
+
+		return Device.findAndCountAll(query.options)
+	}).then(resultIP => {
+		if (resultIP.count == '0') throw new Error('3') // Device IP not Match
+
+		return callback(null, {
+			code: 'OK',
+			message: 'Device checked',
+			data : '0'
+		})
+	}).catch(e => {
+		switch (e.message) {
+			case '1':
+				response = {
+					code: 'OK',
+					message: 'Device ID not Registered',
+					data: '1'
+				}
+				break;
+		
+			case '2':
+				response = {
+					code: 'OK',
+					message: 'Device Deleted',
+					data: '2'
+				}
+				break;
+		
+			case '3':
+				response = {
+					code: 'OK',
+					message: 'Device IP not Match',
+					data: '3'
+				}
+				break;
+		
+			default:
+				return callback({
+					code: 'DATABASE_ERR',
+					message: e.message
+				})
+		}
+
+		return callback(null, response)
+	})
 };
 
 exports.activateallpin = function (APP, req, callback) {
