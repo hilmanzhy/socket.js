@@ -1198,7 +1198,7 @@ exports.sensordata = function (APP, req, callback) {
 						}
 					}
 
-					APP.request.sendNotif(notif, (err, res) => {
+					request.sendNotif(notif, (err, res) => {
 						if (err) return callback(err);
 
 						console.log(`/ SENDING PUSH NOTIFICATION /`)
