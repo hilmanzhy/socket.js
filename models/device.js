@@ -53,6 +53,10 @@ module.exports = function (sequelize, Sequelize) {
 			type: Sequelize.INTEGER,
 			allowNull: true
 		},
+		mac_address: {
+			type: Sequelize.STRING,
+			allowNull: true
+		},
 		created_at: {
             allowNull: false,
             type: Sequelize.DATE,
