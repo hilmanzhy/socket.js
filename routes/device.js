@@ -2,6 +2,7 @@
 
 const express = require('express');
 const vascommkit = require('vascommkit');
+const moment = require('moment');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
@@ -253,8 +254,21 @@ router.post('/ipupdate', (req, res, next) => {
 	});
 });
 
-router.post('/regischeck', (req, res, next) => {
-	deviceController.regischeck(req.APP, req, (err, result) => {
+router.post('/check', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+	if (!req.body.device_ip) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_ip' }
+	})
+
+	deviceController.check(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);
@@ -363,5 +377,29 @@ router.post('/delete', (req, res, next) => {
 		return req.APP.output.print(req, res, result);
 	});
 });
+
+/* Route Generate Device ID */
+router.post('/generate_id', (req, res, next) => {
+	if (req.get('session-key') != 'apps') return req.APP.output.print(req, res, {
+		code: 'INVALID_HEADERS',
+		message: 'Only Apps allowed!'
+	})
+
+	req.APP.models.mysql.device.findAndCountAll({ where: {
+		user_id: req.auth.user_id
+	} }).then(device => {
+		let generated = `SitamotoDevice-${process.env.HW_VER}_${req.auth.user_id}-${(device.count)+1}` // FORMAT : SitamotoDevice-HWversion_userid-indexdevice
+		
+		return req.APP.output.print(req, res, {
+			code: 'OK',
+			data: { device_id: generated }
+		});
+	}).catch(err => {
+		return req.APP.output.print(req, res, {
+			code: 'DATABASE_ERR',
+			message: err
+		})
+	})
+})
 
 module.exports = router;
