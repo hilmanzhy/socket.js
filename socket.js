@@ -36,11 +36,9 @@ async function updateSession(query, callback) {
 		{ $set : query.mongo.update },
 		{ upsert : true },
 	    function(err, result){
-	        if (err){
-				callback(err);
-	        } else {
-	            callback(null, result);
-	        }
+	        if (err) return callback(err);
+	        
+			callback(null, result);
 	    }
 	);
 }
@@ -57,12 +55,10 @@ io.on('connection', (socket) => {
 		if (err) {
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
-			log.message = log.message +
-									`\n${JSON.stringify(err)}`;
+			log.message = log.message + `\n${JSON.stringify(err)}`;
 		} else {
 			APP.models = result;
-			log.message = log.message +
-									`\n> INIT CONNECTION SUCCESS`;
+			log.message = log.message + `\n> INIT CONNECTION SUCCESS`;
 		}
 
 		fnOutput.log(log)
@@ -78,7 +74,7 @@ io.on('connection', (socket) => {
 		log.body = req.body = device
 		log.level = { error : false }
 		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${device.device_id}`
+					  `\nDEVICE ID : ${device.device_id}`
 
 		query.sql = {
 			where : { device_id : device.device_id },
@@ -94,8 +90,7 @@ io.on('connection', (socket) => {
 
 		async.waterfall([
 			function checkDevice(callback) {
-				log.message = log.message +
-									 `\n> CHECK DEVICE`
+				log.message = log.message + `\n> CHECK DEVICE`
 									 
 				deviceController.regischeck(req.APP, req, (err, result) => {
 					if (err) { 
@@ -135,8 +130,7 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceStatus(data, callback) {
-				log.message = log.message +
-									 `\n> UPDATE DEVICE STATUS`
+				log.message = log.message + `\n> UPDATE DEVICE STATUS`
 
 				Device.update({ is_connected : 1 }, query.sql).then((result) => {
 					callback(null, data);
@@ -146,21 +140,17 @@ io.on('connection', (socket) => {
 			},
 
 			function updateDeviceSession(data, callback) {
-				log.message = log.message +
-									 `\n> UPDATE DEVICE SESSION`
+				log.message = log.message + `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
-					if (err) {
-						callback(err)
-					} else {
-						callback(null, data)
-					}
+					if (err) return callback(err)
+					
+					callback(null, data)
 				})
 			},
 
 			function getPinName(data, callback) {
-				log.message = log.message +
-									 `\n> GET PIN NAME`
+				log.message = log.message + `\n> GET PIN NAME`
 
 				query.sql.attributes = [ 'pin', 'device_name' ]
 
@@ -180,8 +170,7 @@ io.on('connection', (socket) => {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
-				log.message = log.message +
-									 `\n${JSON.stringify(err)}`;
+				log.message = log.message + `\n${JSON.stringify(err)}`;
 
 				output = {
 					code: 'SOCKET_ERR',
@@ -215,8 +204,7 @@ io.on('connection', (socket) => {
 		log.info = `HANDSHAKE HUB`
 		log.body = req.body = device
 		log.level = { error : false }
-		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${device.device_id}`
+		log.message = `SOCKET ID : ${socket.id}` + `\nDEVICE ID : ${device.device_id}`
 
 		query.sql = {
 			where : { device_id : hub.device_id },
@@ -243,23 +231,19 @@ io.on('connection', (socket) => {
 				})
 			},
 			function session(data, callback) {
-				log.message = log.message +
-									 `\n> UPDATE DEVICE SESSION`
+				log.message = log.message + `\n> UPDATE DEVICE SESSION`
 
 				updateSession(query, (err, res) => {
-					if (err) {
-						callback(err)
-					} else {
-						callback(null, data)
-					}
+					if (err) return callback(err)
+					
+					callback(null, data)
 				})
 			}
 		], function (err, res) {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
-				log.message = log.message +
-									 `\n${JSON.stringify(err)}`;
+				log.message = log.message + `\n${JSON.stringify(err)}`;
 
 				fnOutput.insert(req, res, log)
 				
@@ -278,13 +262,11 @@ io.on('connection', (socket) => {
 		req.event = `disconnect`
 		log.info = `SOCKET DISCONNECTED`
 		log.level = { error : false }
-		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nREASON : ${reason}`
+		log.message = `SOCKET ID : ${socket.id}` + `\nREASON : ${reason}`
 		 
 		async.waterfall([
 			function (callback) {
-				log.message = log.message +
-									 `\n> REMOVE SESSION`
+				log.message = log.message + `\n> REMOVE SESSION`
 
 				DeviceSession.findOneAndDelete({ session_id: socket.id }, (err, res) => {
 					if (err) return callback(err)
@@ -343,8 +325,7 @@ io.on('connection', (socket) => {
 				fnRequest.sendNotif(params, (err, res) => {
 					if (err) return callback(err);
 
-					log.message = log.message +
-									 `\n> PUSH NOTIFICATION`
+					log.message = log.message + `\n> PUSH NOTIFICATION`
 
 					callback(null, res)
 				})
@@ -353,8 +334,7 @@ io.on('connection', (socket) => {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
-				log.message = log.message +
-									 `\n${JSON.stringify(err)}`;
+				log.message = log.message + `\n${JSON.stringify(err)}`;
 
 				return fnOutput.insert(req, err, log)							 
 			}
@@ -381,7 +361,7 @@ io.on('connection', (socket) => {
 		log.info = 'SENSORDATA';
 		log.level = { error : false };
 		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}`;
+					  `\nDEVICE ID : ${params.device_id}`;
 
 		APP.db = db
 
@@ -389,8 +369,7 @@ io.on('connection', (socket) => {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
-				log.message = log.message +
-									 `\n${JSON.stringify(err)}`;
+				log.message = log.message + `\n${JSON.stringify(err)}`;
 
 				fnOutput.insert(req, err, log)
 
@@ -415,7 +394,7 @@ io.on('connection', (socket) => {
 		log.info = 'COMMANDAPI';
 		log.level = { error : false };
 		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}`;
+					  `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
 			io.to(result.session_id).emit('command', params);
@@ -424,8 +403,7 @@ io.on('connection', (socket) => {
 		}).catch((err) => {
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
-			log.message = log.message +
-									`\n${JSON.stringify(err)}`;
+			log.message = log.message + `\n${JSON.stringify(err)}`;
 
 			return fnOutput.insert(req, err, log)
 		});
@@ -438,15 +416,13 @@ io.on('connection', (socket) => {
 		log.body = req.body = params;
 		log.info = 'COMMANDPANEL';
 		log.level = { error : false };
-		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}`;
+		log.message = `SOCKET ID : ${socket.id}` + `\nDEVICE ID : ${params.device_id}`;
 
 		deviceController.commandpanel(APP, req, (err, result) => {
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }
-				log.message = log.message +
-									 `\n${JSON.stringify(err)}`;
+				log.message = log.message + `\n${JSON.stringify(err)}`;
 
 				fnOutput.insert(req, err, log)
 
@@ -467,11 +443,10 @@ io.on('connection', (socket) => {
 		log.info = 'COMMANDVOICE';
 		log.level = { error : false };
 		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nDEVICE ID : ${params.device_id}`;
+					  `\nDEVICE ID : ${params.device_id}`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((result) => {
-			log.message = log.message +
-								 `\n> SENDING COMMANDVOICE TO ${result.device_id}`
+			log.message = log.message + `\n> SENDING COMMANDVOICE TO ${result.device_id}`
 			
 			io.to(result.session_id).emit('command', params);
 
@@ -479,8 +454,7 @@ io.on('connection', (socket) => {
 		}).catch((err) => {
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
-			log.message = log.message +
-									`\n${JSON.stringify(err)}`;
+			log.message = log.message + `\n${JSON.stringify(err)}`;
 
 			fnOutput.insert(req, err, log)
 		});
@@ -494,7 +468,7 @@ io.on('connection', (socket) => {
 		log.info = 'UPDATE PIN';
 		log.level = { error : false };
 		log.message = `SOCKET ID : ${socket.id}` +
-							 `\nGET PIN NAME`;
+					  `\nGET PIN NAME`;
 
 		DeviceSession.findOne({ device_id : params.device_id }).then((resultSession) => {
 			query = {
@@ -514,8 +488,7 @@ io.on('connection', (socket) => {
 		}).catch((err) => {
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
-			log.message = log.message +
-									`\n${JSON.stringify(err)}`;
+			log.message = log.message + `\n${JSON.stringify(err)}`;
 
 			return fnOutput.insert(req, err, log)
 		});
@@ -532,8 +505,7 @@ io.on('connection', (socket) => {
 
 		DeviceSession.findOne(params).then(resultSession => {
 			if (resultSession) {
-				log.message = log.message +
-							  `\nSending Reset Command to Device ID : ${params.device_id}`;
+				log.message = log.message + `\nSending Reset Command to Device ID : ${params.device_id}`;
 				
 				io.to(resultSession.session_id).emit('reset', { reset: '1' });
 
@@ -542,8 +514,7 @@ io.on('connection', (socket) => {
 		}).catch((err) => {
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
-			log.message = log.message +
-						  `\n${JSON.stringify(err)}`;
+			log.message = log.message + `\n${JSON.stringify(err)}`;
 
 			return fnOutput.insert(req, err, log)
 		});

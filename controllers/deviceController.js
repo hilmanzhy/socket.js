@@ -9,7 +9,7 @@ const vascommkit = require('vascommkit');
 
 const request = require('../functions/request.js');
 
-var socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
+let socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
 var query = {};
 
 function updateSaklar(Sequelize, params, callback) {
@@ -1162,12 +1162,10 @@ exports.sensordata = function (APP, req, callback) {
 		User = APP.models.mysql.user,
 		DevicePIN = APP.models.mysql.device_pin
 
-	query = {
-		options: {
-			where: {
-				user_id: params.user_id
-			}
-		},
+	query.options = {
+		where: {
+			user_id: params.user_id
+		}
 	}
 
 	async.waterfall([
