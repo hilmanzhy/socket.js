@@ -1166,7 +1166,8 @@ exports.sensordata = function (APP, req, callback) {
 	query.options = {
 		where: {
 			user_id: params.user_id
-		}
+		},
+		attributes: ['device_key']
 	}
 
 	async.waterfall([
@@ -1178,13 +1179,15 @@ exports.sensordata = function (APP, req, callback) {
 		},
 
 		function updatingSensorStatus(params, callback) {
-			query.update = { sensor_status: params.sensor_status }
 
 			User.findOne(query.options).then(resultDevice => {
 				params.device_key = resultDevice.device_key
-				query.options.device_id = params.device_id
-
-				return DevicePIN.update(query.update, query.options)
+				
+				query.options.where.device_id = params.device_id
+				query.options.where.pin = params.pin
+				query.value = { sensor_status: params.sensor_status }
+				
+				return DevicePIN.update(query.value, query.options)
 			}).then(updated => {
 				if (params.sensor_status == '0' && updated[0] > 0) {
 					let notif = {
