@@ -2521,7 +2521,6 @@ exports.commandsocket = function (APP, req, callback) {
 		Sequelize = APP.db.sequelize;
 
 	let params = req.body,
-		output = {},
 		date = new Date()
 	date.setHours(date.getHours())
 
