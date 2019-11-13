@@ -399,22 +399,14 @@ router.post('/generate_id', (req, res, next) => {
 		code: 'INVALID_HEADERS',
 		message: 'Only Apps allowed!'
 	})
+	
+	let randomInt = Math.floor(Math.random() * 1000) + Math.floor(Math.random() * 100) + Math.floor(Math.random() * 10),
+		generated = `SitamotoDevice-${process.env.HW_VER}_${req.auth.user_id}-${randomInt}` // FORMAT : SitamotoDevice-HWversion_UserId-RandomInteger
 
-	req.APP.models.mysql.device.findAndCountAll({ where: {
-		user_id: req.auth.user_id
-	} }).then(device => {
-		let generated = `SitamotoDevice-${process.env.HW_VER}_${req.auth.user_id}-${(device.count)+1}` // FORMAT : SitamotoDevice-HWversion_userid-indexdevice
-		
-		return req.APP.output.print(req, res, {
-			code: 'OK',
-			data: { device_id: generated }
-		});
-	}).catch(err => {
-		return req.APP.output.print(req, res, {
-			code: 'DATABASE_ERR',
-			message: err
-		})
-	})
+	return req.APP.output.print(req, res, {
+		code: 'OK',
+		data: { device_id: generated }
+	});
 })
 
 module.exports = router;
