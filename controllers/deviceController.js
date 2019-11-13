@@ -245,9 +245,9 @@ exports.registerdevice = function (APP, req, callback) {
 							device_name: datareq.device_name,
 							date: date,
 							pin : datareq.pin,
-							group_id: 'NULL',
+							group_id: null,
 							device_type: datareq.device_type,
-							mac_address: datareq.mac_address ? datareq.mac_address : 'NULL'
+							mac_address: datareq.mac_address ? datareq.mac_address : null
 						}, 
 						type: APP.db.sequelize.QueryTypes.RAW 
 					}
