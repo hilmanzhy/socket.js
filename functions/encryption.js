@@ -42,8 +42,8 @@ exports.extract = function (encrypted) {
 exports.validate = function (encrypted) {
 	const extracted = module.exports.extract(encrypted);
 	let a = [];
-	a[0] = extracted[0] || 'null';
-	a[1] = extracted[1] || 'null';
+	a[0] = extracted[0] || null;
+	a[1] = extracted[1] || null;
 
 	if (module.exports.signature(a[0]) !== a[1]) return false;
 

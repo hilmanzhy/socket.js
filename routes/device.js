@@ -44,16 +44,30 @@ router.post('/registerdevice', (req, res, next) => {
 	});
 });
 
-router.post('/activatedevice', (req, res, next) => {
-	deviceController.activatedevice(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
+router.post('/activate', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+	if (!req.body.active_status) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'active_status' }
+	})
+	if (!req.body.type) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'type' }
+	})
+	if (req.body.type == 1 && !req.body.pin) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		message: 'Type 1 must include pin!',
+		data: { missing_parameter: 'pin' }
+	})
 
-router.post('/deactivatedevice', (req, res, next) => {
-	deviceController.deactivatedevice(req.APP, req, (err, result) => {
+	deviceController.activate(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);
@@ -223,6 +237,15 @@ router.post('/testingtoken', (req, res, next) => {
 });
 
 router.post('/getpindevice', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.device_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'device_id' }
+	})
+
 	deviceController.getpindevice(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
@@ -277,14 +300,6 @@ router.post('/check', (req, res, next) => {
 
 router.post('/updateusertdl', (req, res, next) => {
 	deviceController.updateusertdl(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/activateallpin', (req, res, next) => {
-	deviceController.activateallpin(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

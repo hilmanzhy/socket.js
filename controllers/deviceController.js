@@ -245,9 +245,9 @@ exports.registerdevice = function (APP, req, callback) {
 							device_name: datareq.device_name,
 							date: date,
 							pin : datareq.pin,
-							group_id: 'NULL',
+							group_id: null,
 							device_type: datareq.device_type,
-							mac_address: datareq.mac_address ? datareq.mac_address : 'NULL'
+							mac_address: datareq.mac_address ? datareq.mac_address : null
 						}, 
 						type: APP.db.sequelize.QueryTypes.RAW 
 					}
@@ -363,20 +363,22 @@ exports.registerdevice = function (APP, req, callback) {
 };
 
 exports.getdevice = function (APP, req, callback) {
-    const params = req.body
-    const Device = APP.models.mysql.device
-    
-    if(!params.user_id) return callback({ code: 'MISSING_KEY' })
-    
-    query.where = { user_id : params.user_id }
-		query.attributes = { exclude: ['created_at', 'updated_at'] }
-    
-    Device.findAll(query).then((result) => {
-		return callback(null, {
-			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : result
-		});
+	const params = req.body
+	const Device = APP.models.mysql.device
 
+	if (!params.user_id) return callback({ code: 'MISSING_KEY' })
+
+	query.where = {
+		user_id: params.user_id,
+		is_deleted: '0'
+	}
+	query.attributes = { exclude: ['is_deleted', 'created_at', 'updated_at'] }
+
+	Device.findAll(query).then((result) => {
+		return callback(null, {
+			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data: result
+		});
 	}).catch((err) => {
 		return callback({
 			code: 'ERR_DATABASE',
@@ -386,269 +388,138 @@ exports.getdevice = function (APP, req, callback) {
 };
 
 exports.getpindevice = function (APP, req, callback) {
+	const Device = APP.models.mysql.device,
+		DevicePIN = APP.models.mysql.device_pin
+	let datareq = req.body
 
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device_pin
+	query.options = {
+		where: {
+			user_id: datareq.user_id,
+			device_id: datareq.device_id,
+			is_deleted: '0'
+		},
+		attributes: { exclude: ['created_at', 'updated_at'] }
+	}
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
+	Device.findOne(query.options).then(resDevice => {
+		if (!resDevice) throw new Error('NOT_FOUND')
 
-	console.log(datareq)
+		let { options: { where } } = query
+		delete where.is_deleted
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	query.where = { user_id : datareq.user_id, device_id : datareq.device_id}
-	query.attributes = { exclude: ['created_at', 'updated_at'] }
-    
-  	Device.findAll(query).then((result) => {
+		console.log(query.options);
+
+		return DevicePIN.findAll(query.options)
+	}).then((result) => {
 		return callback(null, {
-			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : result
+			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data: result
 		});
 
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
-};
+	}).catch((e) => {
+		if (e.message == 'NOT_FOUND') return callback(null, { code: 'NOT_FOND' })
 
-exports.activatedevice = function (APP, req, callback) {
-
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device
-	const Devicepin = APP.models.mysql.device_pin
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-
-	console.log(datareq)
-
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-
-	query.options = {
-		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
-		}
-	}
-	
-	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) 
-		{
-			if (datareq.device_type == '0')
-			{
-				console.log("activate device");
-				APP.db.sequelize.query("update device set device_status = 1, active_date = now() where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-				.then(device => {
-
-					console.log("res")
-					response = {
-						code : 'OK',
-						error : 'false',
-						message : 'Activate success'
-					}
-					return callback(null, response);
-				
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			}
-			else
-			{
-				query.options = {
-					where : {
-						device_id : datareq.device_id,
-						user_id : datareq.user_id,
-						pin : datareq.pin
-					}
-				}
-
-				Devicepin.findAll(query.options).then((result) => {
-					if (result.length > 0) 
-					{
-						console.log("activate device");
-						APP.db.sequelize.query("update device_pin set device_status = 1, active_date = now() where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-					
-						.then(device => {
-
-							console.log("res")
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Activate success'
-							}
-							return callback(null, response);
-						
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-					} 
-					else 
-					{
-						return callback(null, {
-							code : 'NOT_FOUND',
-							message : 'Device Pin Not Found'
-						});
-					}
-				}).catch((err) => {
-					return callback({
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					});
-				});
-			}
-		} 
-		else 
-		{
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'Device Not Found'
-			});
-		}
-	}).catch((err) => {
 		return callback({
 			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
+			data: JSON.stringify(e)
 		});
 	});
-	
+
 };
 
-exports.deactivatedevice = function (APP, req, callback) {
+exports.activate = function (APP, req, callback) {
+	const Device = APP.models.mysql.device,
+		DevicePIN = APP.models.mysql.device_pin
+	let query, output = {},
+		params = req.body
 
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device
-	const Devicepin = APP.models.mysql.device_pin
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_type) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-
-	console.log(datareq)
-
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	query.options = {
-		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
-		}
-	}
-
-	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) 
-		{
-			if (datareq.device_type == '0')
-			{
-				console.log("deactivate device");
-				APP.db.sequelize.query("update device set device_status = 0, active_date = NULL where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-				
-				.then(device => {
-
-					console.log("res")
-					response = {
-						code : 'OK',
-						error : 'false',
-						message : 'Deactivate success'
-					}
-					return callback(null, response);
-				
-				}).catch((err) => {
-					response = {
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					}
-					return callback(response);
-				});
-			}
-			else
-			{
-				query.options = {
-					where : {
-						device_id : datareq.device_id,
-						user_id : datareq.user_id,
-						pin : datareq.pin
+	async.waterfall([
+		function generatingQuery(callback) {
+			query = {
+				value: {
+					device_status: params.active_status,
+					active_date: (params.active_status == '1') ? vascommkit.time.now() : null
+				},
+				options: {
+					where: {
+						device_id: params.device_id,
+						user_id: params.user_id
 					}
 				}
-
-				Devicepin.findAll(query.options).then((result) => {
-					if (result.length > 0) 
-					{
-						console.log("deactivate device");
-						APP.db.sequelize.query("update device_pin set device_status = 0, active_date = NULL where device_id = '" + datareq.device_id + "' and user_id = '" + datareq.user_id + "' and pin = '" + datareq.pin + "'", { type: APP.db.sequelize.QueryTypes.RAW})
-					
-						.then(device => {
-
-							console.log("res")
-							response = {
-								code : 'OK',
-								error : 'false',
-								message : 'Deactivate success'
-							}
-							return callback(null, response);
-						
-						}).catch((err) => {
-							response = {
-								code: 'ERR_DATABASE',
-								data: JSON.stringify(err)
-							}
-							return callback(response);
-						});
-					} 
-					else 
-					{
-						return callback(null, {
-							code : 'NOT_FOUND',
-							message : 'Device Pin Not Found'
-						});
-					}
-				}).catch((err) => {
-					return callback({
-						code: 'ERR_DATABASE',
-						data: JSON.stringify(err)
-					});
-				});
 			}
-		} 
-		else 
-		{
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'Device Not Found'
-			});
+
+			callback(null, query)
+		},
+
+		function checkExistingDevice(query, callback) {
+			Device.findOne(query.options).then(resDevice => {
+				if (!resDevice) return callback({
+					code: 'NOT_FOUND',
+					message: 'Device not found!'
+				})
+
+				callback(null, query, params.type, params.active_status)
+			}).catch(e => {
+				return callback({
+					code: 'ERR_DATABASE',
+					message: JSON.stringify(e)
+				})
+			})
+		},
+
+		function updatingData(query, type, status, callback) {
+			console.log(type)
+			console.log(status)
+			if (!(type == '1' && status == '0')) {
+				Device.update(query.value, query.options).then(() => { return })
+					.catch(e => {
+						return callback({
+							code: 'ERR_DATABASE',
+							message: JSON.stringify(e)
+						})
+					})
+			}
+
+			callback(null, params.type)
+		},
+
+		function updatingChildData(type, callback) {
+			let { options: { where } } = query
+
+			if (type != '0') {
+				if (type == '1') where.pin = params.pin
+
+				DevicePIN.update(query.value, query.options).then(() => { return })
+					.catch(e => {
+						return callback({
+							code: 'ERR_DATABASE',
+							message: JSON.stringify(e)
+						})
+					})
+			}
+
+			callback(null, params.active_status)
+		},
+
+		function generatingOutput(status, callback) {
+			output.code = 'OK'
+
+			switch (status) {
+				case '0':
+					output.message = 'Deactivate success'
+					break;
+
+				case '1':
+					output.message = 'Activate success'
+					break;
+			}
+
+			callback(null, output)
 		}
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-	
+	], (err, res) => {
+		if (err) return callback(err)
+		if (res) return callback(null, res)
+	})
 };
 
 exports.registerkeyword = function (APP, req, callback) {
@@ -2521,7 +2392,6 @@ exports.commandsocket = function (APP, req, callback) {
 		Sequelize = APP.db.sequelize;
 
 	let params = req.body,
-		output = {},
 		date = new Date()
 	date.setHours(date.getHours())
 
@@ -2848,7 +2718,7 @@ exports.check = function (APP, req, callback) {
 			{
 				replacements: {
 					device_id: params.device_id,
-					mac_address: params.mac_address ? params.mac_address : 'NULL'
+					mac_address: params.mac_address ? params.mac_address : null
 				}, type: APP.db.sequelize.QueryTypes.RAW
 			}
 		)
@@ -2901,69 +2771,6 @@ exports.check = function (APP, req, callback) {
 
 		return callback(null, response)
 	})
-};
-
-exports.activateallpin = function (APP, req, callback) {
-
-	var datareq = req.body
-	var response = {}
-	console.log(datareq)
-	const Device = APP.models.mysql.device_pin
-	var message = ""
-	var date = new Date();
-
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.active_status) return callback({ code: 'MISSING_KEY' })
-
-	if (datareq.active_status == '0')
-	{
-		query.value = {
-			device_status : datareq.active_status,
-			active_date : null
-		}
-		message = "Deactivate all pin device success"
-	}
-	else
-	{
-		query.value = {
-			device_status : datareq.active_status,
-			active_date : date
-		}
-		message = "Activate all pin device success"
-	}
-
-	query.options = {
-		where : {
-			device_id : datareq.device_id,
-			user_id : datareq.user_id
-		}
-	}
-
-	Device.findAll(query.options).then((result) => {
-		if (result.length > 0) {
-			Device.update(query.value, query.options).then((resUpdate) => {
-				console.log(`========== RESULT ==========`)
-				console.log(resUpdate)
-				
-				return callback(null, {
-					code : 'OK',
-					message : message
-				});
-			});
-		} else {
-			return callback(null, {
-				code : 'NOT_FOUND',
-				message : 'Device Not Found'
-			});
-		}
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-	
 };
 
 exports.getpagingdevice = function (APP, req, callback) {
