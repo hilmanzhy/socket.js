@@ -366,17 +366,19 @@ exports.getdevice = function (APP, req, callback) {
     const params = req.body
     const Device = APP.models.mysql.device
     
-    if(!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if (!params.user_id) return callback({ code: 'MISSING_KEY' })
     
-    query.where = { user_id : params.user_id }
-		query.attributes = { exclude: ['created_at', 'updated_at'] }
+	query.where = {
+		user_id: params.user_id,
+		is_deleted: '0'
+	}
+	query.attributes = { exclude: ['is_deleted', 'created_at', 'updated_at'] }
     
     Device.findAll(query).then((result) => {
 		return callback(null, {
-			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : result
+			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data: result
 		});
-
 	}).catch((err) => {
 		return callback({
 			code: 'ERR_DATABASE',
@@ -386,35 +388,41 @@ exports.getdevice = function (APP, req, callback) {
 };
 
 exports.getpindevice = function (APP, req, callback) {
+	const Device = APP.models.mysql.device,
+		DevicePIN = APP.models.mysql.device_pin
+	let datareq = req.body
 
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device_pin
+	query.options = {
+		where: {
+			user_id: datareq.user_id,
+			device_id: datareq.device_id,
+			is_deleted: '0'
+		},
+		attributes: { exclude: ['created_at', 'updated_at'] }
+	}
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
+	Device.findOne(query.options).then(resDevice => {
+		if (!resDevice) throw new Error('NOT_FOUND')
 
-	console.log(datareq)
+		let { options: { where } } = query
+		delete where.is_deleted
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+		console.log(query.options);
 	
-	query.where = { user_id : datareq.user_id, device_id : datareq.device_id}
-	query.attributes = { exclude: ['created_at', 'updated_at'] }
-    
-  	Device.findAll(query).then((result) => {
+		return DevicePIN.findAll(query.options)
+	}).then((result) => {
 		return callback(null, {
-			code : (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : result
+			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data: result
 		});
 
-	}).catch((err) => {
-		response = {
+	}).catch((e) => {
+		if (e.message == 'NOT_FOUND') return callback(null, { code: 'NOT_FOND' })
+
+		return callback({
 			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
+			data: JSON.stringify(e)
+	});
 	});
 	
 };
@@ -2847,7 +2855,7 @@ exports.check = function (APP, req, callback) {
 			{
 				replacements: {
 					device_id: params.device_id,
-					mac_address: params.mac_address ? params.mac_address : 'NULL'
+					mac_address: params.mac_address ? params.mac_address : null
 				}, type: APP.db.sequelize.QueryTypes.RAW
 			}
 		)
