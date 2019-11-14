@@ -109,13 +109,11 @@ io.on('connection', (socket) => {
 						
 						case '2':
 							log.message = log.message + ' : DEVICE DELETED' +
-														`\nSending Reset Command to Device ID : ${params.device_id}`;
+														`\nSending Reset Command to Device ID : ${device.device_id}`;
 
 							io.to(socket.id).emit('reset', { reset: '1' });
 		
-							callback(null, true)
-
-							break;
+							return callback('DEVICE_DELETED');
 
 						case '3':
 							log.message = log.message + ' : DEVICE_IP NOT MATCH'
@@ -181,6 +179,8 @@ io.on('connection', (socket) => {
 					code: 'SOCKET_ERR',
 					message: JSON.stringify(err)
 				}
+
+				if (err == 'DEVICE_DELETED') output.message = 'Device Deleted'
 
 				fnOutput.insert(req, output, log)
 
