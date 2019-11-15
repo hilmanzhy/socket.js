@@ -122,6 +122,9 @@ router.post('/devicehistory', (req, res, next) => {
 	});
 });
 
+/**
+ * Route Command
+ */
 router.post('/command', (req, res, next) => {
 	deviceController.command(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
@@ -343,16 +346,6 @@ router.post('/timer/remove', (req, res, next) => {
 	deviceController.removetimer(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-/* Route Command Socket */
-router.post('/commandsocket', (req, res, next) => {
-
-	deviceController.commandsocket(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-
 		return req.APP.output.print(req, res, result);
 	});
 });

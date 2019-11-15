@@ -1780,7 +1780,7 @@ exports.testing = function (APP, req, callback) {
 	
 };
 
-exports.command = function (APP, req, callback) {
+exports.command_backup = function (APP, req, callback) {
 	
 	var datareq = req.body
 	console.log(datareq);
@@ -2385,7 +2385,7 @@ exports.commandtest = function (APP, req, callback) {
 	}
 };
 
-exports.commandsocket = function (APP, req, callback) {
+exports.command = function (APP, req, callback) {
 	const Device = APP.models.mysql.device,
 		DevicePIN = APP.models.mysql.device_pin,
 		DeviceHistory = APP.models.mysql.device_history,
