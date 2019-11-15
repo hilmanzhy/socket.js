@@ -2436,18 +2436,6 @@ exports.commandsocket = function (APP, req, callback) {
 
 			switch (params.mode) {
 				case "1":
-					console.log(`/...ALL PIN.../`)
-
-					updateSaklar(Sequelize, query.insert, (err, response) => {
-						if (err) {
-							return callback(err)
-						} else {
-							return callback(null, response)
-						}
-					})
-	
-					break;
-				case "2":
 					console.log(`/...PIN ${params.pin}/`)
 	
 					async.waterfall([
@@ -2552,6 +2540,19 @@ exports.commandsocket = function (APP, req, callback) {
 								error: 'false',
 								message: 'Command success and saved'
 							})
+						}
+					})
+	
+					break;
+
+				case "2":
+					console.log(`/...ALL PIN.../`)
+
+					updateSaklar(Sequelize, query.insert, (err, response) => {
+						if (err) {
+							return callback(err)
+						} else {
+							return callback(null, response)
 						}
 					})
 	
