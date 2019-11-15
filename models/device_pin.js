@@ -2,7 +2,9 @@
 
 module.exports = function (sequelize, Sequelize) {
 	var device_pin = sequelize.define('device_pin', {
-
+		id: {
+			type: Sequelize.INTEGER
+		},
 		device_id: {
 			type: Sequelize.STRING,
 			allowNull: false,
