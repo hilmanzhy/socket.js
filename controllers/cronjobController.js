@@ -76,7 +76,7 @@ module.exports = function () {
 	})
 
     // Scheduler Device On Off
-	scheduler.scheduleJob('*/30 * * * *', function(time) {
+	scheduler.scheduleJob('*/15 * * * *', function(time) {
         let DevicePIN = APP.models.mysql.device_pin
         let hours = (time.getHours() < 10 ? '0' : '' ) + time.getHours()
 		let minutes = (time.getMinutes() < 10 ? '0' : '' ) + time.getMinutes()
@@ -91,6 +91,7 @@ module.exports = function () {
             'user_id',
             'device_ip',
             'device_name',
+            'pin',
             'timer_on',
             'timer_off'
         ]
@@ -106,14 +107,14 @@ module.exports = function () {
             if (result.length > 0) {
                 for (let index = 0; index < result.length; index++) {
                     let device = result[index].toJSON()
-                    let url = `http://localhost:${process.env.PORT}/device/commandsocket`
+                    let url = `${process.env.APP_URL}/device/command`
                     let params = {
                         "user_id" : device.user_id.toString(),
                         "device_id" : device.device_id.toString(),
                         "device_ip" : device.device_ip.toString(),
-                        "device_name" : device.device_name.toString(),
+                        "device_name" : device.device_name ? device.device_name.toString() : null,
                         "mode" : "1",
-                        "pin" : ""
+                        "pin" : device.pin.toString()
                     }
 
                     if (device.timer_on == convertedTime) {
@@ -121,14 +122,14 @@ module.exports = function () {
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
-                        params.status = "1"
+                        params.switch = "1"
                     }
                     if (device.timer_off == convertedTime) {
                         payloadLog.message = `TIMER OFF at ${convertedTime}` + '\n' +
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
-                        params.status = "0"
+                        params.switch = "0"
                     }
 
                     request.post(url, params, (err, result) => {
