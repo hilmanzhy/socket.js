@@ -20,7 +20,7 @@ exports.post = function (url, params, callback) {
 		.send(params)
 		.end(function (response) {
             if (response.error) return callback({
-                code : response.code
+                code : response.error
             });
 
             callback(null, response.body);
