@@ -14,8 +14,7 @@ let output = {},
 		footer  : chalk.bold.blue('======================================================================'),
 		request : chalk.cyan('============================ REQUEST ================================='),
 		response: chalk.cyan('============================ RESPONSE ================================'),
-		message : chalk.cyan('============================ MESSAGE ================================='),
-		time    : 'DATETIME  : ' + chalk.bold.yellow(vascommkit.time.now())
+		message : chalk.cyan('============================ MESSAGE =================================')
 	}
 
 exports.print = function (req, res, params) {
@@ -112,13 +111,13 @@ exports.log = function (req, res) {
         (req.ip ?			'\nIP        : ' + chalk.bold.yellow(req.ip) : '') +
         (req.originalUrl ?	'\nENDPOINT  : ' + chalk.bold.yellow(req.originalUrl) : '') +
         (req.info ?			'\nINFO      : ' + chalk.bold.yellow(req.info) : '') +
-        '\n' + templateLog.time +
+        '\n' + 'DATETIME  : ' + chalk.bold.yellow(vascommkit.time.now()) +
         (req.body ? '\n' + templateLog.request : '') +
         (req.body ? '\n' + JSON.stringify(req.body) : '') +
         (res ? '\n' + templateLog.response : '') +
 		(res ? '\n' + ((typeof res == 'object') ? JSON.stringify(res) : res) : '') +
 		(req.message ? '\n' + templateLog.message : '') +
-        (req.message ? '\n' + req.message : '')
+        (req.message ? '\n' + ((typeof req.message == 'object') ? JSON.stringify(req.message) : req.message) : '')
 
     let template =
         templateLog.header + '\n' +
