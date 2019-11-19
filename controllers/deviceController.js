@@ -9,7 +9,7 @@ const vascommkit = require('vascommkit');
 
 const request = require('../functions/request.js');
 
-let socket = io(`http://localhost:${process.env.SOCKET_PORT}`);
+let socket = io(process.env.SOCKET_URL);
 var query = {};
 
 function updateSaklar(Sequelize, params, callback) {
