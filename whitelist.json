@@ -7,7 +7,5 @@
 	"/auth/checkuser",
 	"/auth/checkotp",
 	"/user/pricing",
-	"/device/command",
-	"/device/commandsocket",
 	"/test/log"
 ]

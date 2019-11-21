@@ -114,7 +114,8 @@ module.exports = function () {
                         "device_ip" : device.device_ip.toString(),
                         "device_name" : device.device_name ? device.device_name.toString() : null,
                         "mode" : "1",
-                        "pin" : device.pin.toString()
+                        "pin" : device.pin.toString(),
+                        "headers"	: { 'Session-Key': "device" }
                     }
 
                     if (device.timer_on == convertedTime) {
