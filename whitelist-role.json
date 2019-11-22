@@ -1,0 +1,9 @@
+[
+	"/auth/login",
+	"/auth/register",
+	"/auth/forgotpassword",
+	"/auth/resetpassword",
+	"/auth/verify",
+	"/auth/checkuser",
+	"/auth/checkotp"
+]

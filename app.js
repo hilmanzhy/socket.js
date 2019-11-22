@@ -26,9 +26,11 @@ const model = require('./config/model.js');
 const queries = require('./functions/queries.js');
 const validation = require('./functions/validation.js');
 const whitelist = require('./whitelist.json');
+const whitelistRole = require('./whitelist-role.json');
 const request = require('./functions/request.js');
 const templates = require('./functions/templates.js');
 const encryption = require('./functions/encryption.js');
+const roles = require('./functions/roles.js');
 
 const cronjob = require('./controllers/cronjobController.js');
 
@@ -126,6 +128,18 @@ app.use((req, res, next) => {
 		})
 	}
 });
+/* Middleware Role */
+app.use((req, res, next) => {
+	if (!req.auth) return next();
+	if (whitelistRole.indexOf(req.originalUrl) >= 0) return next();
+	
+	roles.can(req, (err, permission) => {
+		if (err) return output.print(req, res, err)
+		if (permission.granted) return next();
+
+		return output.print(req, res, { code: 'UNAUTHORIZED' })
+	})
+})
 
 fs.readdir('./routes', (err, files) => {
 	var len = files.length;

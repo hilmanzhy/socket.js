@@ -125,7 +125,7 @@
 		"status": 401,
 		"from": "",
 		"info": {},
-		"message": "Unauthorized!",
+		"message": "You're not authorized to perform this operation!",
 		"data": {}
 	},
 

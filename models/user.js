@@ -25,6 +25,7 @@ module.exports = function (sequelize, Sequelize) {
             defaultValue: 0
         },
         verify_date: Sequelize.DATE,
+        level_id: Sequelize.INTEGER,
         action_by: Sequelize.INTEGER,
         ip_address: Sequelize.STRING,
         created_at: {
@@ -39,7 +40,9 @@ module.exports = function (sequelize, Sequelize) {
         }
     })
 
-    User.associate = function (models) {}
+    User.associate = function (models) {
+        User.belongsTo(models.user_level, { foreignKey: 'level_id' })
+    }
 
     return User
 }
