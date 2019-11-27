@@ -263,28 +263,35 @@ exports.registerdevice = function (APP, req, callback) {
 						var connectdev = "Device ID " + datareq.device_id + " : " + datareq.device_name + " sudah terkoneksi dengan sistem"
 						console.log(connectdev)
 
-						var notif = {
-							"to": device[0].device_key,
-							"notification": 
-								{
-									"title": "Sitamoto",
-									"body": connectdev
-								},
-							"data": 
-								{
-									"id": "1",
-									"command": "1"
+						APP.roles.can(req, '/notif/connect', (err, permission) => {
+							if (err) return output.print(req, res, err)
+							if (permission.granted) {
+								var notif = {
+									"to": device[0].device_key,
+									"notification": 
+										{
+											"title": "Sitamoto",
+											"body": connectdev
+										},
+									"data": 
+										{
+											"id": "1",
+											"command": "1"
+										}
 								}
-						}
-						
-						console.log("sendnotif")
-						unirest.post('https://fcm.googleapis.com/fcm/send')
-							.headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ'})
-							.send(notif)
-							.end(function (response) {
-								console.log(response.body);
 								
-							});
+								console.log("sendnotif")
+								unirest.post('https://fcm.googleapis.com/fcm/send')
+									.headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ'})
+									.send(notif)
+									.end(function (response) {
+										console.log(response.body);
+										
+									});
+							}
+							
+						})
+						
 					
 						response = {
 							code : 'OK',
@@ -312,29 +319,34 @@ exports.registerdevice = function (APP, req, callback) {
 						var unirest = require('unirest');
 						var connectdev = "Device ID " + datareq.device_id + " : " + datareq.device_name + " gagal terkoneksi dengan sistem, mohon coba lagi"
 						console.log(connectdev)
-
-						var notif = {
-							"to": device[0].device_key,
-							"notification": 
-								{
-									"title": "Sitamoto",
-									"body": connectdev
-								},
-							"data": 
-								{
-									"id": "1",
-									"command": "1"
-								}
-						}
 						
-						console.log("sendnotif")
-						unirest.post('https://fcm.googleapis.com/fcm/send')
-							.headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ'})
-							.send(notif)
-							.end(function (response) {
-								console.log(response.body);
+						APP.roles.can(req, '/notif/connect', (err, permission) => {
+							if (err) return output.print(req, res, err)
+							if (permission.granted) {
+								var notif = {
+									"to": device[0].device_key,
+									"notification": 
+										{
+											"title": "Sitamoto",
+											"body": connectdev
+										},
+									"data": 
+										{
+											"id": "1",
+											"command": "1"
+										}
+								}
 								
-							});
+								console.log("sendnotif")
+								unirest.post('https://fcm.googleapis.com/fcm/send')
+									.headers({'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ'})
+									.send(notif)
+									.end(function (response) {
+										console.log(response.body);
+										
+									});
+							}
+						})
 
 						response = {
 							code: 'ERR_DATABASE',

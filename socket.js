@@ -16,6 +16,7 @@ const db = require('./config/db.js'),
 	  model = require('./config/model.js'),
 	  fnOutput = require('./functions/output.js');
 	  fnRequest = require('./functions/request.js');
+	  fnRoles = require('./functions/roles.js');
 /* MODEL & CONTROLLER */
 const Device = require('./models/device.js')(db.sequelize, db.Sequelize),
 	  DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize),
@@ -315,25 +316,30 @@ io.on('connection', (socket) => {
 			},
 
 			function (device, callback) {
-				let params = {
-					'notif'	: {
-						'title'	: 'Device Disconnected',
-						'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`,
-						'tag'	: device.device_id
-					},
-					'data'	: {
-						'device_id' : `${device.device_id}`,
-						'device_key' : `${device.device_key}`
-					}
-				}
-
-				fnRequest.sendNotif(params, (err, res) => {
+				fnRoles.can(req, '/notif/disconnect',(err, permission) => {
 					if (err) return callback(err);
-
-					log.message = log.message + `\n> PUSH NOTIFICATION`
-
-					callback(null, res)
-				})
+					if (permission.granted) {
+						let params = {
+							'notif'	: {
+								'title'	: 'Device Disconnected',
+								'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`,
+								'tag'	: device.device_id
+							},
+							'data'	: {
+								'device_id' : `${device.device_id}`,
+								'device_key' : `${device.device_key}`
+							}
+						}
+		
+						fnRequest.sendNotif(params, (err, res) => {
+							if (err) return callback(err);
+		
+							log.message = log.message + `\n> PUSH NOTIFICATION`
+		
+							callback(null, res)
+						})
+					} else { callback(null, device) }
+				})				
 			}
 		], (err, res) => {
 			if (err) {

@@ -3,6 +3,7 @@ const async = require('async'),
       encrypt = require('../functions/encryption.js'),
       otp = require('../functions/otp.js'),
       request = require('../functions/request.js'),
+      roles = require('../functions/roles.js'),
       session = require('../functions/session.js'),
       validation = require('../functions/validation.js');
 
@@ -15,11 +16,14 @@ exports.login = function (APP, req, callback) {
     const User = APP.models.mysql.user
     let data = req.body
     
-    query.attributes = { exclude: ['password', 'created_at', 'updated_at'] }
-    query.where = {
-        username        : data.username,
-        password        : encrypt.encrypt(data.password),
-        active_status   : 1
+    query = {
+        attributes : { exclude: ['password', 'created_at', 'updated_at'] },
+        include: 'user_level',
+        where : {
+            username        : data.username,
+            password        : encrypt.encrypt(data.password),
+            active_status   : 1
+        }
     }
 
     async.waterfall([
@@ -61,6 +65,21 @@ exports.login = function (APP, req, callback) {
                     data: JSON.stringify(err)
                 });
             })
+        },
+
+        function getRole(data, callback) {
+            let mapFeature = roles.feature(req, data.user_level.level_previledge)
+            
+            Promise.all(mapFeature).then((result) => {
+                data.user_level = result.filter(Boolean)
+
+                callback(null, data)
+            }).catch((err) => {
+                callback({
+                    code: 'GENERAL_ERR',
+                    data: JSON.stringify(err)
+                });
+            });
         },
 
         function putSession(data, callback) {
@@ -146,7 +165,8 @@ exports.register = function (APP, req, callback) {
             if (validation.email(req.body.email) != true) return callback(validation.email(req.body.email))
             if (validation.phone(req.body.phone) != true) return callback(validation.phone(req.body.phone))
             if (!req.body.tdl_id) return callback({ code: 'MISSING_KEY', data: { parameter : 'tdl_id' } })
-            
+            if (!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
+
             callback(null, true)
         },
 
@@ -185,12 +205,22 @@ exports.register = function (APP, req, callback) {
 
         function create(data, callback) {
             var query = APP.queries.insert('user', req, APP.models)
-
+            
+            switch (req.get('session-key')) {
+                case 'apps':
+                    query.level_id = '3'
+                    break;
+            
+                case 'web':
+                    query.level_id = '2'
+                    break;
+            }
+            
             APP.models.mysql.user.create(query).then((user) => {
                 if (user) {
                     user.token = encrypt.token()
                     
-                    let urlToken = `${ process.env.APP_URL }auth/verify?token=${ user.token }`
+                    let urlToken = `${ process.env.APP_URL }/auth/verify?token=${ user.token }`
                     let payload = {
                         to      : user.email,
                         subject : `Verify your email address`,

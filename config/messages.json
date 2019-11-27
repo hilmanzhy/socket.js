@@ -129,6 +129,17 @@
 		"data": {}
 	},
 
+	"FORBIDDEN": {
+		"error": true,
+		"code": "FORBIDDEN",
+		"name": "FORBIDDEN",
+		"status": 403,
+		"from": "",
+		"info": {},
+		"message": "You don't have permission to access this operation!",
+		"data": {}
+	},
+
 	"DEVICE_DISSCONNECTED": {
 		"error": true,
 		"code": "DEVICE_DISSCONNECTED",
