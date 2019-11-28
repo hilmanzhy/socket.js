@@ -264,7 +264,7 @@ exports.registerdevice = function (APP, req, callback) {
 						console.log(connectdev)
 
 						APP.roles.can(req, '/notif/connect', (err, permission) => {
-							if (err) return output.print(req, res, err)
+							if (err) return callback(err);
 							if (permission.granted) {
 								var notif = {
 									"to": device[0].device_key,
@@ -286,7 +286,6 @@ exports.registerdevice = function (APP, req, callback) {
 									.send(notif)
 									.end(function (response) {
 										console.log(response.body);
-										
 									});
 							}
 							
@@ -321,7 +320,7 @@ exports.registerdevice = function (APP, req, callback) {
 						console.log(connectdev)
 						
 						APP.roles.can(req, '/notif/connect', (err, permission) => {
-							if (err) return output.print(req, res, err)
+							if (err) return callback(err);
 							if (permission.granted) {
 								var notif = {
 									"to": device[0].device_key,
