@@ -6,28 +6,6 @@ const moment = require('moment');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
-router.post('/connection', (req, res, next) => {
-	return req.APP.output.print(req, res, {
-		code: 'OK'
-	});
-});
-
-router.post('/mysqlGet', (req, res, next) => {
-	deviceController.mysqlGet(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-
-		return req.APP.output.print(req, res, result);
-	});
-});
-
-router.post('/mongoGet', (req, res, next) => {
-	deviceController.mongoGet(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-
-		return req.APP.output.print(req, res, result);
-	});
-});
-
 router.post('/getdevice', (req, res, next) => {
 	deviceController.getdevice(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
