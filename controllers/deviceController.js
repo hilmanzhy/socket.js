@@ -1480,64 +1480,81 @@ exports.runtimereportdaily = function (APP, req, callback) {
 };
 
 exports.totalruntime = function (APP, req, callback) {
-	
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
+	const Device = APP.models.mysql.device
+	let params = req.body
+	var data = {}, response = {}
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
+	query.options = {
+		col: 'device_status',
+		where: {
+			device_status: '1',
+			user_id: params.user_id
+		},
+	}
 
-	console.log('runtimereport_total')
+	Device.count(query.options).then((resultCount) => {
+		data.active_device = resultCount;
 
-	APP.db.sequelize.query("SELECT count(device_status) as active_device FROM sitadev_iot_2.device where device_status = '1' and user_id = '" + datareq.user_id + "'", { type: APP.db.sequelize.QueryTypes.RAW})
+		return APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)', { 
+			replacements: {
+				user_id: params.user_id,
+				date_from: params.date_from,		
+				date_to: params.date_to
+			}, 
+			type: APP.db.sequelize.QueryTypes.RAW 
+		})
+	}).then((resultSP) => {
+		data.total_kwh = resultSP[0].total_kwh
+		data.total_harga = resultSP[0].total_harga
 
-	.then(active_device => {
-		console.log(active_device)
+		async.parallel([
+			function validateKWH(cb) {
+				APP.roles.can(req, '/totalruntime/kwh', (err, permission) => {
+					if (err) return cb(err);
+					if (!permission.granted) delete data.total_kwh
 
-		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)',
-			{ 
-				replacements: {
-					user_id: datareq.user_id,
-					date_from: datareq.date_from,		
-					date_to: datareq.date_to
-				}, 
-				type: APP.db.sequelize.QueryTypes.RAW 
+					cb(null, data)
+				})
+			},
+
+			function validateCost(cb) {
+				APP.roles.can(req, '/totalruntime/cost', (err, permission) => {
+					if (err) return cb(err);
+					if (!permission.granted) delete data.total_harga
+
+					cb(null, data)
+				})
+			},
+
+			function validateDevice(cb) {
+				APP.roles.can(req, '/totalruntime/device', (err, permission) => {
+					if (err) return cb(err);
+					if (!permission.granted) delete data.active_device
+
+					cb(null, data)
+				})
 			}
-		)
-
-		.then(total_runtime => {
-			
-			return callback(null, {
-				code : (total_runtime && (total_runtime.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data : {
-					runtime : total_runtime,
-					device : active_device[0]
-				}
-			});
-		
-		}).catch((err) => {
+		], function (err, res) {
+			if (err) return callback({
+				code: 'GENERAL_ERR',
+				message: err
+			})
 
 			response = {
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
+				code: (res && (res.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+				data: {
+					runtime: [{
+						'total_kwh': data.total_kwh,
+						'total_harga': data.total_harga
+					}],
+					device: [{ 'active_device': data.active_device }]
+				}
 			}
-			return callback(response);
 			
-		});
-	
-	}).catch((err) => {
-
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-		
-	});
-
-};
+			return callback(null, response);
+		})
+	})
+}
 
 exports.settimer = function (APP, req, callback) {
 	const params = req.body
