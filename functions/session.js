@@ -4,53 +4,37 @@ var randomstring = require("randomstring")
 exports.put = function (APP, req, callback) {
     if(!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
 
-    var params = {
-        user_id: req.body.user_id,
-        username: req.body.username,
-        session_key: req.headers['session-key']
-    }
-    
-    async.waterfall([
-        function (callback) {
-            APP.models.mongo.session.remove(params).then((result) => {
-                callback(null, true)
-            }).catch((err) => {
-                callback({
-                    code: 'ERR_DATABASE',
-                    ori_message: err.message
-                })
-            });
+    const Session = APP.models.mongo.session
+    let query = {
+        find: {
+            user_id: req.body.user_id,
+            username: req.body.username,
+            session_key: req.headers['session-key']
         },
+        update: {
+            user_level: req.body.user_level,
+            session_id: randomstring.generate(22)
+        }
+    }
 
-        function (data, callback) {
-            params.session_id = randomstring.generate(22)
+    Session.updateOne(
+        query.find,
+        query.update,
+        { upsert : true },
+        function(err, result) {
+            if (err) {
+                return callback({
+                    code: 'ERR_DATABASE',
+                    data: JSON.stringify(err)
+                })
+            }
 
-            APP.models.mongo.session.create(params, (err, result) => {
-                if (err) {
-                    callback({
-                        code: 'ERR_DATABASE',
-                        data: JSON.stringify(err)
-                    })
-                } else {
-                    callback(null, {
-                        code: '00',
-                        data: result
-                    })
-                }
-                
+            callback(null, {
+                code: '00',
+                data: result
             })
         }
-
-    ], function (err, result) {
-        if (err) {
-            callback({
-                code: 'ERR_DATABASE',
-                data: JSON.stringify(err)
-            })
-        } else {
-            callback(null, result)
-        }
-    })
+    )
 }
 
 exports.check = function (APP, req, callback) {

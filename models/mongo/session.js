@@ -8,6 +8,7 @@ module.exports = function (mongo) {
         username: String,
         session_id: String,
         session_key: String,
+        user_level: [],
         expired: String,
         expired_in: String,
         date: {
