@@ -31,7 +31,7 @@ exports.put = function (APP, req, callback) {
 
             callback(null, {
                 code: '00',
-                data: result
+                data: query.update
             })
         }
     )
