@@ -769,52 +769,75 @@ exports.updatename = function (APP, req, callback) {
 };
 
 exports.devicehistory = function (APP, req, callback) {
-	
-	var datareq = req.body
-	var response = {}
-	console.log(datareq)
 	const DeviceHistory = APP.models.mysql.device_history
+	var response = {},
+		params = req.body
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
-
-	query.options = {
+	query = {
 		attributes : { exclude: ['created_at', 'updated_at'] },
 		where : {
-			user_id : datareq.user_id,
+			user_id : params.user_id,
 			date: {
-				[APP.db.Sequelize.Op.between]: [datareq.date_from, `${datareq.date_to} 23:59:59`]
+				[APP.db.Sequelize.Op.between]: [params.date_from, `${params.date_to} 23:59:59`]
 			  }
 		}
 	}
 
-	if (datareq.device_id) query.options.where.device_id = datareq.device_id
-	if (datareq.pin) query.options.where.pin = datareq.pin
+	if (params.device_id) query.where.device_id = params.device_id
+	if (params.pin) query.where.pin = params.pin
 	
-	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + datareq.user_id + "' and date > '" + datareq.date_from + "' and date < '" + datareq.date_to + "'"
+	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + params.user_id + "' and date > '" + params.date_from + "' and date < '" + params.date_to + "'"
 
-	// if (datareq.device_id != '')
+	// if (params.device_id != '')
 	// {
-	// 	query = query + " and device_id = '" + datareq.device_id + "'"
+	// 	query = query + " and device_id = '" + params.device_id + "'"
 	// }
 
-	// if (datareq.pin != '')
+	// if (params.pin != '')
 	// {
-	// 	query = query + " and pin = '" + datareq.pin + "'"
+	// 	query = query + " and pin = '" + params.pin + "'"
 	// }
 	
 	// APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
 	
 	// .then(device => {
 
-	DeviceHistory.findAll(query.options).then((device) => {
+	DeviceHistory.findAll(query).then((device) => {
+		let Model = APP.models.mysql.device;
+		let data = device.map( history => {
+			query = {
+				attributes : ['icon_id'],
+				raw: true,
+				where : {
+					user_id : history.user_id,
+					device_id : history.device_id
+				}
+			}
+			
+			history = history.toJSON();
+			history.icon_id = null;
+
+			if (history.pin) {
+				Model = APP.models.mysql.device_pin
+				query.where.pin = history.pin
+			}
+
+			return Model.findOne(query).then((result) => {
+				history.icon_id = result.icon_id;
+
+				return history;
+			}).catch((err) => {
+				throw new Error(err)
+			});
+		})
+
+		return Promise.all(data)
+	}).then((data) => {
 		response = {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
+			code : (data && (data.length > 0)) ? 'FOUND' : 'NOT_FOUND',
+			data : data
 		}
 		return callback(null, response);
-
 	}).catch((err) => {
 		response = {
 			code: 'ERR_DATABASE',

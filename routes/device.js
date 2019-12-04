@@ -93,6 +93,19 @@ router.post('/updatename', (req, res, next) => {
 });
 
 router.post('/devicehistory', (req, res, next) => {
+	if (!req.body.user_id) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'user_id' }
+	})
+	if (!req.body.date_from) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'date_from' }
+	})
+	if (!req.body.date_to) return req.APP.output.print(req, res, {
+		code: 'MISSING_KEY',
+		data: { missing_parameter: 'date_to' }
+	})
+
 	deviceController.devicehistory(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
