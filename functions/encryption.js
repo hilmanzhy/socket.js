@@ -54,60 +54,6 @@ exports.token = function () {
 	return crypto.randomBytes(16).toString('hex');
 }
 
-exports.generateRSA = function (callback) {
-	generateKeyPair('rsa', {
-		modulusLength: 4096,
-		publicKeyEncoding: {
-			type: 'pkcs1',
-			format: 'pem'
-		},
-		privateKeyEncoding: {
-			type: 'pkcs1',
-			format: 'pem'
-		}
-	}, (err, publicKey, privateKey) => {
-		fs.writeFileSync(path.resolve('./storage/keys', 'public.pem'), publicKey);
-		fs.writeFileSync(path.resolve('./storage/keys', 'private.pem'), privateKey);
-
-		let keys = {
-			public: publicKey,
-			private: privateKey
-		}
-
-		return callback(null, keys);
-	});
-}
-/**
- * ENCRYPT RSA PER INDEX ARRAY
- */
-// exports.encryptRSA = function (toEncrypt) {
-// 	var encrypted,
-// 		strEncrypt = JSON.stringify(toEncrypt);
-
-// 	try {
-// 		let keys = {
-// 			public: fs.readFileSync(path.resolve('./storage/keys', 'public.pem'), "utf8"),
-// 			private: fs.readFileSync(path.resolve('./storage/keys', 'private.pem'), "utf8")
-// 		}
-// 		var buffer = Buffer.from(strEncrypt),
-// 			isArray = Array.isArray(toEncrypt)
-
-// 		if (isArray) {
-// 			encrypted = toEncrypt.map(data => this.encryptRSA(data));
-// 		} else {
-// 			encrypted = crypto.publicEncrypt(keys.public, buffer);
-// 			encrypted = encrypted.toString('base64');
-// 		}
-
-// 		return encrypted;
-// 	} catch (error) {
-// 		console.log(error)
-// 		throw (error);
-// 	}
-// }
-/**
- * ENCRYPT RSA PER BYTES
- */
 exports.encryptRSA = function (toEncrypt) {
 	var encrypted, defaultLength = 470,
 		strEncrypt = JSON.stringify(toEncrypt);

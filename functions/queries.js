@@ -32,15 +32,6 @@ exports.insert = function (model, req, models) {
 
 	switch (model) {
 		// Sequelize (MySql) Example.
-		case 'test':
-			query = {
-				name: req.body.name,
-				value: req.body.value
-			};
-			
-			return query;
-			break;
-
 		case 'user':
 			query = {
 				name: req.body.name,
@@ -56,15 +47,6 @@ exports.insert = function (model, req, models) {
 			break;
 
 		// Mongoose (Mongo) Example.
-		case 'test.mongo':
-			query = {
-				name: req.body.name,
-				value: req.body.value
-			};
-			
-			return query;
-			break;
-
 		case 'log.mongo':
 			query = {
 				endpoint: req.body.endpoint,
@@ -103,14 +85,6 @@ exports.select = function (model, req, models) {
 	if (req.body.groupBy) query.group = req.body.groupBy;
 
 	switch (model) {
-		// Sequelize (MySql) Example.
-		case 'test':
-			if (req.body.name) query.where.name = req.body.name;
-			if (req.body.value) query.where.value = req.body.value;
-
-			return query;
-			break;
-
 		// DEVICE
 		case 'device_box_listrik':
 			if (req.body.name) query.where.name = req.body.name;
@@ -134,17 +108,6 @@ exports.select = function (model, req, models) {
 					{ phone: req.body.phone }
 				]
 			}
-
-			return query;
-			break;
-
-		// Mongoose (Mongo) Example.
-		case 'test.mongo':
-			query = {}; // Overwrite the 'query' variable.
-
-			if (req.body._id) query._id = req.body._id;
-			if (req.body.name) query.name = req.body.name;
-			if (req.body.value) query.value = req.body.value;
 
 			return query;
 			break;

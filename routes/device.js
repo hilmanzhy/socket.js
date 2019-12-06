@@ -235,14 +235,6 @@ router.post('/totalruntime', (req, res, next) => {
 	});
 });
 
-router.post('/testingtoken', (req, res, next) => {
-	deviceController.testingtoken(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
-});
-
 router.post('/getpindevice', (req, res, next) => {
 	if (!req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',

@@ -6,6 +6,5 @@
 	"/auth/verify",
 	"/auth/checkuser",
 	"/auth/checkotp",
-	"/user/pricing",
-	"/test/log"
+	"/user/pricing"
 ]

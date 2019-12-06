@@ -32,48 +32,6 @@ function updateSaklar(Sequelize, params, callback) {
 	});
 }
 
-exports.mysqlGet = function (APP, req, callback) {
-	var params = APP.queries.select('test', req, APP.models);
-
-	APP.models.mysql.test.findAll(params).then((rows) => {
-		return callback(null, {
-			code: (rows && (rows.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data: rows,
-			info: {
-				dataCount: rows.length
-			}
-		});
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
-};
-
-exports.mongoGet = function (APP, req, callback) {
-	var params = APP.queries.select('log.mongo', req, APP.models);
-	req.body.take = req.body.take ? req.body.take : 10;
-	req.body.skip = req.body.skip ? req.body.skip : 0;
-
-	APP.models.mongo.log.find(params).limit(req.body.take).skip(req.body.skip).sort({
-		_id: -1
-	}).lean().exec((err, rows) => {
-	  if (err) return callback({
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			});
-
-		callback(null, {
-			code: (rows && (rows.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data: rows,
-			info: {
-				dataCount: rows.length
-			}
-		});
-	});
-};
-
 exports.registerdevice = function (APP, req, callback) {
 	
 	var datareq = req.body
