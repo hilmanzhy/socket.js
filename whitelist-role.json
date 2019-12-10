@@ -1,9 +1,12 @@
 [
 	"/auth/login",
+	"/auth/logout",
 	"/auth/register",
+	"/auth/changepassword",
 	"/auth/forgotpassword",
 	"/auth/resetpassword",
 	"/auth/verify",
+	"/auth/updatekey",
 	"/auth/checkuser",
 	"/auth/checkotp"
 ]
