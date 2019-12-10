@@ -150,10 +150,13 @@ exports.pricing = function (APP, req, callback) {
 exports.tokenInsert = function (APP, req, cb) {
     async.waterfall([
         function generatingQuery(cb) {
-            query = { options: {
-                where: { user_id: req.auth.user_id },
-                include: 'electricity_pricing'
-            }, values: {} }
+            query = {
+                values: {},
+                options: {
+                    where: { user_id: req.auth.user_id },
+                    include: 'electricity_pricing'
+                }
+            }
             
             cb(null, query, req)
         },
