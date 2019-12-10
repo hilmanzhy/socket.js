@@ -163,6 +163,7 @@ exports.tokenInsert = function (APP, req, cb) {
                 .then(result => {
                     let { values } = query
                     
+                    if (!result.tdl_id) throw new Error('TDL_NULL')
                     if (result.electricity_pricing.meter_type != '2') throw new Error('PRA_ONLY')
                     if (req.body.type == 'rph') {
                         req.body.token = (parseInt(req.body.token) / parseInt(result.electricity_pricing.rp_lbwp)).toFixed(2)
@@ -179,6 +180,12 @@ exports.tokenInsert = function (APP, req, cb) {
                 }))
                 .catch(e => {
                     switch (e.message) {
+                        case 'TDL_NULL':
+                            output.code = 'INVALID_REQUEST',
+                            output.message = 'TDL not selected!'
+                            
+                            break;
+                            
                         case 'PRA_ONLY':
                             output.code = 'INVALID_REQUEST',
                             output.message = 'Prabayar only!'
