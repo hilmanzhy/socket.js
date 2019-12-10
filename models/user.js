@@ -37,11 +37,13 @@ module.exports = function (sequelize, Sequelize) {
             allowNull: false,
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
-        }
+        },
+        token: Sequelize.DOUBLE
     })
 
     User.associate = function (models) {
         User.belongsTo(models.user_level, { foreignKey: 'level_id' })
+        User.belongsTo(models.pricing, { foreignKey: 'tdl_id' })
     }
 
     return User

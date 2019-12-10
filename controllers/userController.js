@@ -146,3 +146,57 @@ exports.pricing = function (APP, req, callback) {
         return callback(null, result)
     })
 }
+
+exports.tokenInsert = function (APP, req, cb) {
+    async.waterfall([
+        function generatingQuery(cb) {
+            query = { options: {
+                where: { user_id: req.auth.user_id },
+                include: 'electricity_pricing'
+            }, values: {} }
+            
+            cb(null, query, req)
+        },
+
+        function processingData(query, req, cb) {
+            APP.models.mysql.user.findOne(query.options)
+                .then(result => {
+                    let { values } = query
+                    
+                    if (result.electricity_pricing.meter_type != '2') throw new Error('PRA_ONLY')
+                    if (req.body.type == 'rph') {
+                        req.body.token = (parseInt(req.body.token) / parseInt(result.electricity_pricing.rp_lbwp)).toFixed(2)
+                    }
+                    
+                    values.token = (parseFloat(req.body.token) + parseFloat(result.token)).toFixed(2)
+                    
+                    return APP.models.mysql.user.update(query.values, query.options)
+                })
+                .then(resUpdate => cb(null, {
+                    code: 'OK',
+                    message: 'Token updated',
+                    data: { 'token': query.values.token }
+                }))
+                .catch(e => {
+                    switch (e.message) {
+                        case 'PRA_ONLY':
+                            output.code = 'INVALID_REQUEST',
+                            output.message = 'Prabayar only!'
+                            
+                            break;
+                    
+                        default:
+                            output.code = 'ERR_DATABASE',
+                            output.message = e.message
+
+                            break;
+                    }
+
+                    cb(output)
+                })
+        }
+    ], function (err, res) {
+        if (err) return cb(err)
+        return cb(null, res)
+    })
+}

@@ -28,7 +28,9 @@ module.exports = function (sequelize, Sequelize) {
         }
     })
 
-    Pricing.associate = function (models) {}
+    Pricing.associate = function (models) {
+        Pricing.hasMany(models.user, { foreignKey: 'tdl_id' })
+    }
 
     return Pricing
 }
