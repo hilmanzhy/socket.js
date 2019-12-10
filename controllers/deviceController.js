@@ -398,6 +398,7 @@ exports.getpindevice = function (APP, req, callback) {
 
 exports.activate = function (APP, req, callback) {
 	const Device = APP.models.mysql.device,
+		User = APP.models.mysql.user,
 		DevicePIN = APP.models.mysql.device_pin
 	let query, output = {},
 		params = req.body
@@ -411,8 +412,7 @@ exports.activate = function (APP, req, callback) {
 				},
 				options: {
 					where: {
-						device_id: params.device_id,
-						user_id: params.user_id
+						user_id: req.auth.user_id
 					}
 				}
 			}
@@ -420,7 +420,23 @@ exports.activate = function (APP, req, callback) {
 			callback(null, query)
 		},
 
+		function checkExistingUser(query, callback) {
+			User.findOne(query.options).then((resultUser) => {
+				if (!resultUser.token && params.active_status == '1') throw new Error('TOKEN_NULL')
+				
+				callback(null, query)
+			}).catch((err) => {
+				return callback({
+					code: 'INVALID_REQUEST',
+					message: 'Please input your token first!'
+				})
+			});
+		},
+
 		function checkExistingDevice(query, callback) {
+			let { options: { where } } = query
+			where.device_id = params.device_id
+			
 			Device.findOne(query.options).then(resDevice => {
 				if (!resDevice) return callback({
 					code: 'NOT_FOUND',
