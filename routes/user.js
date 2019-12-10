@@ -31,7 +31,7 @@ router.post('/pricing', (req, res, next) => {
  * User Token
  */
 router.post('/token/insert', (req, res, next) => {
-	if (!req.auth || !req.body.user_id) return req.APP.output.print(req, res, {
+	if (!req.auth && !req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'user_id' }
 	})
