@@ -147,7 +147,7 @@ exports.pricing = function (APP, req, callback) {
     })
 }
 
-exports.tokenInsert = function (APP, req, cb) {
+exports.tokenTopUp = function (APP, req, cb) {
     async.waterfall([
         function generatingQuery(cb) {
             query = {
@@ -162,25 +162,46 @@ exports.tokenInsert = function (APP, req, cb) {
         },
 
         function processingData(query, req, cb) {
+            let { values } = query, user, pricing
+                token = { rph: {}, kwh: {} }
+
             APP.models.mysql.user.findOne(query.options)
                 .then(result => {
-                    let { values } = query
-                    
+                    user = result
+                    pricing = user.electricity_pricing
+
                     if (!result) throw new Error('USER_NULL')
                     if (!result.tdl_id) throw new Error('TDL_NULL')
                     if (result.electricity_pricing.meter_type != '2') throw new Error('PRA_ONLY')
-                    if (req.body.type == 'rph') {
-                        values.token = (parseInt(req.body.token) / parseInt(result.electricity_pricing.rp_lbwp)).toFixed(2)
-                    }
-                    if (result.token) values.token =( parseFloat(values.token) + parseFloat(result.token)).toFixed(2)
+
+                    switch (req.body.type) {
+                        case 'rph':
+                            token.rph.topup = parseInt(req.body.token)
+                            token.kwh.topup = parseFloat(token.rph.topup / parseInt(pricing.rp_lbwp))
+                            
+                            break;
                     
+                        case 'kwh':
+                            token.kwh.topup = parseFloat(req.body.token),
+                            token.rph.topup = parseInt(token.kwh.topup * parseInt(pricing.rp_lbwp))
+                            
+                            break;
+                    }
+
+                    if (result.token) {
+                        token.kwh.prev = parseFloat(result.token),
+                        token.rph.prev = parseInt(result.token * parseInt(pricing.rp_lbwp))
+                    } else {
+                        token.kwh.prev = 0,
+                        token.rph.prev = 0
+                    }
+
+                    token.kwh.total = values.token = token.kwh.topup + token.kwh.prev
+                    token.rph.total = token.rph.topup + token.rph.prev
+
                     return APP.models.mysql.user.update(query.values, query.options)
                 })
-                .then(resUpdate => cb(null, {
-                    code: 'OK',
-                    message: 'Token updated',
-                    data: { 'token': query.values.token }
-                }))
+                .then(resUpdate => cb(null, token, user))
                 .catch(e => {
                     switch (e.message) {
                         case 'USER_NULL':
@@ -210,9 +231,38 @@ exports.tokenInsert = function (APP, req, cb) {
 
                     cb(output)
                 })
+        },
+        
+        function pushNotif(token, user, cb) {
+            let params = {
+                'notif'	: {
+                    'title'	: 'TopUp Token Success',
+                    'body'	: `TopUp balance Rp. ${token.rph.topup}, ${(token.kwh.topup).toFixed(2)} kWh.`+'\n'+
+                              `Total token Rp. ${token.rph.total}, ${(token.kwh.total).toFixed(2)} kWh`
+                },
+                'data'	: {
+                    'user_id' : `${user.user_id}`,
+                    'user_name' : `${user.name}`,
+                    'device_key' : `${user.device_key}`
+                }
+            }
+
+            APP.request.sendNotif(params, (err, res) => {
+                if (err) return cb({
+                    code: 'GENERAL_ERR',
+                    message: err.message,
+                });
+
+                cb(null, {
+                    code: 'OK',
+                    message: 'Token updated',
+                    data: token
+                })
+            })
         }
     ], function (err, res) {
         if (err) return cb(err)
+
         return cb(null, res)
     })
 }

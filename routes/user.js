@@ -30,7 +30,7 @@ router.post('/pricing', (req, res, next) => {
 /**
  * User Token
  */
-router.post('/token/insert', (req, res, next) => {
+router.post('/token/topup', (req, res, next) => {
 	if (!req.auth && !req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'user_id' }
@@ -45,7 +45,7 @@ router.post('/token/insert', (req, res, next) => {
 	})
 	if (!req.auth) req.auth = { 'user_id': req.body.user_id }
 
-	userController.tokenInsert(req.APP, req, (err, result) => {
+	userController.tokenTopUp(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err)
 
 		return req.APP.output.print(req, res, result)
