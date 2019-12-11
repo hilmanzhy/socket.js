@@ -23,7 +23,7 @@ router.post('/registerdevice', (req, res, next) => {
 });
 
 router.post('/activate', (req, res, next) => {
-	if (!req.body.user_id) return req.APP.output.print(req, res, {
+	if (!req.auth && !req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'user_id' }
 	})
@@ -44,6 +44,7 @@ router.post('/activate', (req, res, next) => {
 		message: 'Type 1 must include pin!',
 		data: { missing_parameter: 'pin' }
 	})
+	if (!req.auth) req.auth = { 'user_id': req.body.user_id }
 
 	deviceController.activate(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);

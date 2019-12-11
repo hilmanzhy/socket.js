@@ -411,6 +411,7 @@ exports.activate = function (APP, req, callback) {
 					active_date: (params.active_status == '1') ? vascommkit.time.now() : null
 				},
 				options: {
+					include: 'electricity_pricing',
 					where: {
 						user_id: req.auth.user_id
 					}
@@ -422,19 +423,35 @@ exports.activate = function (APP, req, callback) {
 
 		function checkExistingUser(query, callback) {
 			User.findOne(query.options).then((resultUser) => {
-				if (!resultUser.token && params.active_status == '1') throw new Error('TOKEN_NULL')
+				let pricing = resultUser.electricity_pricing
+
+				if (params.active_status == '1') {
+					if (pricing.meter_type == '2' && !resultUser.token) throw new Error('TOKEN_NULL')
+				}
 				
 				callback(null, query)
 			}).catch((err) => {
-				return callback({
-					code: 'INVALID_REQUEST',
-					message: 'Please input your token first!'
-				})
+				switch (err.message) {
+					case 'TOKEN_NULL':
+						output.code = 'INVALID_REQUEST',
+						output.message = 'Please input your token first!'
+
+						break;
+				
+					default:
+						output.code = 'ERR_DATABASE',
+						output.message = e.message
+
+						break;
+				}
+				
+				callback(output)
 			});
 		},
 
 		function checkExistingDevice(query, callback) {
 			let { options: { where } } = query
+			delete query.options.include
 			where.device_id = params.device_id
 			
 			Device.findOne(query.options).then(resDevice => {
@@ -453,8 +470,6 @@ exports.activate = function (APP, req, callback) {
 		},
 
 		function updatingData(query, type, status, callback) {
-			console.log(type)
-			console.log(status)
 			if (!(type == '1' && status == '0')) {
 				Device.update(query.value, query.options).then(() => { return })
 					.catch(e => {

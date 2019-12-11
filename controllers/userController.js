@@ -166,13 +166,13 @@ exports.tokenInsert = function (APP, req, cb) {
                 .then(result => {
                     let { values } = query
                     
+                    if (!result) throw new Error('USER_NULL')
                     if (!result.tdl_id) throw new Error('TDL_NULL')
                     if (result.electricity_pricing.meter_type != '2') throw new Error('PRA_ONLY')
                     if (req.body.type == 'rph') {
-                        req.body.token = (parseInt(req.body.token) / parseInt(result.electricity_pricing.rp_lbwp)).toFixed(2)
+                        values.token = (parseInt(req.body.token) / parseInt(result.electricity_pricing.rp_lbwp)).toFixed(2)
                     }
-                    
-                    values.token = (parseFloat(req.body.token) + parseFloat(result.token)).toFixed(2)
+                    if (result.token) values.token =( parseFloat(values.token) + parseFloat(result.token)).toFixed(2)
                     
                     return APP.models.mysql.user.update(query.values, query.options)
                 })
@@ -183,6 +183,12 @@ exports.tokenInsert = function (APP, req, cb) {
                 }))
                 .catch(e => {
                     switch (e.message) {
+                        case 'USER_NULL':
+                            output.code = 'NOT_FOUND',
+                            output.message = 'User not found!'
+                            
+                            break;
+
                         case 'TDL_NULL':
                             output.code = 'INVALID_REQUEST',
                             output.message = 'TDL not selected!'
