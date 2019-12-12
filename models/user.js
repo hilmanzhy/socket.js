@@ -38,7 +38,8 @@ module.exports = function (sequelize, Sequelize) {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
         },
-        token: Sequelize.DOUBLE
+        token: Sequelize.DOUBLE,
+        token_alert: Sequelize.BOOLEAN
     })
 
     User.associate = function (models) {

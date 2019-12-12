@@ -161,6 +161,57 @@ module.exports = function () {
             return output.log(payloadLog)
         });
     });
+
+    // Scheduler Alert Token
+    scheduler.scheduleJob('0 * * * *', function (time) {
+        payloadLog.info = `SCHEDULER TOKEN CHECKER`
+        payloadLog.level = { error : false }
+
+        query.where = { token_alert: 1 }
+        query.include = 'electricity_pricing'
+        query.attributes = ['user_id', 'device_key', 'token']
+
+
+        APP.models.mysql.user.findAll(query).then((result) => {
+            if (result) {
+                result.map(user => {
+                    let pricing = user.electricity_pricing,
+                        token_kwh = (parseFloat(user.token)).toFixed(2),
+                        token_rph = parseInt(token_kwh * parseInt(pricing.rp_lbwp)),
+                        payloadNotif = {
+                            notif: {
+                                title: 'Critical Token Balance',
+                                body: `Your token balance Rp.${token_rph}, ${token_rph} kWh and it's about to die`
+                            },
+                            data: { user_id: user.user_id }
+                        }
+    
+                    if (user.device_key && user.token <= 20) {
+                        payloadNotif.data.device_key = user.device_key
+    
+                        request.sendNotif(payloadNotif, (err, res) => {
+                            if (err) {
+                                throw new Error(err)
+                            } else {
+                                payloadLog.message = `Critical Token Balance at ${time}` + '\n' +
+                                                     `Token Balance (kWh) : ${token_kwh}` + '\n' +
+                                                     `Token Balance (kWh) : ${token_rph}`
+                                payloadLog.level = { error : false }
+        
+                                return output.log(payloadLog)
+                            }
+                        })
+                    }
+                })
+            }
+        }).catch((err) => {
+            payloadLog.info = 'DEVICE CRON ERROR : REQUEST';
+            payloadLog.message = err.message;
+            payloadLog.level = { error : true }
+
+            return output.log(payloadLog)
+        });
+    })
     
     // Scheduler Connected Device
     // scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
