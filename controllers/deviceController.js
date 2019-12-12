@@ -1518,6 +1518,7 @@ exports.totalruntime = function (APP, req, callback) {
 	}).then((resultSP) => {
 		data.total_kwh = resultSP[0].total_kwh
 		data.total_harga = resultSP[0].total_harga
+		data.token = resultSP[0].token
 
 		async.parallel([
 			function validateKWH(cb) {
@@ -1545,6 +1546,15 @@ exports.totalruntime = function (APP, req, callback) {
 
 					cb(null, data)
 				})
+			},
+
+			function validateToken(cb) {
+				APP.roles.can(req, '/totalruntime/token', (err, permission) => {
+					if (err) return cb(err);
+					if (!permission.granted) delete data.token
+
+					cb(null, data)
+				})
 			}
 		], function (err, res) {
 			if (err) return callback({
@@ -1557,7 +1567,8 @@ exports.totalruntime = function (APP, req, callback) {
 				data: {
 					runtime: [{
 						'total_kwh': data.total_kwh,
-						'total_harga': data.total_harga
+						'total_harga': data.total_harga,
+						'token': data.token
 					}],
 					device: [{ 'active_device': data.active_device }]
 				}

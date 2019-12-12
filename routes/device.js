@@ -216,7 +216,7 @@ router.post('/runtimereport', (req, res, next) => {
 });
 
 router.post('/totalruntime', (req, res, next) => {
-	if (!req.body.user_id) return req.APP.output.print(req, res, {
+	if (!req.auth && !req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'user_id' }
 	})
@@ -228,6 +228,7 @@ router.post('/totalruntime', (req, res, next) => {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'date_to' }
 	})
+	if (!req.auth) req.auth = { 'user_id': req.body.user_id }
 
 	deviceController.totalruntime(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
