@@ -253,6 +253,8 @@ exports.tokenTopUp = function (APP, req, cb) {
                     message: err.message,
                 });
 
+                console.log('PUSH NOTIFICATION!')
+
                 cb(null, {
                     code: 'OK',
                     message: 'Token updated',
