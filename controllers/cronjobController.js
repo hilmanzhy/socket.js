@@ -1,6 +1,7 @@
-const async = require('async');
-const sequelize = require('sequelize');
-const scheduler = require('node-schedule');
+const async = require('async'),
+     moment = require('moment'),
+     sequelize = require('sequelize'),
+     scheduler = require('node-schedule');
 
 const db = require('../config/db.js'),
       datetime = require('../functions/datetime.js'),
@@ -78,10 +79,8 @@ module.exports = function () {
     // Scheduler Device On Off
 	scheduler.scheduleJob('*/15 * * * *', function(time) {
         let DevicePIN = APP.models.mysql.device_pin
-        let hours = (time.getHours() < 10 ? '0' : '' ) + time.getHours()
-		let minutes = (time.getMinutes() < 10 ? '0' : '' ) + time.getMinutes()
-		let seconds = (time.getSeconds() < 10 ? '0' : '') + time.getSeconds()
-        let convertedTime = [hours, minutes, seconds].join(':')
+            timeNow = moment(time).format('HH:mm:ss'),
+            timeSubtract = moment(time).subtract(15, 'minutes').format('HH:mm:ss')
         
         payloadLog.info = `SCHEDULER DEVICE ON/OFF`
         payloadLog.level = { error : false }
@@ -97,8 +96,12 @@ module.exports = function () {
         ]
         query.where = {
             [sequelize.Op.or]: [
-                { timer_on: convertedTime },
-                { timer_off: convertedTime }
+                { timer_on: {
+                    [sequelize.Op.between]: [timeSubtract, timeNow]
+                } },
+                { timer_off: {
+                    [sequelize.Op.between]: [timeSubtract, timeNow]
+                } }
             ],
             timer_status: '1'
         }
@@ -118,15 +121,15 @@ module.exports = function () {
                         "headers"	: { 'Session-Key': "device" }
                     }
 
-                    if (device.timer_on == convertedTime) {
-                        payloadLog.message = `TIMER ON at ${convertedTime}` + '\n' +
+                    if (timeNow >= device.timer_on && device.timer_on >= timeSubtract) {
+                        payloadLog.message = `TIMER ON at ${device.timer_on}` + '\n' +
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
                         params.switch = "1"
                     }
-                    if (device.timer_off == convertedTime) {
-                        payloadLog.message = `TIMER OFF at ${convertedTime}` + '\n' +
+                    if (timeNow >= device.timer_off && device.timer_off >= timeSubtract) {
+                        payloadLog.message = `TIMER OFF at ${device.timer_off}` + '\n' +
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
@@ -205,7 +208,7 @@ module.exports = function () {
                 })
             }
         }).catch((err) => {
-            payloadLog.info = 'DEVICE CRON ERROR : REQUEST';
+            payloadLog.info = 'TOKEN CRON ERROR';
             payloadLog.message = err.message;
             payloadLog.level = { error : true }
 
