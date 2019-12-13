@@ -181,7 +181,7 @@ module.exports = function () {
                         payloadNotif = {
                             notif: {
                                 title: 'Critical Token Balance',
-                                body: `Your token balance Rp.${token_rph}, ${token_rph} kWh and it's about to die`
+                                body: `Your token balance Rp.${token_rph}, ${token_kwh} kWh and it's about to die`
                             },
                             data: { user_id: user.user_id }
                         }
@@ -193,7 +193,7 @@ module.exports = function () {
                             if (err) {
                                 throw new Error(err)
                             } else {
-                                payloadLog.message = `Critical Token Balance at ${time}` + '\n' +
+                                payloadLog.message = `Critical Token Balance on User ${user.user_id}` + '\n' +
                                                      `Token Balance (kWh) : ${token_kwh}` + '\n' +
                                                      `Token Balance (kWh) : ${token_rph}`
                                 payloadLog.level = { error : false }
