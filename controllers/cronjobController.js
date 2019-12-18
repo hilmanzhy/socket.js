@@ -7,11 +7,10 @@ const db = require('../config/db.js'),
       datetime = require('../functions/datetime.js'),
       model = require('../config/model.js'),
       output = require('../functions/output.js'),
-      request = require('../functions/request.js');
+      request = require('../functions/request.js'),
+      deviceController = require('../controllers/deviceController.js');
 
-var APP = {},
-    payloadLog = {},
-    query = {};
+var APP = {}
 
 async function dcDevice(ids, app, time) {
     let Log = app.models.mongo.log;
@@ -61,6 +60,7 @@ module.exports = function () {
                     callback(err);
                 } else {
                     APP.models = result;
+                    APP.db = db;
     
                     callback(null, true);
                 }
@@ -80,7 +80,9 @@ module.exports = function () {
 	scheduler.scheduleJob('*/15 * * * *', function(time) {
         let DevicePIN = APP.models.mysql.device_pin
             timeNow = moment(time).format('HH:mm:ss'),
-            timeSubtract = moment(time).subtract(15, 'minutes').format('HH:mm:ss')
+            timeSubtract = moment(time).subtract(15, 'minutes').format('HH:mm:ss'),
+            payloadLog = {},
+            query = {};
         
         payloadLog.info = `SCHEDULER DEVICE ON/OFF`
         payloadLog.level = { error : false }
@@ -110,15 +112,12 @@ module.exports = function () {
             if (result.length > 0) {
                 for (let index = 0; index < result.length; index++) {
                     let device = result[index].toJSON()
-                    let url = `${process.env.APP_URL}/device/command`
-                    let params = {
+                    let body = {
                         "user_id" : device.user_id.toString(),
                         "device_id" : device.device_id.toString(),
-                        "device_ip" : device.device_ip.toString(),
                         "device_name" : device.device_name ? device.device_name.toString() : null,
                         "mode" : "1",
-                        "pin" : device.pin.toString(),
-                        "headers"	: { 'Session-Key': "device" }
+                        "pin" : device.pin.toString()
                     }
 
                     if (timeNow >= device.timer_on && device.timer_on >= timeSubtract) {
@@ -126,28 +125,28 @@ module.exports = function () {
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
-                        params.switch = "1"
+                        body.switch = "1"
                     }
                     if (timeNow >= device.timer_off && device.timer_off >= timeSubtract) {
                         payloadLog.message = `TIMER OFF at ${device.timer_off}` + '\n' +
                                              `DEVICE ID : ${device.device_id}` + '\n' +
                                              `DEVICE IP : ${device.device_ip}`
 
-                        params.switch = "0"
+                        body.switch = "0"
                     }
-
-                    request.post(url, params, (err, result) => {
+                    
+                    deviceController.command(APP, { body }, (err, result) => {
                         if (err) {
-                            payloadLog.info = 'DEVICE CRON ERROR : REQUEST';
+                            payloadLog.info = 'DEVICE CRON ERROR : COMMAND';
                             payloadLog.message = err;
                             payloadLog.level = { error : true }
 
                             return output.log(payloadLog)
-                        } else {
-                            payloadLog.level = { error : false }
-
-                            return output.log(payloadLog)
                         }
+                        
+                        payloadLog.level = { error : false }
+
+                        return output.log(payloadLog)
                     })
                 }				
             } else {
@@ -167,6 +166,9 @@ module.exports = function () {
 
     // Scheduler Alert Token
     scheduler.scheduleJob('0 * * * *', function (time) {
+        let payloadLog = {},
+            query = {};
+
         payloadLog.info = `SCHEDULER TOKEN CHECKER`
         payloadLog.level = { error : false }
 
@@ -198,19 +200,30 @@ module.exports = function () {
                             } else {
                                 payloadLog.message = `Critical Token Balance on User ${user.user_id}` + '\n' +
                                                      `Token Balance (kWh) : ${token_kwh}` + '\n' +
-                                                     `Token Balance (kWh) : ${token_rph}`
+                                                     `Token Balance (rph) : ${token_rph}`
                                 payloadLog.level = { error : false }
         
                                 return output.log(payloadLog)
                             }
                         })
-                    }
+                    } else { throw new Error('NOT_FOUND') }
                 })
-            }
+            } else { throw new Error('NOT_FOUND') }
         }).catch((err) => {
-            payloadLog.info = 'TOKEN CRON ERROR';
-            payloadLog.message = err.message;
-            payloadLog.level = { error : true }
+            switch (err.message) {
+                case 'NOT_FOUND':
+                    payloadLog.message = `NO SCHEDULED TOKEN ALERT AT THIS TIME`
+                    payloadLog.level = { error : false }
+    
+                    break;
+            
+                default:
+                    payloadLog.info = 'TOKEN CRON ERROR';
+                    payloadLog.message = err.message;
+                    payloadLog.level = { error : true }
+
+                    break;
+            }
 
             return output.log(payloadLog)
         });
