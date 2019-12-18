@@ -1,16 +1,16 @@
-const async = require('async'),
-     moment = require('moment'),
-     sequelize = require('sequelize'),
-     scheduler = require('node-schedule');
+const async = require("async"),
+    moment = require("moment"),
+    sequelize = require("sequelize"),
+    scheduler = require("node-schedule");
 
-const db = require('../config/db.js'),
-      datetime = require('../functions/datetime.js'),
-      model = require('../config/model.js'),
-      output = require('../functions/output.js'),
-      request = require('../functions/request.js'),
-      deviceController = require('../controllers/deviceController.js');
+const db = require("../config/db.js"),
+    datetime = require("../functions/datetime.js"),
+    model = require("../config/model.js"),
+    output = require("../functions/output.js"),
+    request = require("../functions/request.js"),
+    deviceController = require("../controllers/deviceController.js");
 
-var APP = {}
+var APP = {};
 
 async function dcDevice(ids, app, time) {
     let Log = app.models.mongo.log;
@@ -18,17 +18,19 @@ async function dcDevice(ids, app, time) {
 
     for (let id of ids) {
         query = {
-            'endpoint': '/device/sensordata',
-            'status': '200',
-            'request.id_device': id
-        }
+            endpoint: "/device/sensordata",
+            status: "200",
+            "request.id_device": id
+        };
 
         try {
-            let rows = await Log.findOne(query).sort({ date: 'desc', time: 'desc' }).exec();
-            
+            let rows = await Log.findOne(query)
+                .sort({ date: "desc", time: "desc" })
+                .exec();
+
             if (rows) {
-                let isToday = datetime.isToday(rows.date)
-                let timeDiff = datetime.timeDiff(rows.time, time, 'minutes')
+                let isToday = datetime.isToday(rows.date);
+                let timeDiff = datetime.timeDiff(rows.time, time, "minutes");
 
                 if (isToday) {
                     if (timeDiff >= 5) {
@@ -40,195 +42,236 @@ async function dcDevice(ids, app, time) {
             } else {
                 updateId.push(id);
             }
-        } catch(e) {
-            payloadLog.info = 'DEVICE CRON ERROR : DISCONNECTED DEVICE';
+        } catch (e) {
+            payloadLog.info = "DEVICE CRON ERROR : DISCONNECTED DEVICE";
             payloadLog.message = e;
-            payloadLog.level = { error : true }
+            payloadLog.level = { error: true };
 
-            output.log(payloadLog)
+            output.log(payloadLog);
         }
     }
 
-    return updateId
+    return updateId;
 }
 
-module.exports = function () {
-    async.waterfall([
-        function initializeModels (callback) {
-			model(db, (err, result) => {
-				if (err) {
-                    callback(err);
-                } else {
-                    APP.models = result;
-                    APP.db = db;
-    
-                    callback(null, true);
-                }
-			});
-		}
-    ], (err, result) => {
-		if (err) {
-            payloadLog.info = 'DEVICE CRON ERROR : INIT APP';
-            payloadLog.message = err;
-            payloadLog.level = { error : true }
+module.exports = function() {
+    async.waterfall(
+        [
+            function initializeModels(callback) {
+                model(db, (err, result) => {
+                    if (err) {
+                        callback(err);
+                    } else {
+                        APP.models = result;
+                        APP.db = db;
 
-            return output.log(payloadLog)
+                        callback(null, true);
+                    }
+                });
+            }
+        ],
+        (err, result) => {
+            if (err) {
+                payloadLog.info = "DEVICE CRON ERROR : INIT APP";
+                payloadLog.message = err;
+                payloadLog.level = { error: true };
+
+                return output.log(payloadLog);
+            }
         }
-	})
+    );
 
     // Scheduler Device On Off
-	scheduler.scheduleJob('*/15 * * * *', function(time) {
-        let DevicePIN = APP.models.mysql.device_pin
-            timeNow = moment(time).format('HH:mm:ss'),
-            timeSubtract = moment(time).subtract(15, 'minutes').format('HH:mm:ss'),
-            payloadLog = {},
-            query = {};
-        
-        payloadLog.info = `SCHEDULER DEVICE ON/OFF`
-        payloadLog.level = { error : false }
+    scheduler.scheduleJob("*/15 * * * *", function(time) {
+        let DevicePIN = APP.models.mysql.device_pin;
+        (timeNow = moment(time).format("HH:mm:ss")),
+            (timeSubtract = moment(time)
+                .subtract(15, "minutes")
+                .format("HH:mm:ss")),
+            (payloadLog = {}),
+            (query = {});
+
+        payloadLog.info = `SCHEDULER DEVICE ON/OFF`;
+        payloadLog.level = { error: false };
 
         query.attributes = [
-            'device_id',
-            'user_id',
-            'device_ip',
-            'device_name',
-            'pin',
-            'timer_on',
-            'timer_off'
-        ]
+            "device_id",
+            "user_id",
+            "device_ip",
+            "device_name",
+            "pin",
+            "timer_on",
+            "timer_off"
+        ];
         query.where = {
             [sequelize.Op.or]: [
-                { timer_on: {
-                    [sequelize.Op.between]: [timeSubtract, timeNow]
-                } },
-                { timer_off: {
-                    [sequelize.Op.between]: [timeSubtract, timeNow]
-                } }
+                {
+                    timer_on: {
+                        [sequelize.Op.between]: [timeSubtract, timeNow]
+                    }
+                },
+                {
+                    timer_off: {
+                        [sequelize.Op.between]: [timeSubtract, timeNow]
+                    }
+                }
             ],
-            timer_status: '1'
-        }
+            timer_status: "1"
+        };
 
-        DevicePIN.findAll(query).then((result) => {
-            if (result.length > 0) {
-                for (let index = 0; index < result.length; index++) {
-                    let device = result[index].toJSON()
-                    let body = {
-                        "user_id" : device.user_id.toString(),
-                        "device_id" : device.device_id.toString(),
-                        "device_name" : device.device_name ? device.device_name.toString() : null,
-                        "mode" : "1",
-                        "pin" : device.pin.toString()
-                    }
+        DevicePIN.findAll(query)
+            .then(result => {
+                if (result.length > 0) {
+                    for (let index = 0; index < result.length; index++) {
+                        let device = result[index].toJSON();
+                        let body = {
+                            user_id: device.user_id.toString(),
+                            device_id: device.device_id.toString(),
+                            device_name: device.device_name
+                                ? device.device_name.toString()
+                                : null,
+                            mode: "1",
+                            pin: device.pin.toString()
+                        };
 
-                    if (timeNow >= device.timer_on && device.timer_on >= timeSubtract) {
-                        payloadLog.message = `TIMER ON at ${device.timer_on}` + '\n' +
-                                             `DEVICE ID : ${device.device_id}` + '\n' +
-                                             `DEVICE IP : ${device.device_ip}`
+                        if (
+                            timeNow >= device.timer_on &&
+                            device.timer_on >= timeSubtract
+                        ) {
+                            payloadLog.message =
+                                `TIMER ON at ${device.timer_on}` +
+                                "\n" +
+                                `DEVICE ID : ${device.device_id}` +
+                                "\n" +
+                                `DEVICE IP : ${device.device_ip}`;
 
-                        body.switch = "1"
-                    }
-                    if (timeNow >= device.timer_off && device.timer_off >= timeSubtract) {
-                        payloadLog.message = `TIMER OFF at ${device.timer_off}` + '\n' +
-                                             `DEVICE ID : ${device.device_id}` + '\n' +
-                                             `DEVICE IP : ${device.device_ip}`
-
-                        body.switch = "0"
-                    }
-                    
-                    deviceController.command(APP, { body }, (err, result) => {
-                        if (err) {
-                            payloadLog.info = 'DEVICE CRON ERROR : COMMAND';
-                            payloadLog.message = err;
-                            payloadLog.level = { error : true }
-
-                            return output.log(payloadLog)
+                            body.switch = "1";
                         }
-                        
-                        payloadLog.level = { error : false }
+                        if (
+                            timeNow >= device.timer_off &&
+                            device.timer_off >= timeSubtract
+                        ) {
+                            payloadLog.message =
+                                `TIMER OFF at ${device.timer_off}` +
+                                "\n" +
+                                `DEVICE ID : ${device.device_id}` +
+                                "\n" +
+                                `DEVICE IP : ${device.device_ip}`;
 
-                        return output.log(payloadLog)
-                    })
-                }				
-            } else {
-                payloadLog.message = `NO SCHEDULED DEVICE AT THIS TIME`
-                payloadLog.level = { error : false }
+                            body.switch = "0";
+                        }
 
-                return output.log(payloadLog)
-            }
-        }).catch((err) => {
-            payloadLog.info = 'DEVICE CRON ERROR : DB';
-            payloadLog.message = err;
-            payloadLog.level = { error : true }
+                        deviceController.command(
+                            APP,
+                            { body },
+                            (err, result) => {
+                                if (err) {
+                                    payloadLog.info =
+                                        "DEVICE CRON ERROR : COMMAND";
+                                    payloadLog.message = err;
+                                    payloadLog.level = { error: true };
 
-            return output.log(payloadLog)
-        });
+                                    return output.log(payloadLog);
+                                }
+
+                                payloadLog.level = { error: false };
+
+                                return output.log(payloadLog);
+                            }
+                        );
+                    }
+                } else {
+                    payloadLog.message = `NO SCHEDULED DEVICE AT THIS TIME`;
+                    payloadLog.level = { error: false };
+
+                    return output.log(payloadLog);
+                }
+            })
+            .catch(err => {
+                payloadLog.info = "DEVICE CRON ERROR : DB";
+                payloadLog.message = err;
+                payloadLog.level = { error: true };
+
+                return output.log(payloadLog);
+            });
     });
 
     // Scheduler Alert Token
-    scheduler.scheduleJob('0 * * * *', function (time) {
+    scheduler.scheduleJob("0 * * * *", function(time) {
         let payloadLog = {},
             query = {};
 
-        payloadLog.info = `SCHEDULER TOKEN CHECKER`
-        payloadLog.level = { error : false }
+        payloadLog.info = `SCHEDULER TOKEN CHECKER`;
+        payloadLog.level = { error: false };
 
-        query.where = { token_alert: 1 }
-        query.include = 'electricity_pricing'
-        query.attributes = ['user_id', 'device_key', 'token']
+        query.where = { token_alert: 1 };
+        query.include = "electricity_pricing";
+        query.attributes = ["user_id", "device_key", "token"];
 
+        APP.models.mysql.user
+            .findAll(query)
+            .then(result => {
+                if (result) {
+                    result.map(user => {
+                        let pricing = user.electricity_pricing,
+                            token_kwh = parseFloat(user.token).toFixed(2),
+                            token_rph = parseInt(
+                                token_kwh * parseInt(pricing.rp_lbwp)
+                            ),
+                            payloadNotif = {
+                                notif: {
+                                    title: "Critical Token Balance",
+                                    body: `Your token balance Rp.${token_rph}, ${token_kwh} kWh and it's about to die`
+                                },
+                                data: { user_id: user.user_id }
+                            };
 
-        APP.models.mysql.user.findAll(query).then((result) => {
-            if (result) {
-                result.map(user => {
-                    let pricing = user.electricity_pricing,
-                        token_kwh = (parseFloat(user.token)).toFixed(2),
-                        token_rph = parseInt(token_kwh * parseInt(pricing.rp_lbwp)),
-                        payloadNotif = {
-                            notif: {
-                                title: 'Critical Token Balance',
-                                body: `Your token balance Rp.${token_rph}, ${token_kwh} kWh and it's about to die`
-                            },
-                            data: { user_id: user.user_id }
+                        if (user.device_key && user.token <= 20) {
+                            payloadNotif.data.device_key = user.device_key;
+
+                            request.sendNotif(payloadNotif, (err, res) => {
+                                if (err) {
+                                    throw new Error(err);
+                                } else {
+                                    payloadLog.message =
+                                        `Critical Token Balance on User ${user.user_id}` +
+                                        "\n" +
+                                        `Token Balance (kWh) : ${token_kwh}` +
+                                        "\n" +
+                                        `Token Balance (rph) : ${token_rph}`;
+                                    payloadLog.level = { error: false };
+
+                                    return output.log(payloadLog);
+                                }
+                            });
+                        } else {
+                            throw new Error("NOT_FOUND");
                         }
-    
-                    if (user.device_key && user.token <= 20) {
-                        payloadNotif.data.device_key = user.device_key
-    
-                        request.sendNotif(payloadNotif, (err, res) => {
-                            if (err) {
-                                throw new Error(err)
-                            } else {
-                                payloadLog.message = `Critical Token Balance on User ${user.user_id}` + '\n' +
-                                                     `Token Balance (kWh) : ${token_kwh}` + '\n' +
-                                                     `Token Balance (rph) : ${token_rph}`
-                                payloadLog.level = { error : false }
-        
-                                return output.log(payloadLog)
-                            }
-                        })
-                    } else { throw new Error('NOT_FOUND') }
-                })
-            } else { throw new Error('NOT_FOUND') }
-        }).catch((err) => {
-            switch (err.message) {
-                case 'NOT_FOUND':
-                    payloadLog.message = `NO SCHEDULED TOKEN ALERT AT THIS TIME`
-                    payloadLog.level = { error : false }
-    
-                    break;
-            
-                default:
-                    payloadLog.info = 'TOKEN CRON ERROR';
-                    payloadLog.message = err.message;
-                    payloadLog.level = { error : true }
+                    });
+                } else {
+                    throw new Error("NOT_FOUND");
+                }
+            })
+            .catch(err => {
+                switch (err.message) {
+                    case "NOT_FOUND":
+                        payloadLog.message = `NO SCHEDULED TOKEN ALERT AT THIS TIME`;
+                        payloadLog.level = { error: false };
 
-                    break;
-            }
+                        break;
 
-            return output.log(payloadLog)
-        });
-    })
-    
+                    default:
+                        payloadLog.info = "TOKEN CRON ERROR";
+                        payloadLog.message = err.message;
+                        payloadLog.level = { error: true };
+
+                        break;
+                }
+
+                return output.log(payloadLog);
+            });
+    });
+
     // Scheduler Connected Device
     // scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
     //     let Device = APP.models.mysql.device
@@ -247,13 +290,13 @@ module.exports = function () {
     //         function getID(callback) {
     //             Device.findAll(query).then((result) => {
     //                 let deviceID = []
-                    
+
     //                 for (let i = 0; i < result.length; i++) {
     //                     let res = result[i].toJSON()
 
     //                     deviceID[i] = res.device_id
     //                 }
-                    
+
     //                 callback(null, deviceID)
     //             })
     //             .catch((err) => {
@@ -281,7 +324,7 @@ module.exports = function () {
     //                     device_id : data
     //                 }
     //             }
-                
+
     //             Device.update(query.value, query.options).then((result) => {
     //                 callback(null, {
     //                     code : 'OK',
@@ -301,8 +344,8 @@ module.exports = function () {
     //     })
     // })
 
-	// Scheduler Retensi Device
-	/* scheduler.scheduleJob('0 * * * *', function(time) {
+    // Scheduler Retensi Device
+    /* scheduler.scheduleJob('0 * * * *', function(time) {
         // const { exec } = require('child_process');
         // const path = require('path')
         const Client = require('node-ssh')
@@ -333,4 +376,4 @@ module.exports = function () {
         //     console.log(`stderr: ${stderr}`);
         // })
 	}); */
-}
+};
