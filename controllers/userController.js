@@ -268,3 +268,27 @@ exports.tokenTopUp = function (APP, req, cb) {
         return cb(null, res)
     })
 }
+
+exports.tokenAlert = function(APP, req, cb) {
+    query = {
+        update: { token_alert: req.body.switch },
+        options: {
+            where: { user_id: req.auth.user_id }
+        }
+    };
+
+    APP.models.mysql.user
+        .update(query.update, query.options)
+        .then(result => {
+            cb(null, {
+                code: 'OK',
+                message: 'Switch updated',
+            });
+        })
+        .catch(err => {
+            cb({
+                code: 'GENERAL_ERR',
+                message: err.message,
+            });
+        });
+};
