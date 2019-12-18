@@ -1052,92 +1052,107 @@ exports.commandpanel = function (APP, req, callback) {
 	
 };
 
-exports.sensordata = function (APP, req, callback) {
-	let params = req.body,
-		User = APP.models.mysql.user,
-		DevicePIN = APP.models.mysql.device_pin
+exports.sensordata = function(APP, req, callback) {
+    let params = req.body,
+        User = APP.models.mysql.user,
+        DevicePIN = APP.models.mysql.device_pin;
 
-	query.options = {
-		where: {
-			user_id: params.user_id
-		},
-		attributes: ['device_key']
-	}
+    query.options = {
+        where: {
+            user_id: params.user_id
+        },
+        attributes: ["device_key"]
+    };
 
-	async.waterfall([
-		function generatingParams(callback) {
-			if (params.sensor_status == '0') params.switch == '0'
-			if (params.device_type == '0') params.pin == '1'
+    async.waterfall(
+        [
+            function generatingParams(callback) {
+                if (params.sensor_status == "0") params.switch == "0";
+                if (params.device_type == "0") params.pin == "1";
 
-			callback(null, params)
-		},
+                callback(null, params);
+            },
 
-		function updatingSensorStatus(params, callback) {
+            function updatingSensorStatus(params, callback) {
+                User.findOne(query.options)
+                    .then(resultDevice => {
+                        params.device_key = resultDevice.device_key;
 
-			User.findOne(query.options).then(resultDevice => {
-				params.device_key = resultDevice.device_key
-				
-				query.options.where.device_id = params.device_id
-				query.options.where.pin = params.pin
-				query.value = { sensor_status: params.sensor_status }
-				
-				return DevicePIN.update(query.value, query.options)
-			}).then(updated => {
-				if (params.sensor_status == '0' && updated[0] > 0) {
-					let notif = {
-						'notif': {
-							'title': 'Sensor Problem',
-							'body': `Sensor Problem on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
-							'tag': params.device_id
-						},
-						'data': {
-							'device_id': `${params.device_id}`,
-							'device_key': `${params.device_key}`
-						}
-					}
+                        query.options.where.device_id = params.device_id;
+                        query.options.where.pin = params.pin;
+                        query.value = { sensor_status: params.sensor_status };
 
-					request.sendNotif(notif, (err, res) => {
-						if (err) return callback(err);
+                        return DevicePIN.update(query.value, query.options);
+                    })
+                    .then(updated => {
+                        /**
+                         * NOTIF SENSOR PROBLEM
+                         */
+                        // if (params.sensor_status == '0' && updated[0] > 0) {
+                        // 	let notif = {
+                        // 		'notif': {
+                        // 			'title': 'Sensor Problem',
+                        // 			'body': `Sensor Problem on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
+                        // 			'tag': params.device_id
+                        // 		},
+                        // 		'data': {
+                        // 			'device_id': `${params.device_id}`,
+                        // 			'device_key': `${params.device_key}`
+                        // 		}
+                        // 	}
 
-						console.log(`/ SENDING PUSH NOTIFICATION /`)
-					})
-				}
+                        // 	request.sendNotif(notif, (err, res) => {
+                        // 		if (err) return callback(err);
 
-				callback(null, params)
-			})
-		},
+                        // 		console.log(`/ SENDING PUSH NOTIFICATION /`)
+                        // 	})
+                        // }
 
-		function callSP(params, callback) {
-			APP.db.sequelize.query('CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)',
-				{
-					replacements: {
-						device_id: params.device_id,
-						user_id: params.user_id,
-						pin: params.pin,
-						switch: params.switch,
-						current_sensor: params.ampere,
-						watt: params.wattage,
-						date_device: params.date
-					}, type: APP.db.sequelize.QueryTypes.RAW
-				}
-			).then(rows => {
-				callback(null, {
-					code: 'OK',
-					message: (rows[0].message == '0') ? 'Device not activated yet' : 'Data saved'
-				})
-				return
-			}).catch((err) => {
-				return callback({
-					code: 'ERR_DATABASE',
-					data: JSON.stringify(err)
-				});
-			});
-		}
-	], function (err, result) {
-		if (err) return callback(err)
+                        callback(null, params);
+                    });
+            },
 
-		return callback(null, result)
-	})
+            function callSP(params, callback) {
+                APP.db.sequelize
+                    .query(
+                        "CALL sitadev_iot_2.datasensor (:device_id, :user_id, :pin, :switch, :current_sensor, :watt, :date_device)",
+                        {
+                            replacements: {
+                                device_id: params.device_id,
+                                user_id: params.user_id,
+                                pin: params.pin,
+                                switch: params.switch,
+                                current_sensor: params.ampere,
+                                watt: params.wattage,
+                                date_device: params.date
+                            },
+                            type: APP.db.sequelize.QueryTypes.RAW
+                        }
+                    )
+                    .then(rows => {
+                        callback(null, {
+                            code: "OK",
+                            message:
+                                rows[0].message == "0"
+                                    ? "Device not activated yet"
+                                    : "Data saved"
+                        });
+                        return;
+                    })
+                    .catch(err => {
+                        return callback({
+                            code: "ERR_DATABASE",
+                            data: JSON.stringify(err)
+                        });
+                    });
+            }
+        ],
+        function(err, result) {
+            if (err) return callback(err);
+
+            return callback(null, result);
+        }
+    );
 };
 
 exports.sensordata_v2 = function (APP, req, callback) {
