@@ -40,6 +40,7 @@ exports.insert = function (model, req, models) {
 				password: req.body.password,
 				phone: req.body.phone,
 				tdl_id: req.body.tdl_id,
+				tax_id: (req.body.tax_id) ? req.body.tax_id : null,
 				active_status: "1"
 			}
 
