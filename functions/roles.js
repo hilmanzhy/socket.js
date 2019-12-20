@@ -22,7 +22,7 @@ function feature(req, level_id) {
 function can(req, role, cb) {
     async.waterfall([
         function checkingCondition(cb) {
-            if (req.auth.user_level) {
+            if (req.auth && req.auth.user_level) {
                 cb(null, req.auth.user_level)
             } else if (req.body.user_id) {
                 query.level_id = {
