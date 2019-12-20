@@ -211,22 +211,22 @@ exports.tokenTopUp = function(APP, req, cb) {
                                 break;
 
                             case "kwh":
-                                (token.kwh.topup = parseFloat(req.body.token)),
-                                    (token.rph.topup = parseInt(
-                                        token.kwh.topup *
-                                            parseInt(pricing.rp_lbwp)
-                                    ));
+                                token.kwh.topup = parseFloat(req.body.token);
+                                token.rph.topup = parseInt(
+                                    token.kwh.topup * parseInt(pricing.rp_lbwp)
+                                );
 
                                 break;
                         }
 
                         if (result.token) {
-                            (token.kwh.prev = parseFloat(result.token)),
-                                (token.rph.prev = parseInt(
-                                    result.token * parseInt(pricing.rp_lbwp)
-                                ));
+                            token.kwh.prev = parseFloat(result.token);
+                            token.rph.prev = parseInt(
+                                result.token * parseInt(pricing.rp_lbwp)
+                            );
                         } else {
-                            (token.kwh.prev = 0), (token.rph.prev = 0);
+                            token.kwh.prev = 0;
+                            token.rph.prev = 0;
                         }
 
                         token.kwh.total = values.token =
@@ -242,26 +242,26 @@ exports.tokenTopUp = function(APP, req, cb) {
                     .catch(e => {
                         switch (e.message) {
                             case "USER_NULL":
-                                (output.code = "NOT_FOUND"),
-                                    (output.message = "User not found!");
+                                output.code = "NOT_FOUND";
+                                output.message = "User not found!";
 
                                 break;
 
                             case "TDL_NULL":
-                                (output.code = "INVALID_REQUEST"),
-                                    (output.message = "TDL not selected!");
+                                output.code = "INVALID_REQUEST";
+                                output.message = "TDL not selected!";
 
                                 break;
 
                             case "PRA_ONLY":
-                                (output.code = "INVALID_REQUEST"),
-                                    (output.message = "Prabayar only!");
+                                output.code = "INVALID_REQUEST";
+                                output.message = "Prabayar only!";
 
                                 break;
 
                             default:
-                                (output.code = "ERR_DATABASE"),
-                                    (output.message = e.message);
+                                output.code = "ERR_DATABASE";
+                                output.message = e.message;
 
                                 break;
                         }
