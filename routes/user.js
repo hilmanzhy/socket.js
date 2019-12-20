@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Controller
 const userController = require("../controllers/userController.js");
+const taxController = require("../controllers/taxController.js");
 
 router.post("/get", (req, res, next) => {
     userController.get(req.APP, req, (err, result) => {
@@ -69,6 +70,17 @@ router.post("/token/alert", (req, res, next) => {
     if (!req.auth) req.auth = { user_id: req.body.user_id };
 
     userController.tokenAlert(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
+/**
+ * City Tax
+ */
+router.post("/tax/get", (req, res, next) => {
+    taxController.get(req.APP, req, (err, result) => {
         if (err) return req.APP.output.print(req, res, err);
 
         return req.APP.output.print(req, res, result);
