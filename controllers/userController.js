@@ -174,6 +174,8 @@ exports.tokenTopUp = function(APP, req, cb) {
         [
             function generatingQuery(cb) {
                 query = {
+                    sp:
+                        "CALL sitadev_iot_2.insert_token (:user_id, :token_rph_topup)",
                     values: {},
                     options: {
                         where: { user_id: req.auth.user_id },
@@ -186,59 +188,70 @@ exports.tokenTopUp = function(APP, req, cb) {
 
             function processingData(query, req, cb) {
                 let { values } = query,
+                    { options } = query,
+                    token = {},
                     user,
+                    power,
+                    max_token,
                     pricing;
-                token = { rph: {}, kwh: {} };
 
                 APP.models.mysql.user
                     .findOne(query.options)
                     .then(result => {
-                        user = result;
-                        pricing = user.electricity_pricing;
-
                         if (!result) throw new Error("USER_NULL");
                         if (!result.tdl_id) throw new Error("TDL_NULL");
                         if (result.electricity_pricing.meter_type != "2")
                             throw new Error("PRA_ONLY");
 
+                        user = result;
+                        pricing = user.electricity_pricing;
+
                         switch (req.body.type) {
                             case "rph":
-                                token.rph.topup = parseInt(req.body.token);
-                                token.kwh.topup = parseFloat(
-                                    token.rph.topup / parseInt(pricing.rp_lbwp)
-                                );
+                                token.topup_balance = `Rp. ${req.body.token}`;
 
-                                break;
+                                return APP.db.sequelize.query(query.sp, {
+                                    replacements: {
+                                        user_id: req.auth.user_id,
+                                        token_rph_topup: req.body.token
+                                    },
+                                    type: APP.db.sequelize.QueryTypes.RAW
+                                });
 
                             case "kwh":
-                                token.kwh.topup = parseFloat(req.body.token);
-                                token.rph.topup = parseInt(
-                                    token.kwh.topup * parseInt(pricing.rp_lbwp)
+                                token.topup_balance = `${req.body.token} kWh`;
+
+                                power = pricing.range_daya.split(" s.d ")[1];
+                                max_token = (power * 720) / 1000;
+
+                                values.token = user.token
+                                    ? parseFloat(user.token) +
+                                      parseFloat(req.body.token)
+                                    : parseFloat(req.body.token);
+
+                                if (values.token > max_token)
+                                    throw new Error("MAX_TOKEN");
+
+                                return APP.models.mysql.user.update(
+                                    query.values,
+                                    query.options
                                 );
-
-                                break;
                         }
-
-                        if (result.token) {
-                            token.kwh.prev = parseFloat(result.token);
-                            token.rph.prev = parseInt(
-                                result.token * parseInt(pricing.rp_lbwp)
-                            );
-                        } else {
-                            token.kwh.prev = 0;
-                            token.rph.prev = 0;
-                        }
-
-                        token.kwh.total = values.token =
-                            token.kwh.topup + token.kwh.prev;
-                        token.rph.total = token.rph.topup + token.rph.prev;
-
-                        return APP.models.mysql.user.update(
-                            query.values,
-                            query.options
-                        );
                     })
-                    .then(resUpdate => cb(null, token, user))
+                    .then(resUpdate => {
+                        if (req.body.type == "rph" && resUpdate[0].message < 1)
+                            throw new Error("MAX_TOKEN");
+
+                        options.attributes = ["token"];
+                        delete options.include;
+
+                        return APP.models.mysql.user.findOne(query.options);
+                    })
+                    .then(resUser => {
+                        token.total_balance = `${resUser.token} kWh`;
+
+                        cb(null, token, user);
+                    })
                     .catch(e => {
                         switch (e.message) {
                             case "USER_NULL":
@@ -259,6 +272,12 @@ exports.tokenTopUp = function(APP, req, cb) {
 
                                 break;
 
+                            case "MAX_TOKEN":
+                                output.code = "INVALID_REQUEST";
+                                output.message = "Max token reached!";
+
+                                break;
+
                             default:
                                 output.code = "ERR_DATABASE";
                                 output.message = e.message;
@@ -275,13 +294,9 @@ exports.tokenTopUp = function(APP, req, cb) {
                     notif: {
                         title: "TopUp Token Success",
                         body:
-                            `TopUp balance Rp. ${
-                                token.rph.topup
-                            }, ${token.kwh.topup.toFixed(2)} kWh.` +
+                            `TopUp balance ${token.topup_balance}` +
                             "\n" +
-                            `Total token Rp. ${
-                                token.rph.total
-                            }, ${token.kwh.total.toFixed(2)} kWh`
+                            `Total balance ${token.total_balance}`
                     },
                     data: {
                         user_id: `${user.user_id}`,
@@ -301,7 +316,7 @@ exports.tokenTopUp = function(APP, req, cb) {
 
                     cb(null, {
                         code: "OK",
-                        message: "Token updated",
+                        message: "Topup Token success",
                         data: token
                     });
                 });
