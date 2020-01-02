@@ -1067,7 +1067,6 @@ exports.sensordata = function(APP, req, callback) {
     async.waterfall(
         [
             function generatingParams(callback) {
-                if (params.sensor_status == "0") params.switch == "0";
                 if (params.device_type == "0") params.pin == "1";
 
                 callback(null, params);
@@ -1088,25 +1087,25 @@ exports.sensordata = function(APP, req, callback) {
                         /**
                          * NOTIF SENSOR PROBLEM
                          */
-                        // if (params.sensor_status == '0' && updated[0] > 0) {
-                        // 	let notif = {
-                        // 		'notif': {
-                        // 			'title': 'Sensor Problem',
-                        // 			'body': `Sensor Problem on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
-                        // 			'tag': params.device_id
-                        // 		},
-                        // 		'data': {
-                        // 			'device_id': `${params.device_id}`,
-                        // 			'device_key': `${params.device_key}`
-                        // 		}
-                        // 	}
+                        if (params.sensor_status == '0' && updated[0] > 0) {
+                        	let notif = {
+                        		'notif': {
+                        			'title': 'Sensor Notice',
+                        			'body': `Sensor Notice on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
+                        			'tag': params.device_id
+                        		},
+                        		'data': {
+                        			'device_id': `${params.device_id}`,
+                        			'device_key': `${params.device_key}`
+                        		}
+                        	}
 
-                        // 	request.sendNotif(notif, (err, res) => {
-                        // 		if (err) return callback(err);
+                        	request.sendNotif(notif, (err, res) => {
+                        		if (err) return callback(err);
 
-                        // 		console.log(`/ SENDING PUSH NOTIFICATION /`)
-                        // 	})
-                        // }
+                        		console.log(`/ SENDING PUSH NOTIFICATION /`)
+                        	})
+                        }
 
                         callback(null, params);
                     });
