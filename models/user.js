@@ -46,6 +46,7 @@ module.exports = function (sequelize, Sequelize) {
     User.associate = function (models) {
         User.belongsTo(models.user_level, { foreignKey: 'level_id' })
         User.belongsTo(models.pricing, { foreignKey: 'tdl_id' })
+        User.belongsTo(models.city_tax, { foreignKey: 'tax_id' })
     }
 
     return User

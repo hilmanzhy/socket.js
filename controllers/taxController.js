@@ -2,6 +2,10 @@ const async = require("async");
 const Tax = APP => {
     return APP.models.mysql.city_tax;
 };
+const User = APP => {
+    return APP.models.mysql.user;
+};
+
 var query = {},
     output = {};
 
@@ -19,7 +23,7 @@ exports.get = function(APP, req, cb) {
         .catch(err => {
             cb(null, {
                 code: "ERR_DATABASE",
-                data: e.message
+                data: err.message
             });
         });
 };
@@ -64,7 +68,7 @@ exports.create = function(APP, req, cb) {
                     break;
 
                 default:
-                    output.code = "GENERAL_ERR";
+                    output.code = "ERR_DATABASE";
                     output.message = err.message;
             }
 
@@ -77,6 +81,10 @@ exports.update = function(APP, req, cb) {
     query.options = {
         where: { city: req.body.city }
     };
+
+    let {
+        options: { where }
+    } = query;
 
     if (req.body.tax_rt)
         query.values.rumah_tangga = parseFloat(req.body.tax_rt);
@@ -94,9 +102,46 @@ exports.update = function(APP, req, cb) {
         .then(resultTax => {
             if (!resultTax) throw new Error("NOT_FOUND"); // If data not found!
 
+            where.id = resultTax.id;
+
             return Tax(APP).update(query.values, query.options);
         })
         .then(resultUpdate => {
+            if (resultUpdate[0] > 0) {
+                return User(APP).findAll({
+                    attributes: ["name", "device_key"],
+                    where: {
+                        tax_id: where.id
+                    }
+                });
+            }
+
+            return []
+        })
+        .then(result => {
+            if (result.length > 0) {
+                result.map(user => {
+                    if (user.device_key) {
+                        let notif = {
+                            'notif': {
+                                'title': 'Tax Update',
+                                'body': `Hello ${user.name}, there is an update in the Road Electricity Tax in ${where.city}, please check the app.`,
+                                'tag': user.name
+                            },
+                            'data': {
+                                'device_key': user.device_key
+                            }
+                        }
+
+                        request.sendNotif(notif, (err, res) => {
+                            if (err) return console.log(err);
+
+                            console.log(`/ SENDING PUSH NOTIFICATION /`)
+                        })
+                    }
+                })
+            }
+
             cb(null, {
                 code: "OK",
                 data: "City tax successfully updated"
@@ -111,7 +156,7 @@ exports.update = function(APP, req, cb) {
                     break;
 
                 default:
-                    output.code = "GENERAL_ERR";
+                    output.code = "ERR_DATABASE";
                     output.message = err.message;
             }
 
@@ -145,7 +190,7 @@ exports.delete = function(APP, req, cb) {
 
                     break;
                 default:
-                    output.code = "GENERAL_ERR";
+                    output.code = "ERR_DATABASE";
                     output.message = e.message;
 
                     break;

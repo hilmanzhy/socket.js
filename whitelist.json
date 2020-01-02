@@ -7,5 +7,5 @@
 	"/auth/checkuser",
 	"/auth/checkotp",
 	"/user/pricing",
-	"/user/tax/get"
+	"/tax/get"
 ]

@@ -28,7 +28,9 @@ module.exports = function(sequelize, Sequelize) {
         }
     });
 
-    CityTax.associate = function(models) {};
+    CityTax.associate = function(models) {
+        CityTax.hasMany(models.user, { foreignKey: 'tax_id' })
+    };
 
     return CityTax;
 };
