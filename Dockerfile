@@ -11,4 +11,4 @@ COPY package-lock.json /usr/src/app
 RUN npm install --production
 
 #ecosystem file ecosystem.json
-CMD ["pm2-docker", "start", "ecosystem.json"]
+CMD ["pm2-docker", "start", "ecosystem.docker.json"]
