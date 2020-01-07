@@ -5,6 +5,9 @@ const Tax = APP => {
 const User = APP => {
     return APP.models.mysql.user;
 };
+const request = APP => {
+    return APP.request;
+};
 
 var query = {},
     output = {};
@@ -85,6 +88,7 @@ exports.update = function(APP, req, cb) {
     let {
         options: { where }
     } = query;
+    let tax;
 
     if (req.body.tax_rt)
         query.values.rumah_tangga = parseFloat(req.body.tax_rt);
@@ -98,69 +102,125 @@ exports.update = function(APP, req, cb) {
         query.values.industri = parseFloat(req.body.tax_industri);
 
     Tax(APP)
-        .findOne(query.options)
-        .then(resultTax => {
-            if (!resultTax) throw new Error("NOT_FOUND"); // If data not found!
-
-            where.id = resultTax.id;
-
-            return Tax(APP).update(query.values, query.options);
-        })
+        .update(query.values, query.options)
         .then(resultUpdate => {
             if (resultUpdate[0] > 0) {
+                return Tax(APP).findOne(query.options);
+            }
+
+            return;
+        })
+        .then(resultTax => {
+            if (resultTax) {
+                tax = resultTax;
+
                 return User(APP).findAll({
-                    attributes: ["name", "device_key"],
+                    attributes: ["name", "email", "device_key"],
                     where: {
-                        tax_id: where.id
+                        tax_id: tax.id
                     }
                 });
             }
 
-            return []
+            return;
         })
-        .then(result => {
-            if (result.length > 0) {
-                result.map(user => {
+        .then(resultUser => {
+            output.code = "OK";
+
+            if (resultUser) {
+                resultUser.map(user => {
                     if (user.device_key) {
                         let notif = {
-                            'notif': {
-                                'title': 'Tax Update',
-                                'body': `Hello ${user.name}, there is an update in the Road Electricity Tax in ${where.city}, please check the app.`,
-                                'tag': user.name
+                            notif: {
+                                title: "Road Elecrticity Tax Update",
+                                body: `Hello ${user.name}, there is an update in the Road Electricity Tax in ${where.city}, please check your email.`,
+                                tag: user.name
                             },
-                            'data': {
-                                'device_key': user.device_key
+                            data: {
+                                device_key: user.device_key
                             }
-                        }
+                        };
 
-                        request.sendNotif(notif, (err, res) => {
-                            if (err) return console.log(err);
-
-                            console.log(`/ SENDING PUSH NOTIFICATION /`)
-                        })
+                        request(APP).sendNotif(notif, (err, res) => {
+                            if (err) console.error(err);
+                            if (res)
+                                console.log(
+                                    `/ SENDING PUSH NOTIFICATION to ${user.name}/`
+                                );
+                        });
                     }
-                })
+
+                    if (user.email) {
+                        let email = {
+                            to: user.email,
+                            subject: `Road Elecrticity Tax Update`,
+                            html:
+                                "<center>" +
+                                "<b>" +
+                                `Hello ${user.name}.<br>There is an update in the Road Electricity Tax in ${where.city}, please check below.` +
+                                "</b>" +
+                                "<br><br><br>" +
+                                "<table>" +
+                                "<tr>" +
+                                "<th>Allocation</th>" +
+                                "<th>Tax</th>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Rumah Tangga</td>" +
+                                "<td>" +
+                                tax.rumah_tangga +
+                                "</td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Sosail</td>" +
+                                "<td>" +
+                                tax.sosial +
+                                "</td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Bisnis</td>" +
+                                "<td>" +
+                                tax.bisnis +
+                                "</td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Publik</td>" +
+                                "<td>" +
+                                tax.publik +
+                                "</td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Industri</td>" +
+                                "<td>" +
+                                tax.industri +
+                                "</td>" +
+                                "</tr>" +
+                                "</table>" +
+                                "</center>"
+                        };
+
+                        request(APP).sendEmail(email, (err, res) => {
+                            if (err) console.error(err);
+                            if (res)
+                                console.log(
+                                    `/ SENDING EMAIL to ${user.email}/`
+                                );
+                        });
+                    }
+                });
+
+                output.message = "City tax successfully updated";
+            } else {
+                output.message = "City tax not updated";
             }
 
-            cb(null, {
-                code: "OK",
-                data: "City tax successfully updated"
-            });
+            cb(null, output);
         })
         .catch(err => {
-            switch (err.message) {
-                case "NOT_FOUND":
-                    output.code = "NOT_FOUND";
-                    output.message = "City tax not found!";
-
-                    break;
-
-                default:
-                    output.code = "ERR_DATABASE";
-                    output.message = err.message;
-            }
-
-            cb(output);
+            cb({
+                code: "GENERAL_ERR",
+                message: err.message
+            });
         });
 };
 
