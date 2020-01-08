@@ -437,11 +437,15 @@ io.on('connection', (socket) => {
 
 				fnOutput.insert(req, err, log)
 
-				return callback(err, result);
+				if (!params.mini) {
+					return callback(err, result);
+				}
 			} else {
 				fnOutput.insert(req, result, log)
 
-				return callback(null, result);
+				if (!params.mini) {
+					return callback(null, result);
+				}
 			}
 		});
 	});
