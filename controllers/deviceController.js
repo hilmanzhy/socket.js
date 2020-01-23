@@ -1593,23 +1593,35 @@ exports.totalruntime = function (APP, req, callback) {
 	})
 }
 
-exports.totalruntime_daily = function (APP, req, callback) {
-	let date_from = `${vascommkit.time.date()} 00:00:00`,
-		date_to = `${vascommkit.time.date()} 23:59:59`
+exports.totalruntime_daily = function(APP, req, callback) {
+    let date_from = `${vascommkit.time.date()} 00:00:00`,
+        date_to = `${vascommkit.time.date()} 23:59:59`;
 
-	APP.db.sequelize.query('CALL `sitadev_iot_2`.`runtimereport_total_perday`(:user_id, :date_from, :date_to);', { 
-		replacements: {
-			user_id: req.auth.user_id,
-			date_from: date_from,		
-			date_to: date_to
-		}, 
-		type: APP.db.sequelize.QueryTypes.RAW 
-	}).then((result) => {
-		console.log(result[0])
-	}).catch((err) => {
-		console.log(err)
-	});
-}
+    APP.db.sequelize
+        .query(
+            "CALL `sitadev_iot_2`.`runtimereport_total_perday`(:user_id, :date_from, :date_to);",
+            {
+                replacements: {
+                    user_id: req.auth.user_id,
+                    date_from: date_from,
+                    date_to: date_to
+                },
+                type: APP.db.sequelize.QueryTypes.RAW
+            }
+        )
+        .then(result => {
+            callback(null, {
+                code: "OK",
+                data: result[0]
+            });
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
 
 exports.settimer = function (APP, req, callback) {
 	const params = req.body
