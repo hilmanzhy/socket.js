@@ -412,6 +412,8 @@ io.on('connection', (socket) => {
 
 			return fnOutput.insert(req, result, log)
 		}).catch((err) => {
+			console.log('ERROR : ', err)
+
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
 			log.message = log.message + `\n${JSON.stringify(err)}`;
