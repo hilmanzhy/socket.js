@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./:/usr/src/app
+      # - ./:/usr/src/app
       - /usr/src/app/node_modules
       - /home/apps/logs_pm2:/usr/src/log
       # digunakan untuk backend cdn (simpan gambar)
