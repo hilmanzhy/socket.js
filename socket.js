@@ -262,97 +262,118 @@ io.on('connection', (socket) => {
 		})
 	});
 	// Disconnect Device
-	socket.on('disconnect', function (reason) {
-		let log = {}, req = {};
-		req.APP = APP
-		req.event = `disconnect`
-		log.info = `SOCKET DISCONNECTED`
-		log.level = { error : false }
-		log.message = `SOCKET ID : ${socket.id}` + `\nREASON : ${reason}`
-		 
-		async.waterfall([
-			function (callback) {
-				log.message = log.message + `\n> REMOVE SESSION`
+	socket.on("disconnect", function(reason) {
+        let log = {},
+            req = {};
+        req.APP = APP;
+        req.event = `disconnect`;
+        log.info = `SOCKET DISCONNECTED`;
+        log.level = { error: false };
+        log.message = `SOCKET ID : ${socket.id}` + `\nREASON : ${reason}`;
 
-				DeviceSession.findOneAndDelete({ session_id: socket.id }, (err, res) => {
-					if (err) return callback(err)
+        async.waterfall(
+            [
+                function(callback) {
+                    log.message = log.message + `\n> REMOVE SESSION`;
 
-					if (res) {
-						callback(null, { device_id: res.device_id })
-					} else {
-						return callback(`SESSION NOT FOUND`);
-					}
-				})
-			},
+                    DeviceSession.findOneAndDelete(
+                        { session_id: socket.id },
+                        (err, res) => {
+                            if (err) return callback(err);
 
-			function (device, callback) {
-				query.update = { is_connected: 0 };
-				query.find = { where: device };
+                            if (res) {
+                                callback(null, { device_id: res.device_id });
+                            } else {
+                                return callback(`SESSION DEVICE NOT FOUND`);
+                            }
+                        }
+                    );
+                },
 
-				Device.findOne(query.find).then((res) => {
-					device = {
-						device_id: res.device_id,
-						device_name: res.device_name,
-						user_id: res.user_id,
-					}
-					
-					Device.update(query.update, query.find).then((res) => {
-						callback(null, device);
-					})
-				}).catch((err) => {
-					return callback(err);
-				});
-			},
+                function(device, callback) {
+                    query.update = { is_connected: 0 };
+                    query.find = { where: device };
 
-			function (device, callback) {
-				User.findOne({ where : { user_id: device.user_id } }).then((user) => {
-					callback(null, {
-						device_id: device.device_id,
-						device_key: user.device_key
-					})
-				}).catch((err) => {
-					return callback(err);
-				});
-			},
+                    Device.findOne(query.find)
+                        .then(res => {
+                            device = {
+                                device_id: res.device_id,
+                                device_name: res.device_name,
+                                user_id: res.user_id
+                            };
 
-			function (device, callback) {
-				fnRoles.can(req, '/notif/disconnect',(err, permission) => {
-					if (err) return callback(err);
-					if (permission.granted) {
-						let params = {
-							'notif'	: {
-								'title'	: 'Device Disconnected',
-								'body'	: `Device ID ${device.device_id} disconnected at ${vascommkit.time.now()}`,
-								'tag'	: device.device_id
-							},
-							'data'	: {
-								'device_id' : `${device.device_id}`,
-								'device_key' : `${device.device_key}`
-							}
-						}
-		
-						fnRequest.sendNotif(params, (err, res) => {
-							if (err) return callback(err);
-		
-							log.message = log.message + `\n> PUSH NOTIFICATION`
-		
-							callback(null, res)
-						})
-					} else { callback(null, device) }
-				})				
-			}
-		], (err, res) => {
-			if (err) {
-				log.info = `${log.info} : ERROR`;
-				log.level = { error : true }
-				log.message = log.message + `\n${JSON.stringify(err)}`;
+                            return Device.update(query.update, query.find);
+                        })
+                        .then(res => {
+                            callback(null, device);
+                        })
+                        .catch(err => {
+                            return callback(err);
+                        });
+                },
 
-				return fnOutput.insert(req, err, log)							 
-			}
+                function(device, callback) {
+                    req.body = {
+                        user_id: device.user_id
+                    };
+                    User.findOne({ where: req.body })
+                        .then(user => {
+                            callback(null, {
+                                device_id: device.device_id,
+                                device_key: user.device_key
+                            });
+                        })
+                        .catch(err => {
+                            return callback(err);
+                        });
+                },
 
-			return fnOutput.insert(req, res, log)
-		})
-	});
+                function(device, callback) {
+                    fnRoles.can(req, "/notif/disconnect", (err, permission) => {
+                        if (err) return callback(err);
+                        if (permission.granted) {
+                            let params = {
+                                notif: {
+                                    title: "Device Disconnected",
+                                    body: `Device ID ${
+                                        device.device_id
+                                    } disconnected at ${vascommkit.time.now()}`,
+                                    tag: device.device_id
+                                },
+                                data: {
+                                    device_id: `${device.device_id}`,
+                                    device_key: `${device.device_key}`
+                                }
+                            };
+
+                            fnRequest.sendNotif(params, (err, res) => {
+                                if (err) return callback(err);
+
+                                log.message =
+                                    log.message + `\n> PUSH NOTIFICATION`;
+
+                                callback(null, res);
+                            });
+                        } else {
+                            callback(null, device);
+                        }
+                    });
+                }
+            ],
+            (err, res) => {
+                if (err) {
+                    log.info = `${log.info} : ERROR`;
+                    log.level = { error: true };
+                    log.message = log.message + `\n${JSON.stringify(err)}`;
+
+                    return fnOutput.insert(req, err, log);
+                }
+
+                return fnOutput.insert(req, res, log);
+            }
+        );
+    });
+	// Error
 	socket.on('error', function (err) {
 		let log = {}, req = {};
 		req.APP = APP
