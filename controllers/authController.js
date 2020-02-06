@@ -7,6 +7,13 @@ const async = require('async'),
       session = require('../functions/session.js'),
       validation = require('../functions/validation.js');
 
+const User = APP => {
+    return APP.models.mysql.user;
+};
+const Token = APP => {
+    return APP.models.mongo.token_verification;
+};
+
 var date = new Date(),
     dateFormat = datetime.formatYMD(date),
     queries = {},
@@ -155,8 +162,6 @@ exports.logout = function (APP, req, callback) {
 }
 
 exports.register = function (APP, req, callback) {
-    const User = APP.models.mysql.user
-
     async.waterfall([
         function validator(callback) {
             if (validation.name(req.body.name) != true) return callback(validation.name(req.body.name))
@@ -173,28 +178,34 @@ exports.register = function (APP, req, callback) {
         function checkExisting(data, callback) {
             queries = APP.queries.select('user.registered', req, APP.models)
             
-            User.findOne(queries).then((result) => {
-                if (result) {
-                    let output = {
-                        code: 'ERR_DUPLICATE',
-                        message: 'Credentials has already been taken!',
-                        data : {}
+            User(APP)
+                .findOne(queries)
+                .then(result => {
+                    if (result) {
+                        let output = {
+                            code: "ERR_DUPLICATE",
+                            message: "Credentials has already been taken!",
+                            data: {}
+                        };
+
+                        if (result.username == req.body.username)
+                            output.data.parameter = "username";
+                        if (result.email == req.body.email)
+                            output.data.parameter = "email";
+                        if (result.phone == req.body.phone)
+                            output.data.parameter = "phone";
+
+                        return callback(output);
                     }
 
-                    if (result.username == req.body.username) output.data.parameter = 'username'
-                    if (result.email == req.body.email) output.data.parameter = 'email'
-                    if (result.phone == req.body.phone) output.data.parameter = 'phone'
-                    
-                    return callback(output)
-                }
-
-                callback(null, true)
-            }).catch((err) => {
-                callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
+                    callback(null, true);
                 })
-            });
+                .catch(err => {
+                    callback({
+                        code: "ERR_DATABASE",
+                        data: JSON.stringify(err)
+                    });
+                });
         },
 
         function encryptPassword(data, callback) {
@@ -216,52 +227,41 @@ exports.register = function (APP, req, callback) {
                     break;
             }
             
-            APP.models.mysql.user.create(query).then((user) => {
-                if (user) {
-                    user.token = encrypt.token()
-                    
-                    let urlToken = `${ process.env.APP_URL }/auth/verify?token=${ user.token }`
-                    let payload = {
-                        to      : user.email,
-                        subject : `Verify your email address`,
-                        html    :
-                            `<p>To complete your sign up, please verify your email address</p>
-                            <a href=${urlToken}>VERIFY</a>`
-                    }
-                    
-                    request.sendEmail(payload, (err, res) => {
-                        if (err) console.error(err)
-                        if (res) console.log(`EMAIL SENT!`)
+            User(APP)
+                .create(query)
+                .then((user) => {
+                    callback(null, 'OK')
+                })
+                .catch(err => {
+                    callback({
+                        code: 'ERR_DATABASE',
+                        data: JSON.stringify(err)
                     })
+                })
+        },
 
-                    return user;
-                }
-            }).then((user) => {
-                if (user) {
-                    let params = {
-                        user_id: user.user_id,
-                        token: user.token
-                    }
-                    APP.models.mongo.token_verification.create(params, (err, res) => {
-                        if (err) return callback({
-                            code: 'ERR_DATABASE',
-                            message: 'Err create token',
-                            data: JSON.stringify(err)
-                        })
-                        
-                        callback(null, {
+        function (status, callback) {
+            queries = APP.queries.select('user.registered', req, APP.models)
+
+            User(APP)
+                .findOne(queries)
+                .then((user) => {
+                    req.body = user
+                    
+                    sendLink(APP, req, (err, res) => {
+                        if (err) callback(err)
+                        else callback(null, {
                             code: 'OK',
                             message: 'Register success, please verify your email.'
                         })
-                    })
-                }
-            })
-            .catch(err => {
-                callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
+                    });
                 })
-            })
+                .catch(err => {
+                    callback({
+                        code: 'ERR_DATABASE',
+                        data: JSON.stringify(err)
+                    })
+                })
         }
 
     ], function (err, result) {
@@ -305,6 +305,22 @@ exports.verifyemail = function (APP, req, callback) {
         })
     });
 }
+
+exports.verify = function(APP, req, callback) {
+    switch (req.body.type) {
+        case "SEND_LINK":
+            sendLink(APP, req, (err, res) => {
+                if (err) callback(err);
+                else callback(null, res);
+            });
+            break;
+        case "VERIFY_LINK":
+            break;
+
+        default:
+            break;
+    }
+};
 
 exports.changepassword = function (APP, req, callback) {
     async.waterfall([
@@ -554,4 +570,93 @@ exports.checkuser = function (APP, req, callback) {
     } else {
         callback({ code: 'MISSING_KEY' })
     }
+}
+
+function sendLink(APP, req, callback) {
+    let auth = req.auth || req.body;
+
+    console.log("AUTH", auth);
+
+    query.where = { user_id: auth.user_id };
+    query.attributes = [
+        "user_id",
+        "username",
+        "name",
+        "email",
+        "verify_status"
+    ];
+
+    async.waterfall(
+        [
+            function dataScanner(callback) {
+                User(APP)
+                    .findOne(query)
+                    .then(result => {
+                        if (!result)
+                            callback({
+                                code: "NOT_FOUND"
+                            });
+                        else if (result.verify_status != "0")
+                            callback({
+                                code: "GENERAL_ERR",
+                                message: "User already verified!"
+                            });
+                        else callback(null, result);
+                    })
+                    .catch(err => {
+                        callback({
+                            code: "ERR_DATABASE",
+                            message: err.message
+                        });
+                    });
+            },
+
+            function creatingToken(dataUser, callback) {
+                dataUser.token = encrypt.token();
+
+                Token(APP).updateOne(
+                    { user_id: dataUser.user_id },
+                    {
+                        username: dataUser.username,
+                        name: dataUser.name,
+                        email: dataUser.email,
+                        token: dataUser.token
+                    },
+                    { upsert: true },
+
+                    function(err, res) {
+                        if (err || !res)
+                            callback({
+                                code: "ERR_DATABASE",
+                                message: err.message
+                            });
+                        else callback(null, dataUser);
+                    }
+                );
+            },
+
+            function sendEmail(dataUser, callback) {
+                let urlToken = `${process.env.APP_URL}/auth/verify?token=${dataUser.token}`;
+                let payload = {
+                    to: dataUser.email,
+                    subject: `Verify your email address`,
+                    html: `<p>To complete your sign up, please verify your email address</p>
+                    <a href=${urlToken}>VERIFY</a>`
+                };
+
+                request.sendEmail(payload, (err, res) => {
+                    if (err)
+                        callback({
+                            code: "MAIL_ERR",
+                            message: err.message
+                        });
+                    else callback(null, res);
+                });
+            }
+        ],
+        (err, res) => {
+            if (err) callback(err);
+            else callback(null, res);
+        }
+    );
 }
