@@ -4,6 +4,7 @@
 	"/auth/forgotpassword",
 	"/auth/resetpassword",
 	"/auth/verify",
+	"/auth/verify/send",
 	"/auth/checkuser",
 	"/auth/checkotp",
 	"/user/pricing",
