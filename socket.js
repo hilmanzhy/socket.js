@@ -51,6 +51,8 @@ io.on('connection', (socket) => {
 	log.message = `SOCKET ID : ${socket.id}`
 	
 	APP.db = db;
+	APP.roles = fnRoles;
+	APP.request = fnRequest;
 	
 	model(db, (err, result) => {
 		if (err) {
@@ -67,7 +69,7 @@ io.on('connection', (socket) => {
 
 
 	// Handshake Device
-	socket.on('handshake', (device, callback) => {
+	socket.on('handshake', (device) => {
 		let log = {}, req = {};
 		req.APP = APP
 		req.event = `handshake`
@@ -185,9 +187,9 @@ io.on('connection', (socket) => {
 
 				fnOutput.insert(req, output, log)
 
-				if (device.device_type == '1') {
-					return callback(err, res);
-				}
+				// if (device.device_type == '1') {
+				// 	return callback(err, res);
+				// }
 			}
 
 			output = {
@@ -197,9 +199,11 @@ io.on('connection', (socket) => {
 			
 			fnOutput.insert(req, output, log)
 
-			if (device.device_type == '1') {
-				return callback(null, res);
-			}
+			// if (device.device_type == '1') {
+			// 	return callback(null, res);
+			// }
+
+			return;
 		});
 	});
 	// Handshake Hub
@@ -329,7 +333,7 @@ io.on('connection', (socket) => {
                 },
 
                 function(device, callback) {
-                    fnRoles.can(req, "/notif/disconnect", (err, permission) => {
+                    APP.roles.can(req, "/notif/disconnect", (err, permission) => {
                         if (err) return callback(err);
                         if (permission.granted) {
                             let params = {
@@ -346,7 +350,7 @@ io.on('connection', (socket) => {
                                 }
                             };
 
-                            fnRequest.sendNotif(params, (err, res) => {
+                            APP.request.sendNotif(params, (err, res) => {
                                 if (err) return callback(err);
 
                                 log.message =
@@ -433,8 +437,6 @@ io.on('connection', (socket) => {
 
 			return fnOutput.insert(req, result, log)
 		}).catch((err) => {
-			console.log('ERROR : ', err)
-
 			log.info = `${log.info} : ERROR`;
 			log.level = { error : true }
 			log.message = log.message + `\n${JSON.stringify(err)}`;
