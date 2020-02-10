@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	
+<head>
+	<meta charset="utf-8">
+	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+	<!-- LINK CSS -->
+	<link rel="stylesheet" href="http:/localhost:5000/cdn/css/bootstrap.min.css">
+	
+	<!-- CSS -->
+	<link rel="stylesheet" href="http:/localhost:5000/cdn/css/email.css">
+
+</head>
+
+<body>
+<div id="row-hana">
+	<nav class="nav" style="height: 50px; background-color: white; width: 100%;">
+		<div class="row">
+			<div class="col-md-6">
+				<p class="EmailNotifhead">EMAIL NOTIFICATION</p>
+			</div>
+			<div class="col-md-6">
+				<img src="http:/localhost:5000/cdn/img/group5.png" class="EmailNotifpic"/>
+			</div>
+		</div>
+	</nav>
+
+	<nav class="nav" style="height: 80px; background: linear-gradient(163.38deg, #11998E -12.92%, #38EF7D 171.29%); width: 100%;">
+		<h4 class="cwhite EmailNotifgreet">Hello, We Meet Again</h4>
+		<small class="cwhite EmailNotifwelcome">Welcome Angga Praja,</small>
+	</nav>
+
+	<div class="isi">
+		<img src="http:/localhost:5000/cdn/img/emailnotiflogo.png" id="EmailNotiflogos" class="img-responsive center-block" alt="Responsive image">
+	</div>
+
+	<div class="row EmailNotifdetail">
+  		<div class="col-md-12">
+  			<h4>
+  			<p class="detail1Notif">Hi there,</p>
+			<p class="detail2Notif">Thank you so much for joining our SITAMOTO.
+			<p class="detail2-2Notif">You have already registered with our system. Here is your account information. Thank You. </p></p>
+			<p class="detail3Notif">All the best,</p>
+			<p class="detail3-3Notif">Sitamoto Team</p></h4>
+  		</div>
+  	</div>
+
+  	<div class="EmailNotifform">
+  	<div class="row">
+    	<div class="col-md-4">
+    		<form>
+    			<div class="form-group">
+    				<label for="residencename" class="detail4Notif">Residence Name</label>
+   					<input type="text" class="form-control" id="residencename" value="Puncak Jaya" readonly="readonly">
+				</div>
+			</form>
+   		</div>
+ 			
+		<div class="col-md-4">
+			<form>
+  				<div class="form-group">
+   					<label for="installeddate" class="detail4Notif">Installed Date</label>
+   					<input type="text" class="form-control" id="installeddate" value="28 Agustus 2019" readonly="readonly">
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div class="row">
+   		<div class="col-md-4">
+   			<form>
+   				<div class="form-group">
+   					<label for="username" class="detail4Notif">Username</label>
+   					<input type="text" class="form-control" id="username" value="puncakjaya" readonly="readonly">
+				</div>
+			</form>
+   		</div>
+ 			
+		<div class="col-md-4">
+			<form>
+  				<div class="form-group">
+ 					<label for="password" class="detail4Notif">Password</label>
+   					<input type="text" class="form-control" id="password" value="kmzwa8awaa" readonly="true">
+				</div>
+			</form>
+		</div>
+  	</div>
+  	</div>
+  	
+  	<footer>
+  		<div class="boxfootNotif">
+  			<div class="row EmailNotiffoot cwhite">
+  				<div class=".col-md-6">
+  					<p class="detail5Notif">Attention! Passwords, verification codes and OTP codes allow secrets.</p>
+					<p> Be careful not to give out your important data to parties on behalf of Sitamoto or whose security cannot be approved.</p>
+					<p class="detail6Notif">Thanks,</p>
+					<h3 class="detail7Notif">Sitamoto</h3>
+  				</div>
+  			</div>
+  		</div>
+	</footer>
+</div>
+</body>
+
+	<!-- LINK SCRIPT -->
+	<script type="text/javascript" src="http:/localhost:5000/cdn/js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="http:/localhost:5000/cdn/js/bootstrap.min.js"></script>
+</html>

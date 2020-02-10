@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	
+<head>
+	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="HandheldFriendly" content="true">
+
+	<!-- LINK CSS -->
+	<link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
+
+	<!-- CSS -->
+	<link rel="stylesheet" type="text/css" href="./email.css">
+
+</head>
+
+<body>
+<div id="row-hana">
+	<nav class="nav" style="height: 50px; background-color: white; width: 100%;">
+		<div class="row">
+			<div class="col-md-6">
+				<p class="OTPhead">OTP Validation</p>
+			</div>
+			<div class="col-md-6">
+				<img src="./images/group5.png" class="OTPpic"/>
+			</div>
+		</div>
+	</nav>
+
+	<nav class="nav" style="height: 80px; background: linear-gradient(163.38deg, #11998E -12.92%, #38EF7D 171.29%); width: 100%;">
+		<h4 class="cwhite OTPgreet">Thank you for registering at Sitamoto</h4>
+		<small class="cwhite OTPwelcome">Welcome Angga Praja,</small>
+	</nav>
+
+	<div class="isi">
+		<img src="./images/otpcodelogo.png" id="OTPlogos" class="img-responsive center-block" alt="Responsive image">
+	</div>
+
+	<div class="row OTPdetail">
+  		<div class="col-md-12">
+  			<h4>
+			<p class="detail1OTP"> Hi, there,</p>
+			<p class="detail2OTP">This is your OTP code to reset your password. Please don't spread your OTP code to someone else.</p></h4>
+  		</div>
+  	</div>
+
+  	<div class="row OTPcode">
+  		<div class="col-md-12">
+  			<h4 class="detail3OTP">OTP Code</h4>
+			<h3 class="detail4OTP">170495</h3>
+		</div>
+  	</div>
+
+  	<div class="row OTPnotes">
+  		<p>Please input this OTP code to get started with Sitamoto</p>
+		<p class="detail5OTP">The verification code expires after two minutes.</p>
+  	</div>
+</div> <!-- end-div hana -->
+
+	<footer>
+		<div class="boxfootOTP">
+  			<div class="row OTPfoot cwhite">
+  				<div class=".col-md-6">
+  					<p class="detail6OTP"> Attention! OTP codes allow secrets.</p>
+					<p> Be careful not to give out your important data to parties on behalf of Sitamoto or whose security cannot be approved.</p>
+					<p class="detail7OTP">Thanks,</p>
+					<h3 class="detail8OTP">Sitamoto</h3>
+  				</div>
+  			</div>
+  		</div>
+	</footer>
+</body>
+
+	<!-- LINK SCRIPT -->
+	<script type="text/javascript" src="./js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="./js/bootstrap.min.js"></script>
+</html>

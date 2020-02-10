@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	
+<head>
+	<meta name="csrf-token" content="{{ csrf_token() }}">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+    <meta name="HandheldFriendly" content="true">
+
+	<!-- LINK CSS -->
+	<link rel="stylesheet" type="text/css" href="./css/bootstrap.min.css">
+
+	<!-- CSS -->
+	<link rel="stylesheet" type="text/css" href="./email.css">
+
+</head>
+
+<body>
+<div id="row-hana">
+	<nav class="nav" style="height: 50px; background-color: white; width: 100%;">
+		<div class="row">
+			<div class="col-md-6">
+				<p class="EmailVerifyhead">EMAIL VERIFICATION</p>
+			</div>
+			<div class="col-md-6">
+				<img src="./images/group5.png" class="EmailVerifypic"/>
+			</div>
+		</div>
+	</nav>
+
+	<nav class="nav" style="height: 80px; background: linear-gradient(163.38deg, #11998E -12.92%, #38EF7D 171.29%); width: 100%;">
+		<h4 class="cwhite EmailVerifygreet">Thank you for registering at Sitamoto</h4>
+		<small class="cwhite EmailVerifywelcome">Welcome Angga Praja,</small>
+	</nav>
+
+	<div class="isi">
+		<img src="./images/emailverifylogo.png" id="EmailVerifylogos" class="img-responsive center-block" alt="Responsive image">
+	</div>
+
+	<div class="row EmailVerifydetail">
+  		<div class="col-md-12">
+  			<h4>
+			<p class="detail1Verify">Before creating a Sitamoto account, you need to complete a simple step. Let us make sure this is the correct email address. </p>
+			<p class="detail2Verify">Please confirm that this is the correct address for your new account.</p></h4>
+  		</div>
+  	</div>
+
+  	<div class="row EmailVerifycode">
+  		<div class="col-md-12">
+  			<h4 class="detail3Verify">Activation Link</h4>
+			<a href="" class="detail4Verify">https://www.figma.com/file/FWJrrKHcGvHNyPVTo0b2vp30/Sitamoto-Web-Admin?node-id=522%3A2</a>
+			<!-- <h3 class="detail4Verify">170495</h3> -->
+		</div>
+  	</div>
+
+  	<div class="row EmailVerifynotes">
+  		<p>Please input this OTP code to get started with Sitamoto</p>
+		<p class="detail5Verify">The verification code expires after two minutes.</p>
+  	</div>
+
+  	<footer>
+  		<div class="boxfootVerify">
+  			<div class="row EmailVerifyfoot cwhite">
+  				<div class=".col-md-6">
+  					<p class="detail6Verify"> Attention! Verification codes allow secrets.</p>
+					<p> Be careful not to give out your important data to parties on behalf of Sitamoto or whose security cannot be approved.</p>
+					<p class="detail7Verify">Thanks,</p>
+					<h3 class="detail8Verify">Sitamoto</h3>
+  				</div>
+  			</div>
+  		</div>
+	</footer>
+</div> <!-- end-div hana -->
+</body>
+
+	<!-- LINK SCRIPT -->
+	<script type="text/javascript" src="./js/jquery-1.12.4.min.js"></script>
+	<script type="text/javascript" src="./js/bootstrap.min.js"></script>
+</html>
