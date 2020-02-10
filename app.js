@@ -108,13 +108,11 @@ app.use((req, res, next) => {
 
 	if (req.query) req.queryUrl = req.originalUrl.split('?')
 
-	if (whitelist.indexOf(req.originalUrl) >= 0) {
-		return next();
-	} else if (req.queryUrl && whitelist.indexOf(req.queryUrl[0]) >= 0) {
-		return next();
-	} else if (req.get('session-key') && req.get('session-key') == 'device' ) {
-		return next();
-	} else {
+	if (whitelist.indexOf(req.originalUrl) >= 0) return next()
+	else if (req.queryUrl && whitelist.indexOf(req.queryUrl[0]) >= 0) return next();
+	else if (req.get('session-key') && req.get('session-key') == 'device' ) return next();
+	else if (req.method === 'GET') return next();
+	else {
 		session.check(req.APP, req, (err, result) => {
 			if (err) {
 				return output.print(req, res, {
@@ -129,6 +127,7 @@ app.use((req, res, next) => {
 		})
 	}
 });
+
 /* Middleware Role */
 app.use((req, res, next) => {
 	if (!req.auth) return next();
