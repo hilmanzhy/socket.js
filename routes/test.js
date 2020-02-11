@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const async = require("async");
+const fs = require("fs");
 const path = require("path");
 const encryption = require('../functions/encryption.js');
 
@@ -40,6 +41,28 @@ router.post('/connection', (req, res, next) => {
 		code: 'OK'
 	});
 });
+
+router.post("/get_cdn", (req, res, next) => {
+    try {
+        let { folder_name } = req.body;
+
+        let readDir = fs.readdirSync(path.join(
+            __dirname,
+            `../public/cdn/${folder_name}`
+        ))
+
+        return req.APP.output.print(req, res, {
+            code: 'OK',
+            data: readDir
+        });
+    } catch (error) {
+        return req.APP.output.print(req, res, {
+            code: 'GENERAL_ERR',
+            message: error.message,
+            data: error
+        });
+    }
+})
 
 router.post("/upload_cdn", (req, res, next) => {
     let { folder_name } = req.body;

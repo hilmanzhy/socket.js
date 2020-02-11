@@ -8,5 +8,6 @@
 	"/auth/checkuser",
 	"/auth/checkotp",
 	"/user/pricing",
-	"/tax/get"
+	"/tax/get",
+	"/test/get_cdn"
 ]
