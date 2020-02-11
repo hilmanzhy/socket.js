@@ -82,3 +82,6 @@ typings/
 
 # DynamoDB Local files
 .dynamodb/
+
+# public cdn dir
+public/cdn/

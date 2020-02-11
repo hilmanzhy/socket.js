@@ -2,6 +2,8 @@
 
 const express = require('express');
 const router = express.Router();
+const async = require("async");
+const path = require("path");
 const encryption = require('../functions/encryption.js');
 
 router.post('/decrypt', (req, res, next) => {
@@ -37,6 +39,70 @@ router.post('/connection', (req, res, next) => {
 	return req.APP.output.print(req, res, {
 		code: 'OK'
 	});
+});
+
+router.post("/upload_cdn", (req, res, next) => {
+    let { folder_name } = req.body;
+
+    async.waterfall(
+        [
+            function param(callback) {
+                if (folder_name) {
+                    callback(null, true);
+                } else {
+                    callback({
+                        code: "INVALID_REQUEST",
+                        message: "Kesalahan parameter",
+                        data: {}
+                    });
+                }
+            },
+            function cekFile(data, callback) {
+                try {
+                    let { mv, name } = req.files.file;
+
+                    callback(null, { mv, name });
+                } catch (err) {
+                    console.log("ERROR CHECK FILE", err);
+
+                    callback(null, {
+                        code: "INVALID_REQUEST",
+                        message: "File tidak ada",
+                        info: err
+                    });
+                }
+            },
+            function(data, callback) {
+                let { mv, name } = data;
+                let dir = path.join(
+                    __dirname,
+                    `../public/cdn/${folder_name}/`,
+                    name
+                );
+
+                mv(dir, (err, res) => {
+                    if (err) {
+                        callback(null, {
+                            code: "INVALID",
+                            message: "Gagal upload file",
+                            data: err
+                        });
+                    } else {
+                        callback(null, {
+                            code: "OK",
+                            message: "Success file upload",
+                            data: {
+                                directory: `/${folder_name}/${name}`
+                            }
+                        });
+                    }
+                });
+            }
+        ],
+        (err, result) => {
+            return req.APP.output.print(req, res, err || result);
+        }
+    );
 });
 
 module.exports = router;

@@ -19,6 +19,7 @@ const path = require('path');
 const vascommkit = require('vascommkit');
 const ip = require('ip');
 const chalk = require('chalk')
+const fileUpload = require('express-fileupload')
 
 const output = require('./functions/output.js');
 const db = require('./config/db.js');
@@ -40,6 +41,7 @@ app.use(bodyParser.json({limit: process.env.JSON_LIMIT}));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(morgan(process.env.LOG_ENV));
+app.use(fileUpload({ createParentPath: true }));
 
 app.use((req, res, next) => {
 	async.waterfall([
