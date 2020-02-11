@@ -39,7 +39,7 @@
     "randomstring": "^1.1.5",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
-    "sequelize": "^6.0.0",
+    "sequelize": "^5.21.4",
     "sequelize-cli": "^5.5.1",
     "socket.io": "^2.3.0",
     "trycatch": "^1.5.21",
