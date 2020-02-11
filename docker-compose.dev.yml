@@ -7,10 +7,10 @@ services:
       dockerfile: Dockerfile
     volumes:
       # - ./:/usr/src/app
-      - /usr/src/app/node_modules
+      # - /usr/src/app/node_modules
       - /home/apps/logs_pm2:/usr/src/log
       # digunakan untuk backend cdn (simpan gambar)
-      #- /home/devops/image:/usr/src/app/public
+      - /home/apps/cdn_image/sita_dev:/usr/src/app/public/cdn
     ports:
       - 5000:5000
       - 5005:5005

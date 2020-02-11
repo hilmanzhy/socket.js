@@ -1,8 +1,12 @@
+variables:
+  GIT_CLEAN_FLAGS: -n
+
 stages:
   - development
   - production
 
 cache:
+  key: "${CI_PROJECT_ID}-${CI_COMMIT_REF_SLUG}"
   paths:
     - node_modules/
     
