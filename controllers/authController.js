@@ -1,5 +1,5 @@
 const async = require('async'),
-      datetime = require('../functions/datetime.js'),
+      vascommkit = require('vascommkit'),
       encrypt = require('../functions/encryption.js'),
       otp = require('../functions/otp.js'),
       request = require('../functions/request.js'),
@@ -15,7 +15,6 @@ const Token = APP => {
 };
 
 var date = new Date(),
-    dateFormat = datetime.formatYMD(date),
     queries = {},
     query = {};
 
@@ -57,8 +56,16 @@ exports.login = function (APP, req, callback) {
                 if (user) {
                     let payload = {
                         to      : user.email,
-                        subject : `Your ${ process.env.APP_NAME } account, Login on ${ dateFormat }`,
-                        html    : `Hello, ${ user.name }. Your account just logged in`    
+                        subject : `Your ${ process.env.APP_NAME } account, just Logged In!`,
+                        html    : {
+                            file    : 'login.html',
+                            data    : {
+                                name    : user.name,
+                                date    : vascommkit.time.now(),
+                                cdn_url : `${ process.env.APP_URL }/cdn`,
+                                platform: req.headers['user-agent']
+                            }
+                        }
                     }
                     
                     request.sendEmail(payload, (err, res) => {
