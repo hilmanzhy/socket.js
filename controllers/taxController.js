@@ -151,55 +151,25 @@ exports.update = function(APP, req, cb) {
                     }
 
                     if (user.email) {
-                        let email = {
-                            to: user.email,
-                            subject: `Road Elecrticity Tax Update`,
-                            html:
-                                "<center>" +
-                                "<b>" +
-                                `Hello ${user.name}.<br>There is an update in the Road Electricity Tax in ${where.city}, please check below.` +
-                                "</b>" +
-                                "<br><br><br>" +
-                                "<table>" +
-                                "<tr>" +
-                                "<th>Allocation</th>" +
-                                "<th>Tax</th>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Rumah Tangga</td>" +
-                                "<td>" +
-                                tax.rumah_tangga +
-                                "</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Sosail</td>" +
-                                "<td>" +
-                                tax.sosial +
-                                "</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Bisnis</td>" +
-                                "<td>" +
-                                tax.bisnis +
-                                "</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Publik</td>" +
-                                "<td>" +
-                                tax.publik +
-                                "</td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Industri</td>" +
-                                "<td>" +
-                                tax.industri +
-                                "</td>" +
-                                "</tr>" +
-                                "</table>" +
-                                "</center>"
-                        };
+                        let payload = {
+                            to      : user.email,
+                            subject : `Road Elecrticity Tax Update`,
+                            html    : {
+                                file    : 'tax.html',
+                                data    : {
+                                    name            : user.name,
+                                    city            : where.city,
+                                    rumah_tangga    : tax.rumah_tangga,
+                                    sosial          : tax.sosial,
+                                    bisnis          : tax.bisnis,
+                                    publik          : tax.publik,
+                                    industri        : tax.industri,
+                                    cdn_url : `${ process.env.APP_URL }/cdn`,
+                                }
+                            }
+                        }
 
-                        request(APP).sendEmail(email, (err, res) => {
+                        request(APP).sendEmail(payload, (err, res) => {
                             if (err) console.error(err);
                             if (res)
                                 console.log(
