@@ -404,26 +404,32 @@ exports.forgotpassword = function (APP, req, callback) {
                     return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
                 }
 
-                callback(null, true)
+                callback(null, user)
             })
 
         },
 
-        function createOTP(validate, callback) {
+        function createOTP(user, callback) {
             otp.create(APP, req, (err, result) => {
                 if (err) return callback(err)
                 
-                callback(null, result)
+                user.otp = result.otp
+                callback(null, user)
             })
         },
 
-        function sendOTP(otp, callback) {
+        function sendOTP(user, callback) {
             let payload = {
-                to      : otp.email,
-                subject : `OTP Forgot Password`,
-                html    :
-                    `<p>Use this OTP to reset your password account</p>
-                    <h2>${otp.otp}</h2>`
+                to      : user.email,
+                subject : `Your OTP Forgot Password`,
+                html    : {
+                    file    : 'otp.html',
+                    data    : {
+                        name    : user.name,
+                        otp     : user.otp,
+                        cdn_url : `${ process.env.APP_URL }/cdn`,
+                    }
+                }
             }
 
             request.sendEmail(payload, (err, res) => {
