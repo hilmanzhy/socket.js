@@ -1,7 +1,10 @@
 "use strict";
 
-const unirest = require('unirest');
-const nodemailer = require('nodemailer');
+const unirest = require('unirest'),
+      nodemailer = require('nodemailer'),
+      mustache = require('mustache'),
+      fs = require('fs'),
+      path = require('path');
 
 exports.post = function (url, params, callback) {
     let headers = {
@@ -47,36 +50,41 @@ exports.soa = function (url, key, callback){
 		});
 };
 
-exports.sendEmail = function (params, callback) {
-	let mailOptions = {
-            from    : process.env.EMAIL_SENDER,
-            to      : params.to,
-            subject : params.subject,
-            html    : params.html
-        };
+exports.sendEmail = function(params, callback) {
+    let template = fs.readFileSync(
+        path.join(__dirname, "../storage/email_templates/", params.html.file),
+        "utf8"
+    );
+    let mailOptions = {
+        from: process.env.EMAIL_SENDER,
+        to: params.to,
+        subject: params.subject,
+        html: mustache.render(template, params.html.data)
+    };
     let transport = {
-            host    : String(process.env.EMAIL_HOST),
-            port    : String(process.env.EMAIL_PORT),
-            secure  : (process.env.EMAIL_PORT == 465) ? true : false,
-            auth: {
-                user: String(process.env.EMAIL_USER),
-                pass: String(process.env.EMAIL_PASSWORD)
-            },
-            tls     : {
-                rejectUnauthorized: false
-            }
-        };
+        host: String(process.env.EMAIL_HOST),
+        port: String(process.env.EMAIL_PORT),
+        secure: process.env.EMAIL_PORT == 465 ? true : false,
+        auth: {
+            user: String(process.env.EMAIL_USER),
+            pass: String(process.env.EMAIL_PASSWORD)
+        },
+        tls: {
+            rejectUnauthorized: false
+        }
+    };
 
-	nodemailer.createTransport(transport).sendMail(mailOptions, (err, info) => {
-        if (err) return callback({
-            code: 'MAIL_ERR',
-            message: 'Failed to sent email.',
-            data: err
-        });
+    nodemailer.createTransport(transport).sendMail(mailOptions, (err, info) => {
+        if (err)
+            return callback({
+                code: "MAIL_ERR",
+                message: "Failed to sent email.",
+                data: err
+            });
 
         callback(null, {
-            code: 'OK',
-            message: 'Email sent.',
+            code: "OK",
+            message: "Email sent.",
             data: info
         });
     });
