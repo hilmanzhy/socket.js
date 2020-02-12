@@ -64,6 +64,29 @@ router.post("/get_cdn", (req, res, next) => {
     }
 })
 
+router.post("/remove_cdn", (req, res, next) => {
+    try {
+        let { folder_name, file_name } = req.body,
+            pathToRemove = path.join(
+                __dirname,
+                `../public/cdn/${folder_name}/${file_name}`
+            );
+
+        if (file_name) fs.unlinkSync(pathToRemove);
+        else fs.rmdirSync(pathToRemove);
+
+        return req.APP.output.print(req, res, {
+            code: "OK"
+        });
+    } catch (error) {
+        return req.APP.output.print(req, res, {
+            code: "GENERAL_ERR",
+            message: error.message,
+            data: error
+        });
+    }
+});
+
 router.post("/upload_cdn", (req, res, next) => {
     let { folder_name } = req.body;
 
