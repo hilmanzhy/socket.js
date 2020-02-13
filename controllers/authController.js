@@ -43,6 +43,8 @@ exports.login = function (APP, req, callback) {
         function attemptLogin(data, callback) {
             User.findOne(query).then((result) => {
                 if (result) {
+                    result.update({ device_key: null }, query);
+
                     callback(null, result.toJSON())
                     
                     return result 
