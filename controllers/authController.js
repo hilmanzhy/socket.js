@@ -579,7 +579,7 @@ function sendLink(APP, req, callback) {
                             });
                         else if (result.verify_status != "0")
                             callback({
-                                code: "GENERAL_ERR",
+                                code: "INVALID_REQUEST",
                                 message: "User already verified!"
                             });
                         else callback(null, result);
@@ -658,30 +658,41 @@ function verifyToken(APP, req, callback) {
         .findOne(query.where)
         .then(result => {
             if (!result)
-                return callback({
+                throw {
                     code: "NOT_FOUND",
-                    message: "Link not Found!"
-                });
+                    message: "Token not Found!"
+                };
 
-            query = {
-                options: { where: { user_id: result.user_id } },
-                value: {
-                    verify_status: 1,
-                    verify_date: date
+            query = {}
+            query.options = {
+                where: {
+                    user_id: result.user_id,
+                    verify_status: 0
                 }
+            };
+            query.value = {
+                verify_status: 1,
+                verify_date: date
             };
 
             return result.remove();
         })
-        .then(() => {
+        .then(removed => {
+            if (!removed) {
+                throw {
+                    code: "GENERAL_ERR",
+                    message: "Error verifying!"
+                };
+            }
+            
             return APP.models.mysql.user.findOne(query.options);
         })
         .then(user => {
             if (!user) {
-                return callback({
-                    code: "NOT_FOUND",
-                    message: "User not Found!"
-                });
+                throw {
+                    code: "INVALID_REQUEST",
+                    message: "User already verified!"
+                };
             }
 
             return APP.models.mysql.user.update(query.value, query.options);
@@ -693,10 +704,12 @@ function verifyToken(APP, req, callback) {
             });
         })
         .catch(err => {
-            return callback({
-                code: "ERR_DATABASE",
-                message: "Failed Verification!",
-                data: err.message
-            });
+            if (err.code) return callback(err);
+            else
+                return callback({
+                    code: "ERR_DATABASE",
+                    message: "Failed Verification!",
+                    data: err.message
+                });
         });
 }

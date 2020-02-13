@@ -27,26 +27,6 @@ router.post('/register', (req, res, next) => {
 	});
 });
 
-router.get('/verify', (req, res, next) => {
-	authController.verifyemail(req.APP, req, (err, result) => {
-		if (result && result.code == 'OK') {
-			res.writeHead(200, {'Content-Type': 'text/html'});
-			res.end('VERIFICATION SUCCESS!');
-		} else if (result) {
-			console.log(result)
-
-			res.writeHead(500, {'Content-Type': 'text/html'});
-			res.end('VERIFICATION FAILED! PLEASE CONTACT OUR TEAM.');
-		} else {
-			console.log(err)
-			
-			res.writeHead(500, {'Content-Type': 'text/html'});
-			res.end('VERIFICATION FAILED! PLEASE CONTACT OUR TEAM.');
-		}
-		
-	})
-});
-
 router.post("/verify", (req, res, next) => {
     if (!req.body.token)
         return req.APP.output.print(req, res, {
