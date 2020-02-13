@@ -279,40 +279,6 @@ exports.register = function (APP, req, callback) {
     })
 }
 
-exports.verifyemail = function (APP, req, callback) {
-    query.where = req.query
-
-    APP.models.mongo.token_verification.findOne(query.where).then((result) => {
-        if (result) {
-            query = {
-                options : { where : { user_id : result.user_id } },
-                value : {
-                    verify_status : 1,
-                    verify_date : date
-                }
-            }
-            
-            APP.models.mysql.user.update(query.value, query.options).then((resUpdate) => {
-                return callback(null, {
-                    code : 'OK',
-                    message : 'Update Key Success'
-                });
-            }).catch((err) => {
-                return callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
-                });
-            });
-        }
-    }).catch((err) => {
-        return callback({
-            code: 'ERR_DATABASE',
-            message: 'Err find token',
-            data: JSON.stringify(err)
-        })
-    });
-}
-
 exports.verify = function(APP, req, callback) {
     switch (req.body.type) {
         case "SEND_LINK":
@@ -321,7 +287,11 @@ exports.verify = function(APP, req, callback) {
                 else callback(null, res);
             });
             break;
-        case "VERIFY_LINK":
+        case "VERIFY_TOKEN":
+            verifyToken(APP, req, (err, res) => {
+                if (err) callback(err);
+                else callback(null, res);
+            });
             break;
 
         default:
@@ -677,4 +647,56 @@ function sendLink(APP, req, callback) {
             else callback(null, res);
         }
     );
+}
+
+function verifyToken(APP, req, callback) {
+    query.where = {
+        token: req.body.token
+    };
+
+    APP.models.mongo.token_verification
+        .findOne(query.where)
+        .then(result => {
+            if (!result)
+                return callback({
+                    code: "NOT_FOUND",
+                    message: "Link not Found!"
+                });
+
+            query = {
+                options: { where: { user_id: result.user_id } },
+                value: {
+                    verify_status: 1,
+                    verify_date: date
+                }
+            };
+
+            return result.remove();
+        })
+        .then(() => {
+            return APP.models.mysql.user.findOne(query.options);
+        })
+        .then(user => {
+            if (!user) {
+                return callback({
+                    code: "NOT_FOUND",
+                    message: "User not Found!"
+                });
+            }
+
+            return APP.models.mysql.user.update(query.value, query.options);
+        })
+        .then(() => {
+            return callback(null, {
+                code: "OK",
+                message: "Success Verification"
+            });
+        })
+        .catch(err => {
+            return callback({
+                code: "ERR_DATABASE",
+                message: "Failed Verification!",
+                data: err.message
+            });
+        });
 }

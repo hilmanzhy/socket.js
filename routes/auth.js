@@ -47,6 +47,22 @@ router.get('/verify', (req, res, next) => {
 	})
 });
 
+router.post("/verify", (req, res, next) => {
+    if (!req.body.token)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "token" }
+        });
+
+    req.body.type = "VERIFY_TOKEN";
+
+    authController.verify(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
 router.post("/verify/send", (req, res, next) => {
     if (!req.auth && !req.body.user_id)
         return req.APP.output.print(req, res, {
