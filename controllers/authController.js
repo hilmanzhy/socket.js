@@ -588,8 +588,6 @@ exports.checkuser = function (APP, req, callback) {
 function sendLink(APP, req, callback) {
     let auth = req.auth || req.body;
 
-    console.log("AUTH", auth);
-
     query.where = { user_id: auth.user_id };
     query.attributes = [
         "user_id",
@@ -649,13 +647,20 @@ function sendLink(APP, req, callback) {
             },
 
             function sendEmail(dataUser, callback) {
-                let urlToken = `${process.env.APP_URL}/auth/verify?token=${dataUser.token}`;
+                dataUser.link = `${process.env.WEB_URL}/verify?token=${dataUser.token}`;
+
                 let payload = {
-                    to: dataUser.email,
-                    subject: `Verify your email address`,
-                    html: `<p>To complete your sign up, please verify your email address</p>
-                    <a href=${urlToken}>VERIFY</a>`
-                };
+                    to      : dataUser.email,
+                    subject : `Please verify your Account!`,
+                    html    : {
+                        file    : 'verification.html',
+                        data    : {
+                            name    : dataUser.name,
+                            link    : dataUser.link,
+                            cdn_url : `${ process.env.APP_URL }/cdn`,
+                        }
+                    }
+                }
 
                 request.sendEmail(payload, (err, res) => {
                     if (err)
