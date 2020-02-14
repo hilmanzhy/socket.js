@@ -42,6 +42,62 @@ router.post('/connection', (req, res, next) => {
 	});
 });
 
+router.post("/notif", (req, res, next) => {
+    if (!req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.title)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "title" }
+        });
+    if (!req.body.body)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "body" }
+        });
+
+    req.APP.models.mysql.user
+        .findOne({ where: { user_id: req.body.user_id } })
+        .then(user => {
+            if (!user.device_key)
+                throw {
+                    code: "INVALID_REQUEST",
+                    message: "User don't have Device Key!"
+                };
+
+            let params = {
+                notif: {
+                    title: req.body.title,
+                    body: req.body.body,
+                    tag: req.body.user_id
+                },
+                data: {
+                    device_key: user.device_key
+                }
+            };
+
+            req.APP.request.sendNotif(params, (err, response) => {
+                if (err) throw err;
+
+                return req.APP.output.print(req, res, {
+                    code: "OK",
+                    message: "Notif sent"
+                });
+            });
+        })
+        .catch(err => {
+            if (err.code) return req.APP.output.print(req, res, err);
+
+            return req.APP.output.print(req, res, {
+                code: "GENERAL_ERR",
+                message: err.message
+            });
+        });
+});
+
 router.post("/get_cdn", (req, res, next) => {
     try {
         let { folder_name } = req.body;
