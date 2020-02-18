@@ -169,7 +169,7 @@ exports.pricing = function(APP, req, callback) {
     );
 };
 
-exports.tokenTopUp = function(APP, req, cb) {
+exports.tokenUpdate = function(APP, req, cb) {
     async.waterfall(
         [
             function generatingQuery(cb) {
