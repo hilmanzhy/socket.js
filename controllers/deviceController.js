@@ -6,6 +6,7 @@ const unirest = require('unirest');
 const sequelize = require('sequelize');
 const io = require('socket.io-client');
 const vascommkit = require('vascommkit');
+const moment = require('moment');
 
 const request = require('../functions/request.js');
 
@@ -1593,9 +1594,32 @@ exports.totalruntime = function (APP, req, callback) {
 	})
 }
 
-exports.totalruntime_daily = function(APP, req, callback) {
-    let date_from = `${vascommkit.time.date()} 00:00:00`,
-        date_to = `${vascommkit.time.date()} 23:59:59`;
+exports.totalruntime_range = function(APP, req, callback) {
+    let date_from, date_to;
+
+    switch (req.body.range) {
+        case "DAILY":
+            date_from = `${vascommkit.time.date()} 00:00:00`;
+            date_to = `${vascommkit.time.date()} 23:59:59`;
+
+            break;
+
+        case "WEEKLY":
+            date_from = `${moment()
+                .startOf("isoWeek")
+                .format("YYYY-MM-DD")} 00:00:00`;
+            date_to = `${moment()
+                .endOf("isoWeek")
+                .format("YYYY-MM-DD")} 23:59:59`;
+
+            break;
+
+        default:
+            date_from = `${req.body.date_from} 00:00:00`;
+            date_to = `${req.body.date_to} 23:59:59`;
+
+            break;
+    }
 
     APP.db.sequelize
         .query(
@@ -1612,7 +1636,7 @@ exports.totalruntime_daily = function(APP, req, callback) {
         .then(result => {
             callback(null, {
                 code: "OK",
-                data: result[0]
+                data: req.body.range == "DAILY" ? result[0] : result
             });
         })
         .catch(err => {
