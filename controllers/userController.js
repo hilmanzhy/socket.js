@@ -224,11 +224,15 @@ exports.tokenUpdate = function(APP, req, cb) {
                                 power = pricing.range_daya.split(" s.d ")[1];
                                 max_token = (power * 720) / 1000;
 
-                                values.token = user.token
-                                    ? parseFloat(user.token) +
-                                      parseFloat(req.body.token)
-                                    : parseFloat(req.body.token);
+                                /* SUM token with previous */
+                                // values.token = user.token
+                                //     ? parseFloat(user.token) +
+                                //       parseFloat(req.body.token)
+                                //     : parseFloat(req.body.token);
 
+                                /* INSERT new token */
+                                values.token = parseFloat(req.body.token);
+                                
                                 if (values.token > max_token)
                                     throw new Error("MAX_TOKEN");
 
