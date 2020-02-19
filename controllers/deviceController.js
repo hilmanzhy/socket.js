@@ -1284,48 +1284,51 @@ exports.sensordata_v2 = function (APP, req, callback) {
 	})
 };
 
-exports.runtimereport = function (APP, req, callback) {
-	
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
+exports.runtimereport = function(APP, req, callback) {
+    let date_from,
+        date_to,
+        sp =
+            "CALL sitadev_iot_2.runtimereport (:user_id, :date_from, :date_to)";
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' }) 
+    switch (req.body.range) {
+        case "WEEKLY":
+            date_from = `${moment()
+                .startOf("isoWeek")
+                .format("YYYY-MM-DD")} 00:00:00`;
+            date_to = `${moment()
+                .endOf("isoWeek")
+                .format("YYYY-MM-DD")} 23:59:59`;
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+            break;
 
-	console.log('runtimereport')
-	APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport (:user_id, :date_from, :date_to)',
-		{ 
-			replacements: {
-				user_id: datareq.user_id,
-				date_from: datareq.date_from,		
-				date_to: datareq.date_to
-			}, 
-			type: APP.db.sequelize.QueryTypes.RAW 
-		}
-	)
+        default:
+            date_from = `${req.body.date_from} 00:00:00`;
+            date_to = `${req.body.date_to} 23:59:59`;
 
-	.then(device => {
-		console.log(device)
+            break;
+    }
 
-		return callback(null, {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
-		});
-
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_id: req.auth.user_id,
+                date_from: date_from,
+                date_to: date_to
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(result => {
+            callback(null, {
+                code: result && result.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: result
+            });
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                data: JSON.stringify(err)
+            });
+        });
 };
 
 exports.runtimereportperday = function (APP, req, callback) {
@@ -1595,7 +1598,10 @@ exports.totalruntime = function (APP, req, callback) {
 }
 
 exports.totalruntime_range = function(APP, req, callback) {
-    let date_from, date_to;
+	let date_from,
+        date_to,
+        sp =
+            "CALL `sitadev_iot_2`.`runtimereport_total_perday`(:user_id, :date_from, :date_to);";
 
     switch (req.body.range) {
         case "DAILY":
@@ -1622,20 +1628,17 @@ exports.totalruntime_range = function(APP, req, callback) {
     }
 
     APP.db.sequelize
-        .query(
-            "CALL `sitadev_iot_2`.`runtimereport_total_perday`(:user_id, :date_from, :date_to);",
-            {
-                replacements: {
-                    user_id: req.auth.user_id,
-                    date_from: date_from,
-                    date_to: date_to
-                },
-                type: APP.db.sequelize.QueryTypes.RAW
-            }
-        )
+        .query(sp, {
+            replacements: {
+                user_id: req.auth.user_id,
+                date_from: date_from,
+                date_to: date_to
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
         .then(result => {
             callback(null, {
-                code: "OK",
+                code: result && result.length > 0 ? "FOUND" : "NOT_FOUND",
                 data: req.body.range == "DAILY" ? result[0] : result
             });
         })

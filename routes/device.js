@@ -207,12 +207,46 @@ router.post('/runtimereportdaily', (req, res, next) => {
 	});
 });
 
-router.post('/runtimereport', (req, res, next) => {
-	deviceController.runtimereport(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
+router.post("/runtimereport", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.date_from)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_from" }
+        });
+    if (!req.body.date_to)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_to" }
+        });
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+
+    deviceController.runtimereport(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
+router.post("/runtimereport/weekly", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+
+    req.body.range = "WEEKLY";
+
+    deviceController.runtimereport(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
 });
 
 router.post('/totalruntime', (req, res, next) => {
@@ -261,7 +295,6 @@ router.post("/totalruntime/weekly", (req, res, next) => {
             code: "MISSING_KEY",
             data: { missing_parameter: "user_id" }
         });
-
     if (!req.auth) req.auth = { user_id: req.body.user_id };
 
     req.body.range = "WEEKLY";
