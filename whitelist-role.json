@@ -9,5 +9,5 @@
 	"/auth/verify/send",
 	"/auth/updatekey",
 	"/auth/checkuser",
-	"/auth/checkotp" 
+	"/auth/checkotp"
 ]

@@ -98,6 +98,61 @@ router.post("/notif", (req, res, next) => {
         });
 });
 
+router.post("/email", (req, res, next) => {
+    if (!req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.subject)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "subject" }
+        });
+
+    req.APP.models.mysql.user
+        .findOne({ where: { user_id: req.body.user_id } })
+        .then(user => {
+            if (!user)
+                throw {
+                    code: "INVALID_REQUEST",
+                    message: "User not found!"
+                };
+
+            let payload = {
+                to      : user.email,
+                subject : req.body.subject,
+                html    : {
+                    file    : 'login.html',
+                    data    : {
+                        name    : user.name,
+                        date    : '2020-20-20 20:20',
+                        cdn_url : `${ process.env.APP_URL }/cdn`,
+                        platform: req.headers['user-agent']
+                    }
+                }
+            }
+
+            req.APP.request.sendEmail(payload, (err, response) => {
+                if (err) return req.APP.output.print(req, res, {
+                    code: "GENERAL_ERR",
+                    message: err.message
+                });
+
+                return req.APP.output.print(req, res, {
+                    code: "OK",
+                    message: "Email sent!"
+                });
+            })
+        })
+        .catch(err => {
+            return req.APP.output.print(req, res, {
+                code: "GENERAL_ERR",
+                message: err.message
+            });
+        });
+});
+
 router.post("/get_cdn", (req, res, next) => {
     try {
         let { folder_name } = req.body;

@@ -9,5 +9,6 @@
 	"/auth/checkotp",
 	"/user/pricing",
 	"/tax/get",
-	"/test/notif"
+	"/test/notif",
+	"/test/email"
 ]
