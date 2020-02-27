@@ -333,15 +333,16 @@ exports.registerdevice = function (APP, req, callback) {
 };
 
 exports.getdevice = function (APP, req, callback) {
-	const params = req.body
 	const Device = APP.models.mysql.device
 
-	if (!params.user_id) return callback({ code: 'MISSING_KEY' })
+	if (req.body.install_date) {
+        req.body.install_date = {
+            [APP.db.Sequelize.Op.gt]: req.body.install_date,
+            [APP.db.Sequelize.Op.lt]: `${req.body.install_date} 23:59:59`
+        };
+    }
 
-	query.where = {
-		user_id: params.user_id,
-		is_deleted: '0'
-	}
+    query.where = { ...req.body, user_id: req.auth.user_id, is_deleted: "0" };
 	query.attributes = { exclude: ['is_deleted', 'created_at', 'updated_at'] }
 
 	Device.findAll(query).then((result) => {

@@ -7,6 +7,14 @@ const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
 router.post('/getdevice', (req, res, next) => {
+	if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+    delete req.body.user_id;
+
 	deviceController.getdevice(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
