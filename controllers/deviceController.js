@@ -334,7 +334,6 @@ exports.registerdevice = function (APP, req, callback) {
 
 exports.getdevice = function(APP, req, callback) {
     const Device = APP.models.mysql.device;
-    req.body.number_of_pin = {};
 
     if (req.body.install_date_from && req.body.install_date_to) {
         req.body.install_date = {
