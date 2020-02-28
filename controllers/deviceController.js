@@ -332,70 +332,105 @@ exports.registerdevice = function (APP, req, callback) {
 
 };
 
-exports.getdevice = function (APP, req, callback) {
-	const Device = APP.models.mysql.device
+exports.getdevice = function(APP, req, callback) {
+    const Device = APP.models.mysql.device;
+    req.body.number_of_pin = {};
 
-	if (req.body.install_date) {
+    if (req.body.install_date_from && req.body.install_date_to) {
         req.body.install_date = {
-            [APP.db.Sequelize.Op.gt]: req.body.install_date,
-            [APP.db.Sequelize.Op.lt]: `${req.body.install_date} 23:59:59`
+            [APP.db.Sequelize.Op.between]: [
+                `${req.body.install_date_from}`,
+                `${req.body.install_date_to} 23:59:59`
+            ]
+        };
+    }
+    if (req.body.total_pin_from) {
+        req.body.number_of_pin = {
+            ...req.body.number_of_pin,
+            [APP.db.Sequelize.Op.gte]: req.body.total_pin_from
+        };
+    }
+    if (req.body.total_pin_to) {
+        req.body.number_of_pin = {
+            ...req.body.number_of_pin,
+            [APP.db.Sequelize.Op.lte]: req.body.total_pin_to
         };
     }
 
-    query.where = { ...req.body, user_id: req.auth.user_id, is_deleted: "0" };
-	query.attributes = { exclude: ['is_deleted', 'created_at', 'updated_at'] }
+    delete req.body.install_date_from;
+    delete req.body.install_date_to;
+    delete req.body.total_pin_from;
+    delete req.body.total_pin_to;
 
-	Device.findAll(query).then((result) => {
-		return callback(null, {
-			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data: result
-		});
-	}).catch((err) => {
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		});
-	});
+    query.where = { ...req.body, user_id: req.auth.user_id, is_deleted: "0" };
+    query.attributes = { exclude: ["is_deleted", "created_at", "updated_at"] };
+
+    Device.findAll(query)
+        .then(result => {
+            return callback(null, {
+                code: result && result.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: result
+            });
+        })
+        .catch(err => {
+            return callback({
+                code: "ERR_DATABASE",
+                data: err.message
+            });
+        });
 };
 
-exports.getpindevice = function (APP, req, callback) {
-	const Device = APP.models.mysql.device,
-		DevicePIN = APP.models.mysql.device_pin
-	let datareq = req.body
+exports.getpindevice = function(APP, req, callback) {
+    const Device = APP.models.mysql.device,
+        DevicePIN = APP.models.mysql.device_pin;
 
-	query.options = {
-		where: {
-			user_id: datareq.user_id,
-			device_id: datareq.device_id,
-			is_deleted: '0'
-		},
-		attributes: { exclude: ['created_at', 'updated_at'] }
-	}
+    query.attributes = { exclude: ["created_at", "updated_at"] };
+    query.where = {
+        user_id: req.auth.user_id,
+        device_id: req.body.device_id,
+        is_deleted: "0"
+    };
 
-	Device.findOne(query.options).then(resDevice => {
-		if (!resDevice) throw new Error('NOT_FOUND')
+    Device.findOne(query)
+        .then(resDevice => {
+            if (!resDevice) throw new Error("NOT_FOUND");
 
-		let { options: { where } } = query
-		delete where.is_deleted
+            if (req.body.install_date_from && req.body.install_date_to) {
+                req.body.install_date = {
+                    [APP.db.Sequelize.Op.between]: [
+                        `${req.body.install_date_from}`,
+                        `${req.body.install_date_to} 23:59:59`
+                    ]
+                };
+            }
 
-		console.log(query.options);
+            delete req.body.install_date_from;
+            delete req.body.install_date_to;
 
-		return DevicePIN.findAll(query.options)
-	}).then((result) => {
-		return callback(null, {
-			code: (result && (result.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data: result
-		});
+            query.where = {
+                ...req.body,
+                user_id: req.auth.user_id
+            };
 
-	}).catch((e) => {
-		if (e.message == 'NOT_FOUND') return callback(null, { code: 'NOT_FOND' })
+            return DevicePIN.findAll(query);
+        })
+        .then(resDevicePIN => {
+            if (!resDevicePIN) throw new Error("NOT_FOUND");
 
-		return callback({
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(e)
-		});
-	});
+            return callback(null, {
+                code: "FOUND",
+                data: resDevicePIN
+            });
+        })
+        .catch(err => {
+            if (err.message == "NOT_FOUND")
+                return callback(null, { code: "NOT_FOND" });
 
+            return callback({
+                code: "ERR_DATABASE",
+                data: err.message
+            });
+        });
 };
 
 exports.activate = function (APP, req, callback) {

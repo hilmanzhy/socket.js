@@ -6,20 +6,65 @@ const moment = require('moment');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController.js');
 
-router.post('/getdevice', (req, res, next) => {
-	if (!req.auth && !req.body.user_id)
+router.post("/getdevice", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
             data: { missing_parameter: "user_id" }
         });
+    if (req.body.install_date_from && !req.body.install_date_to) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "install_date_to" }
+        });
+    }
+    if (!req.body.install_date_from && req.body.install_date_to) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "install_date_from" }
+        });
+    }
     if (!req.auth) req.auth = { user_id: req.body.user_id };
     delete req.body.user_id;
 
-	deviceController.getdevice(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
+    deviceController.getdevice(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
+router.post("/getpindevice", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.device_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_id" }
+        });
+    if (req.body.install_date_from && !req.body.install_date_to) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "install_date_to" }
+        });
+    }
+    if (!req.body.install_date_from && req.body.install_date_to) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "install_date_from" }
+        });
+    }
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+    delete req.body.user_id;
+
+    deviceController.getpindevice(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
 });
 
 router.post('/registerdevice', (req, res, next) => {
@@ -338,23 +383,6 @@ router.post("/totalruntime/range", (req, res, next) => {
 
         return req.APP.output.print(req, res, result);
     });
-});
-
-router.post('/getpindevice', (req, res, next) => {
-	if (!req.body.user_id) return req.APP.output.print(req, res, {
-		code: 'MISSING_KEY',
-		data: { missing_parameter: 'user_id' }
-	})
-	if (!req.body.device_id) return req.APP.output.print(req, res, {
-		code: 'MISSING_KEY',
-		data: { missing_parameter: 'device_id' }
-	})
-
-	deviceController.getpindevice(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
 });
 
 router.post('/testing', (req, res, next) => {
