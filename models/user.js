@@ -40,7 +40,12 @@ module.exports = function (sequelize, Sequelize) {
             defaultValue: Sequelize.NOW
         },
         token: Sequelize.DOUBLE,
-        token_alert: Sequelize.BOOLEAN
+        notif_token_alert: Sequelize.INTEGER,
+        notif_device_disconnected: Sequelize.INTEGER,
+        notif_sensor_status_update: Sequelize.INTEGER,
+        notif_device_connected: Sequelize.INTEGER,
+        notif_email_login: Sequelize.INTEGER,
+        notif_tax_update: Sequelize.INTEGER
     })
 
     User.associate = function (models) {

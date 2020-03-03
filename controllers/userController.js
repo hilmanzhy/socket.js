@@ -336,7 +336,7 @@ exports.tokenUpdate = function(APP, req, cb) {
 
 exports.tokenAlert = function(APP, req, cb) {
     query = {
-        update: { token_alert: req.body.switch },
+        update: { notif_token_alert: req.body.switch },
         options: {
             where: { user_id: req.auth.user_id }
         }

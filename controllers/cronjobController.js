@@ -204,7 +204,7 @@ module.exports = function() {
         payloadLog.info = `SCHEDULER TOKEN CHECKER`;
         payloadLog.level = { error: false };
 
-        query.where = { token_alert: 1 };
+        query.where = { notif_token_alert: 1 };
         query.include = "electricity_pricing";
         query.attributes = ["user_id", "device_key", "token"];
 
