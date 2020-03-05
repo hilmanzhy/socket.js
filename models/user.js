@@ -1,5 +1,5 @@
 module.exports = function (sequelize, Sequelize) {
-    var User = sequelize.define('users', {
+    var User = sequelize.define("users", {
         user_id: {
             type: Sequelize.INTEGER,
             primaryKey: true,
@@ -10,7 +10,7 @@ module.exports = function (sequelize, Sequelize) {
         name: Sequelize.STRING,
         username: Sequelize.STRING,
         email: {
-            type:Sequelize.STRING,
+            type: Sequelize.STRING,
             validate: {
                 isEmail: true
             }
@@ -40,13 +40,55 @@ module.exports = function (sequelize, Sequelize) {
             defaultValue: Sequelize.NOW
         },
         token: Sequelize.DOUBLE,
-        notif_token_alert: Sequelize.INTEGER,
-        notif_device_disconnected: Sequelize.INTEGER,
-        notif_sensor_status_update: Sequelize.INTEGER,
-        notif_device_connected: Sequelize.INTEGER,
-        notif_email_login: Sequelize.INTEGER,
-        notif_tax_update: Sequelize.INTEGER
-    })
+        notif_token_alert: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_token_alert")) return 0;
+
+                return this.getDataValue("notif_token_alert");
+            }
+        },
+        notif_device_disconnected: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_device_disconnected")) return 0;
+
+                return this.getDataValue("notif_device_disconnected");
+            }
+        },
+        notif_sensor_status_update: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_sensor_status_update")) return 0;
+
+                return this.getDataValue("notif_sensor_status_update");
+            }
+        },
+        notif_device_connected: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_device_connected")) return 0;
+
+                return this.getDataValue("notif_device_connected");
+            }
+        },
+        notif_email_login: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_email_login")) return 0;
+
+                return this.getDataValue("notif_email_login");
+            }
+        },
+        notif_tax_update: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_tax_update")) return 0;
+
+                return this.getDataValue("notif_tax_update");
+            }
+        }
+    });
 
     User.associate = function (models) {
         User.belongsTo(models.user_level, { foreignKey: 'level_id' })
