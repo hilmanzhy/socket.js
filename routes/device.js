@@ -67,8 +67,45 @@ router.post("/getpindevice", (req, res, next) => {
     });
 });
 
-router.post('/registerdevice', (req, res, next) => {
-	deviceController.registerdevice(req.APP, req, (err, result) => {
+router.post('/register', (req, res, next) => {
+	if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.device_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_id" }
+        });
+    if (!req.body.device_ip)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_ip" }
+        });
+    if (!req.body.device_name)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_name" }
+        });
+    if (!req.body.device_type)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_type" }
+        });
+    if (!req.body.pin)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "pin" }
+		});
+	if (req.body.device_type == '0' && req.body.pin != '1') return callback({
+			code: 'INVALID_REQUEST',
+			message: 'Invalid total pin!'
+		})
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+	delete req.body.user_id;
+	
+	deviceController.register(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

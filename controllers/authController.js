@@ -55,7 +55,7 @@ exports.login = function (APP, req, callback) {
                     })
                 }
             }).then((user) => {
-                if (user) {
+                if (user && user.notif_email_login == 1) {
                     let payload = {
                         to      : user.email,
                         subject : `Your ${ process.env.APP_NAME } account, just Logged In!`,

@@ -129,7 +129,7 @@ exports.update = function(APP, req, cb) {
 
             if (resultUser) {
                 resultUser.map(user => {
-                    if (user.device_key) {
+                    if (user.device_key && user.notif_tax_update == 1) {
                         let notif = {
                             notif: {
                                 title: "Road Elecrticity Tax Update",
@@ -150,7 +150,7 @@ exports.update = function(APP, req, cb) {
                         });
                     }
 
-                    if (user.email) {
+                    if (user.email && user.notif_tax_update == 1) {
                         let payload = {
                             to      : user.email,
                             subject : `Road Elecrticity Tax Update`,

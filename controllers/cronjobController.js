@@ -213,37 +213,41 @@ module.exports = function() {
             .then(result => {
                 if (result) {
                     result.map(user => {
-                        let pricing = user.electricity_pricing,
-                            token_kwh = parseFloat(user.token).toFixed(2),
-                            token_rph = parseInt(
-                                token_kwh * parseInt(pricing.rp_lbwp)
-                            ),
-                            payloadNotif = {
-                                notif: {
-                                    title: "Critical Token Balance",
-                                    body: `Your token balance Rp.${token_rph}, ${token_kwh} kWh and it's about to die`
-                                },
-                                data: { user_id: user.user_id }
-                            };
+                        if (user.notif_token_alert == 1) {
+                            let pricing = user.electricity_pricing,
+                                token_kwh = parseFloat(user.token).toFixed(2),
+                                token_rph = parseInt(
+                                    token_kwh * parseInt(pricing.rp_lbwp)
+                                ),
+                                payloadNotif = {
+                                    notif: {
+                                        title: "Critical Token Balance",
+                                        body: `Your token balance Rp.${token_rph}, ${token_kwh} kWh and it's about to die`
+                                    },
+                                    data: { user_id: user.user_id }
+                                };
 
-                        if (user.device_key && user.token <= 20) {
-                            payloadNotif.data.device_key = user.device_key;
+                            if (user.device_key && user.token <= 20) {
+                                payloadNotif.data.device_key = user.device_key;
 
-                            request.sendNotif(payloadNotif, (err, res) => {
-                                if (err) {
-                                    throw new Error(err);
-                                } else {
-                                    payloadLog.message =
-                                        `Critical Token Balance on User ${user.user_id}` +
-                                        "\n" +
-                                        `Token Balance (kWh) : ${token_kwh}` +
-                                        "\n" +
-                                        `Token Balance (rph) : ${token_rph}`;
-                                    payloadLog.level = { error: false };
+                                request.sendNotif(payloadNotif, (err, res) => {
+                                    if (err) {
+                                        throw new Error(err);
+                                    } else {
+                                        payloadLog.message =
+                                            `Critical Token Balance on User ${user.user_id}` +
+                                            "\n" +
+                                            `Token Balance (kWh) : ${token_kwh}` +
+                                            "\n" +
+                                            `Token Balance (rph) : ${token_rph}`;
+                                        payloadLog.level = { error: false };
 
-                                    return output.log(payloadLog);
-                                }
-                            });
+                                        return output.log(payloadLog);
+                                    }
+                                });
+                            } else {
+                                throw new Error("NOT_FOUND");
+                            }
                         } else {
                             throw new Error("NOT_FOUND");
                         }

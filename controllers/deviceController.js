@@ -10,6 +10,9 @@ const moment = require('moment');
 
 const request = require('../functions/request.js');
 
+const Device = APP => APP.models.mysql.device
+const User = APP => APP.models.mysql.user
+
 let socket = io(process.env.SOCKET_URL);
 var query = {};
 
@@ -33,7 +36,118 @@ function updateSaklar(Sequelize, params, callback) {
 	});
 }
 
-exports.registerdevice = function (APP, req, callback) {
+exports.register = function(APP, req, callback) {
+    let payloadNotif = {
+            notif: {
+                title: "Device Registered",
+                body: `Your Device ${req.body.device_name} has successfully registered and connected to System`,
+                tag: req.body.device_id
+            },
+            data: {
+                device_id: `${req.body.device_id}`
+            }
+        },
+        { notif, data } = payloadNotif;
+
+    async.waterfall(
+        [
+            // Check existing Device
+            callback => {
+                query = {
+                    where: { device_id: req.body.device_id }
+                };
+
+                Device(APP)
+                    .findOne(query)
+                    .then(resCheck => {
+                        if (resCheck) throw new Error("DEVICE_REGISTERED");
+
+                        query = {
+                            where: { user_id: req.auth.user_id },
+                            attributes: ["notif_device_disconnected", "device_key"]
+                        };
+
+                        return User(APP).findOne(query);
+                    })
+                    .then(resUser => {
+						if (!resUser) throw new Error("USER_NOT_FOUND");
+
+						if (resUser.device_key && resUser.notif_device_disconnected) {
+							data.device_key = resUser.device_key
+							data.notif_device_disconnected = resUser.notif_device_disconnected
+						}
+
+                        callback(null, payloadNotif);
+                    })
+                    .catch(err => {
+                        let output;
+
+                        switch (err.message) {
+                            case "DEVICE_REGISTERED":
+                                output = {
+                                    code: "INVALID_REQUEST",
+                                    message: "Device already registered!"
+                                };
+                                break;
+
+                            case "USER_NOT_FOUND":
+                                output = {
+                                    code: "INVALID_REQUEST",
+                                    message: "User not registered!"
+                                };
+                                break;
+
+                            default:
+                                output = {
+                                    code: "ERR_DATABASE",
+                                    message: err.message
+                                };
+                                break;
+                        }
+
+                        callback(output);
+                    });
+            },
+            // Call SP Creating Device
+            (notif, callback) => {
+                APP.db.sequelize
+                    .query(
+                        "CALL sitadev_iot_2.create_devicepin (:device_id, :device_ip, :user_id, :device_name, :date, :pin, :group_id, :device_type, :mac_address)",
+                        {
+                            replacements: {
+                                device_id: datareq.device_id,
+                                user_id: datareq.user_id,
+                                device_ip: datareq.device_ip,
+                                device_name: datareq.device_name,
+                                date: date,
+                                pin: datareq.pin,
+                                group_id: null,
+                                device_type: datareq.device_type,
+                                mac_address: datareq.mac_address ? datareq.mac_address : null
+                            },
+                            type: APP.db.sequelize.QueryTypes.RAW
+                        }
+                    )
+                    .then(responseSP => {
+                        callback(null, notif);
+                    })
+                    .catch(errSP => {
+                        callback({
+							code: 'ERR_DATABASE',
+							message: errSP.message
+						});
+                    });
+            }
+        ],
+        (errAsync, payloadNotif) => {
+            if (errAsync) {
+				console.log(notif)
+            }
+        }
+    );
+};
+
+exports.registerdevice_backup = function (APP, req, callback) {
 	
 	var datareq = req.body
 	var response = {}
@@ -222,6 +336,7 @@ exports.registerdevice = function (APP, req, callback) {
 						var connectdev = "Device ID " + datareq.device_id + " : " + datareq.device_name + " sudah terkoneksi dengan sistem"
 						console.log(connectdev)
 
+						// Notif Connect
 						APP.roles.can(req, '/notif/connect', (err, permission) => {
 							if (err) return callback(err);
 							if (permission.granted) {
@@ -278,6 +393,7 @@ exports.registerdevice = function (APP, req, callback) {
 						var connectdev = "Device ID " + datareq.device_id + " : " + datareq.device_name + " gagal terkoneksi dengan sistem, mohon coba lagi"
 						console.log(connectdev)
 						
+						// Notif Connect
 						APP.roles.can(req, '/notif/connect', (err, permission) => {
 							if (err) return callback(err);
 							if (permission.granted) {
@@ -1112,6 +1228,7 @@ exports.sensordata = function(APP, req, callback) {
                 User.findOne(query.options)
                     .then(resultDevice => {
                         params.device_key = resultDevice.device_key;
+                        params.notif = resultDevice.notif_sensor_status_update;
 
                         query.options.where.device_id = params.device_id;
                         query.options.where.pin = params.pin;
@@ -1120,10 +1237,8 @@ exports.sensordata = function(APP, req, callback) {
                         return DevicePIN.update(query.value, query.options);
                     })
                     .then(updated => {
-                        /**
-                         * NOTIF SENSOR PROBLEM
-                         */
-                        if (params.sensor_status == '0' && updated[0] > 0) {
+                        // NOTIF SENSOR UPDATE
+                        if (params.sensor_status == '0' && updated[0] > 0 && params.notif == 1) {
                         	let notif = {
                         		'notif': {
                         			'title': 'Sensor Notice',

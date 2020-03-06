@@ -324,7 +324,8 @@ io.on('connection', (socket) => {
                         .then(user => {
                             callback(null, {
                                 device_id: device.device_id,
-                                device_key: user.device_key
+								device_key: user.device_key,
+								notification: user.notif_device_disconnected
                             });
                         })
                         .catch(err => {
@@ -333,35 +334,33 @@ io.on('connection', (socket) => {
                 },
 
                 function(device, callback) {
-                    APP.roles.can(req, "/notif/disconnect", (err, permission) => {
-                        if (err) return callback(err);
-                        if (permission.granted) {
-                            let params = {
-                                notif: {
-                                    title: "Device Disconnected",
-                                    body: `Device ID ${
-                                        device.device_id
-                                    } disconnected at ${vascommkit.time.now()}`,
-                                    tag: device.device_id
-                                },
-                                data: {
-                                    device_id: `${device.device_id}`,
-                                    device_key: `${device.device_key}`
-                                }
-                            };
+					// Notif Disconnect
+					if (device.notification == 1) {
+						let params = {
+							notif: {
+								title: "Device Disconnected",
+								body: `Device ID ${
+									device.device_id
+								} disconnected at ${vascommkit.time.now()}`,
+								tag: device.device_id
+							},
+							data: {
+								device_id: `${device.device_id}`,
+								device_key: `${device.device_key}`
+							}
+						};
 
-                            APP.request.sendNotif(params, (err, res) => {
-                                if (err) return callback(err);
+						APP.request.sendNotif(params, (err, res) => {
+							if (err) return callback(err);
 
-                                log.message =
-                                    log.message + `\n> PUSH NOTIFICATION`;
+							log.message =
+								log.message + `\n> PUSH NOTIFICATION`;
 
-                                callback(null, res);
-                            });
-                        } else {
-                            callback(null, device);
-                        }
-                    });
+							callback(null, res);
+						});
+					} else {
+						callback(null, device);
+					}
                 }
             ],
             (err, res) => {
