@@ -51,12 +51,13 @@ exports.register = function(APP, req, callback) {
 
     async.waterfall(
         [
-            // Check existing Device
+            // Check Existing
             callback => {
                 query = {
                     where: { device_id: req.body.device_id }
                 };
 
+                // Check Existing Device
                 Device(APP)
                     .findOne(query)
                     .then(resCheck => {
@@ -67,15 +68,16 @@ exports.register = function(APP, req, callback) {
                             attributes: ["notif_device_disconnected", "device_key"]
                         };
 
+                        // Check Existing User
                         return User(APP).findOne(query);
                     })
                     .then(resUser => {
-						if (!resUser) throw new Error("USER_NOT_FOUND");
+                        if (!resUser) throw new Error("USER_NOT_FOUND");
 
-						if (resUser.device_key && resUser.notif_device_disconnected) {
-							data.device_key = resUser.device_key
-							data.notif_device_disconnected = resUser.notif_device_disconnected
-						}
+                        if (resUser.device_key) data.device_key = resUser.device_key;
+                        if (resUser.notif_device_disconnected)
+                            data.resUser.notif_device_disconnected =
+                                resUser.resUser.notif_device_disconnected;
 
                         callback(null, payloadNotif);
                     })
@@ -115,15 +117,15 @@ exports.register = function(APP, req, callback) {
                         "CALL sitadev_iot_2.create_devicepin (:device_id, :device_ip, :user_id, :device_name, :date, :pin, :group_id, :device_type, :mac_address)",
                         {
                             replacements: {
-                                device_id: datareq.device_id,
-                                user_id: datareq.user_id,
-                                device_ip: datareq.device_ip,
-                                device_name: datareq.device_name,
-                                date: date,
-                                pin: datareq.pin,
+                                device_id: req.body.device_id,
+                                user_id: req.auth.user_id,
+                                device_ip: req.body.device_ip,
+                                device_name: req.body.device_name,
+                                date: vascommkit.time.now(),
+                                pin: req.body.pin,
                                 group_id: null,
-                                device_type: datareq.device_type,
-                                mac_address: datareq.mac_address ? datareq.mac_address : null
+                                device_type: req.body.device_type,
+                                mac_address: req.body.mac_address ? req.body.mac_address : null
                             },
                             type: APP.db.sequelize.QueryTypes.RAW
                         }
@@ -133,16 +135,31 @@ exports.register = function(APP, req, callback) {
                     })
                     .catch(errSP => {
                         callback({
-							code: 'ERR_DATABASE',
-							message: errSP.message
-						});
+                            code: "ERR_DATABASE",
+                            message: errSP.message
+                        });
                     });
             }
         ],
-        (errAsync, payloadNotif) => {
+        (errAsync, resAsync) => {
             if (errAsync) {
-				console.log(notif)
+                (notif.title = "Device not Registered!"),
+                    (notif.body = `Your Device ${req.body.device_name} not successfully registered. Please Try Again!`);
             }
+
+            if (data.notif_device_disconnected == 1) {
+                APP.request.sendNotif(payloadNotif, (err, res) => {
+                    if (err) console.log(err);
+                    else console.log("EMAIL SENT!");
+                });
+            }
+
+            errAsync
+                ? callback(errAsync)
+                : callback(null, {
+                      code: "OK",
+                      message: "Device Sucessfully Registered"
+                  });
         }
     );
 };

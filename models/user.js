@@ -87,6 +87,14 @@ module.exports = function (sequelize, Sequelize) {
 
                 return this.getDataValue("notif_tax_update");
             }
+        },
+        notif_update_token: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_update_token")) return 0;
+
+                return this.getDataValue("notif_update_token");
+            }
         }
     });
 

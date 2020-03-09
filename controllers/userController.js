@@ -246,7 +246,7 @@ exports.tokenUpdate = function(APP, req, cb) {
                         if (req.body.type == "rph" && resUpdate[0].message < 1)
                             throw new Error("MAX_TOKEN");
 
-                        options.attributes = ["token"];
+                        options.attributes = ["token", "notif_update_token"];
                         delete options.include;
 
                         return APP.models.mysql.user.findOne(query.options);
@@ -294,36 +294,38 @@ exports.tokenUpdate = function(APP, req, cb) {
             },
 
             function pushNotif(token, user, cb) {
-                let params = {
-                    notif: {
-                        title: "TopUp Token Success",
-                        body:
-                            `TopUp balance ${token.topup_balance}` +
-                            "\n" +
-                            `Total balance ${token.total_balance}`
-                    },
-                    data: {
-                        user_id: `${user.user_id}`,
-                        user_name: `${user.name}`,
-                        device_key: `${user.device_key}`
-                    }
-                };
-
-                APP.request.sendNotif(params, (err, res) => {
-                    if (err)
-                        return cb({
-                            code: "GENERAL_ERR",
-                            message: err.message
+                if (user.notif_update_token) {
+                    let params = {
+                        notif: {
+                            title: "TopUp Token Success",
+                            body:
+                                `TopUp balance ${token.topup_balance}` +
+                                "\n" +
+                                `Total balance ${token.total_balance}`
+                        },
+                        data: {
+                            user_id: `${user.user_id}`,
+                            user_name: `${user.name}`,
+                            device_key: `${user.device_key}`
+                        }
+                    };
+    
+                    APP.request.sendNotif(params, (err, res) => {
+                        if (err)
+                            return cb({
+                                code: "GENERAL_ERR",
+                                message: err.message
+                            });
+    
+                        console.log("PUSH NOTIFICATION!");
+    
+                        cb(null, {
+                            code: "OK",
+                            message: "Topup Token success",
+                            data: token
                         });
-
-                    console.log("PUSH NOTIFICATION!");
-
-                    cb(null, {
-                        code: "OK",
-                        message: "Topup Token success",
-                        data: token
                     });
-                });
+                }
             }
         ],
         function(err, res) {
