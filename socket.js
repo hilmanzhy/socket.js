@@ -79,6 +79,10 @@ io.on('connection', (socket) => {
 		log.message = `SOCKET ID : ${socket.id}` +
 					  `\nDEVICE ID : ${device.device_id}`
 
+		req.auth = {
+			user_id: req.body.user_id
+		}
+
 		query.sql = {
 			where : { device_id : device.device_id },
 			attributes : [ 'device_id' ]
@@ -102,7 +106,7 @@ io.on('connection', (socket) => {
 						case '1':
 							log.message = log.message + ' : DEVICE_ID NOT REGISTERED'
 
-							deviceController.registerdevice(req.APP, req, (err, result) => {
+							deviceController.register(req.APP, req, (err, result) => {
 								if (err) return callback(err, result);
 								
 								callback(null, result);
