@@ -12,7 +12,7 @@ socket.emit('handshake', {
     "device_name": "TESTING",
     "device_type": "0",
     "pin": "1",
-    "mac_address": "00:00:00:00:00"
+    "mac_address": "80:C5:F2:F8:49:EE"
 })
 
 http.listen(5555, function() {

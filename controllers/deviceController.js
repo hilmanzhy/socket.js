@@ -3001,66 +3001,73 @@ exports.check = function (APP, req, callback) {
 		}
 	}
 	
-	Device.findOne(query.options).then(result => {
-		if (!result) throw new Error('1') // Device ID not Registered
+	APP.db.sequelize
+        .query("CALL sitadev_iot_2.cek_mac_address (:device_id, :mac_address)", {
+            replacements: {
+                device_id: params.device_id,
+                mac_address: params.mac_address ? params.mac_address : null
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(resultSP => {
+            // console.log(resultSP)
+            // process.exit(1)
 
-		return APP.db.sequelize.query('CALL sitadev_iot_2.cek_mac_address (:device_id, :mac_address)',
-			{
-				replacements: {
-					device_id: params.device_id,
-					mac_address: params.mac_address ? params.mac_address : null
-				}, type: APP.db.sequelize.QueryTypes.RAW
-			}
-		)
-	}).then(resultSP => {
-		if (resultSP[0].message == '1') throw new Error('2') // Device Deleted
+            if (resultSP[0].message == "2") return Device.findOne(query.options);
 
-		query.options.where.device_ip = params.device_ip
+            throw new Error("2"); // Device Deleted
+        })
+        .then(result => {
+            if (!result) throw new Error("1"); // Device ID not Registered
 
-		return Device.findAndCountAll(query.options)
-	}).then(resultIP => {
-		if (resultIP.count == '0') throw new Error('3') // Device IP not Match
+            query.options.where.device_ip = params.device_ip;
 
-		return callback(null, {
-			code: 'OK',
-			message: 'Device checked',
-			data : '0'
-		})
-	}).catch(e => {
-		switch (e.message) {
-			case '1':
-				response = {
-					code: 'OK',
-					message: 'Device ID not Registered',
-					data: '1'
-				}
-				break;
-		
-			case '2':
-				response = {
-					code: 'OK',
-					message: 'Device Deleted',
-					data: '2'
-				}
-				break;
-		
-			case '3':
-				response = {
-					code: 'OK',
-					message: 'Device IP not Match',
-					data: '3'
-				}
-				break;
-		
-			default:
-				return callback({
-					code: 'DATABASE_ERR',
-					message: e.message
-				})
-		}
+            return Device.findAndCountAll(query.options);
+        })
+        .then(resultIP => {
+            if (resultIP.count == "0") throw new Error("3"); // Device IP not Match
 
-		return callback(null, response)
-	})
+            return callback(null, {
+                code: "OK",
+                message: "Device checked",
+                data: "0"
+            });
+        })
+        .catch(e => {
+            switch (e.message) {
+                case "1":
+                    response = {
+                        code: "OK",
+                        message: "Device ID not Registered",
+                        data: "1"
+                    };
+                    break;
+
+                case "2":
+                    response = {
+                        code: "OK",
+                        message: "Device Deleted",
+                        data: "2"
+                    };
+                    break;
+
+                case "3":
+                    response = {
+                        code: "OK",
+                        message: "Device IP not Match",
+                        data: "3"
+                    };
+                    break;
+
+                default:
+                    return callback({
+                        code: "DATABASE_ERR",
+                        message: e.message
+                    });
+            }
+
+            return callback(null, response);
+        });
 };
 
 exports.getpagingdevice = function (APP, req, callback) {
