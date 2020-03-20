@@ -2684,10 +2684,6 @@ exports.command = function (APP, req, callback) {
 		date = new Date()
 	date.setHours(date.getHours())
 
-	if (!params.user_id) return callback({ code: 'MISSING_KEY' })
-	if (!params.device_id) return callback({ code: 'MISSING_KEY' })
-	if (!params.switch) return callback({ code: 'MISSING_KEY' })
-
 	socket.emit('commandapi', params)
 
 	query.options = {

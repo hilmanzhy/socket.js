@@ -8,7 +8,8 @@ const db = require("../config/db.js"),
     model = require("../config/model.js"),
     output = require("../functions/output.js"),
     request = require("../functions/request.js"),
-    deviceController = require("../controllers/deviceController.js");
+    deviceController = require("../controllers/deviceController.js"),
+    devicePIN = APP => APP.models.mysql.device_pin;
 
 var APP = {};
 
@@ -54,7 +55,10 @@ async function dcDevice(ids, app, time) {
     return updateId;
 }
 
-module.exports = function() {
+module.exports = function () {
+    /**
+     * Init Base APP Cron
+     */
     async.waterfall(
         [
             function initializeModels(callback) {
@@ -81,123 +85,180 @@ module.exports = function() {
         }
     );
 
-    // Scheduler Device On Off
-    scheduler.scheduleJob("*/15 * * * *", function(time) {
-        let DevicePIN = APP.models.mysql.device_pin;
-        (timeNow = moment(time).format("HH:mm:ss")),
-            (timeSubtract = moment(time)
-                .subtract(15, "minutes")
-                .format("HH:mm:ss")),
-            (payloadLog = {}),
-            (query = {});
-
-        payloadLog.info = `SCHEDULER DEVICE ON/OFF`;
-        payloadLog.level = { error: false };
-
-        query.attributes = [
-            "device_id",
-            "user_id",
-            "device_ip",
-            "device_name",
-            "pin",
-            "timer_on",
-            "timer_off"
-        ];
-        query.where = {
-            [sequelize.Op.or]: [
-                {
-                    timer_on: {
-                        [sequelize.Op.between]: [timeSubtract, timeNow]
-                    }
-                },
-                {
-                    timer_off: {
-                        [sequelize.Op.between]: [timeSubtract, timeNow]
-                    }
+    /**
+     * Scheduler Device Timer (1 seconds)
+     */
+    scheduler.scheduleJob("* * * * *", function(time) {
+        let timeNow = `${moment(time).format("HH:mm")}:00`,
+            options = {
+                where: {
+                    [sequelize.Op.or]: [{ timer_on: timeNow }, { timer_off: timeNow }]
                 }
-            ],
-            timer_status: "1"
-        };
+            };
 
-        DevicePIN.findAll(query)
-            .then(result => {
-                if (result.length > 0) {
-                    for (let index = 0; index < result.length; index++) {
-                        let device = result[index].toJSON();
-                        let body = {
-                            user_id: device.user_id.toString(),
-                            device_id: device.device_id.toString(),
-                            device_name: device.device_name
-                                ? device.device_name.toString()
-                                : null,
-                            mode: "1",
-                            pin: device.pin.toString()
-                        };
+        devicePIN(APP)
+            .findAll(options)
+            .then(resultPin => {
+                if (resultPin.length > 0) {
+                    resultPin.map(device => {
+                        // Init Body
+                        let log = { info: "DEVICE TIMER CRON" },
+                            body = {
+                                user_id: device.user_id.toString(),
+                                device_id: device.device_id.toString(),
+                                device_name: device.device_name
+                                    ? device.device_name.toString()
+                                    : null,
+                                mode: "1",
+                                pin: device.pin.toString()
+                            };
 
-                        if (
-                            timeNow >= device.timer_on &&
-                            device.timer_on >= timeSubtract
-                        ) {
-                            payloadLog.message =
-                                `TIMER ON at ${device.timer_on}` +
-                                "\n" +
-                                `DEVICE ID : ${device.device_id}` +
-                                "\n" +
-                                `DEVICE IP : ${device.device_ip}`;
+                        // Timer ON
+                        if (timeNow == device.timer_on) body.switch = "1";
+                        // Timer OFF
+                        if (timeNow == device.timer_off) body.switch = "0";
 
-                            body.switch = "1";
-                        }
-                        if (
-                            timeNow >= device.timer_off &&
-                            device.timer_off >= timeSubtract
-                        ) {
-                            payloadLog.message =
-                                `TIMER OFF at ${device.timer_off}` +
-                                "\n" +
-                                `DEVICE ID : ${device.device_id}` +
-                                "\n" +
-                                `DEVICE IP : ${device.device_ip}`;
+                        deviceController.command(APP, { body }, (err, result) => {
+                            if (err) {
+                                log.info += " ERROR : COMMAND";
+                                log.message = err;
+                                log.level = { error: true };
 
-                            body.switch = "0";
-                        }
-
-                        deviceController.command(
-                            APP,
-                            { body },
-                            (err, result) => {
-                                if (err) {
-                                    payloadLog.info =
-                                        "DEVICE CRON ERROR : COMMAND";
-                                    payloadLog.message = err;
-                                    payloadLog.level = { error: true };
-
-                                    return output.log(payloadLog);
-                                }
-
-                                payloadLog.level = { error: false };
-
-                                return output.log(payloadLog);
+                                return output.log(log);
                             }
-                        );
-                    }
-                } else {
-                    payloadLog.message = `NO SCHEDULED DEVICE AT THIS TIME`;
-                    payloadLog.level = { error: false };
 
-                    return output.log(payloadLog);
+                            log.info += ` AT ${timeNow}`;
+                            log.message = `DEVICE ID : ${device.device_id}` + "\n";
+                            log.message += `DEVICE NAME : ${device.device_name}` + "\n";
+                            log.message += `PIN : ${device.pin}`;
+                            log.level = { error: false };
+
+                            return output.log(log);
+                        });
+                    });
                 }
-            })
-            .catch(err => {
-                payloadLog.info = "DEVICE CRON ERROR : DB";
-                payloadLog.message = err;
-                payloadLog.level = { error: true };
-
-                return output.log(payloadLog);
             });
     });
 
+    /**
+     * Scheduler Device Timer (1 seconds)
+     */
+    // scheduler.scheduleJob("*/15 * * * *", function(time) {
+    //     let DevicePIN = APP.models.mysql.device_pin;
+    //     (timeNow = moment(time).format("HH:mm:ss")),
+    //         (timeSubtract = moment(time)
+    //             .subtract(15, "minutes")
+    //             .format("HH:mm:ss")),
+    //         (payloadLog = {}),
+    //         (query = {});
+
+    //     payloadLog.info = `SCHEDULER DEVICE ON/OFF`;
+    //     payloadLog.level = { error: false };
+
+    //     query.attributes = [
+    //         "device_id",
+    //         "user_id",
+    //         "device_ip",
+    //         "device_name",
+    //         "pin",
+    //         "timer_on",
+    //         "timer_off"
+    //     ];
+    //     query.where = {
+    //         [sequelize.Op.or]: [
+    //             {
+    //                 timer_on: {
+    //                     [sequelize.Op.between]: [timeSubtract, timeNow]
+    //                 }
+    //             },
+    //             {
+    //                 timer_off: {
+    //                     [sequelize.Op.between]: [timeSubtract, timeNow]
+    //                 }
+    //             }
+    //         ],
+    //         timer_status: "1"
+    //     };
+
+    //     DevicePIN.findAll(query)
+    //         .then(result => {
+    //             if (result.length > 0) {
+    //                 for (let index = 0; index < result.length; index++) {
+    //                     let device = result[index].toJSON();
+    //                     let body = {
+    //                         user_id: device.user_id.toString(),
+    //                         device_id: device.device_id.toString(),
+    //                         device_name: device.device_name
+    //                             ? device.device_name.toString()
+    //                             : null,
+    //                         mode: "1",
+    //                         pin: device.pin.toString()
+    //                     };
+
+    //                     if (
+    //                         timeNow >= device.timer_on &&
+    //                         device.timer_on >= timeSubtract
+    //                     ) {
+    //                         payloadLog.message =
+    //                             `TIMER ON at ${device.timer_on}` +
+    //                             "\n" +
+    //                             `DEVICE ID : ${device.device_id}` +
+    //                             "\n" +
+    //                             `DEVICE IP : ${device.device_ip}`;
+
+    //                         body.switch = "1";
+    //                     }
+    //                     if (
+    //                         timeNow >= device.timer_off &&
+    //                         device.timer_off >= timeSubtract
+    //                     ) {
+    //                         payloadLog.message =
+    //                             `TIMER OFF at ${device.timer_off}` +
+    //                             "\n" +
+    //                             `DEVICE ID : ${device.device_id}` +
+    //                             "\n" +
+    //                             `DEVICE IP : ${device.device_ip}`;
+
+    //                         body.switch = "0";
+    //                     }
+
+    //                     deviceController.command(
+    //                         APP,
+    //                         { body },
+    //                         (err, result) => {
+    //                             if (err) {
+    //                                 payloadLog.info =
+    //                                     "DEVICE CRON ERROR : COMMAND";
+    //                                 payloadLog.message = err;
+    //                                 payloadLog.level = { error: true };
+
+    //                                 return output.log(payloadLog);
+    //                             }
+
+    //                             payloadLog.level = { error: false };
+
+    //                             return output.log(payloadLog);
+    //                         }
+    //                     );
+    //                 }
+    //             } else {
+    //                 payloadLog.message = `NO SCHEDULED DEVICE AT THIS TIME`;
+    //                 payloadLog.level = { error: false };
+
+    //                 return output.log(payloadLog);
+    //             }
+    //         })
+    //         .catch(err => {
+    //             payloadLog.info = "DEVICE CRON ERROR : DB";
+    //             payloadLog.message = err;
+    //             payloadLog.level = { error: true };
+
+    //             return output.log(payloadLog);
+    //         });
+    // });
+
     // Scheduler Alert Token
-    scheduler.scheduleJob("0 * * * *", function(time) {
+    scheduler.scheduleJob("0 * * * *", function (time) {
         let payloadLog = {},
             query = {};
 
