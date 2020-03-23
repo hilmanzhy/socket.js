@@ -1,7 +1,7 @@
 const User = APP => APP.models.mysql.user,
     async = require("async");
 
-exports.get = function(APP, req, callback) {
+exports.getSetting = function(APP, req, callback) {
     let options = {
         where: { user_id: req.auth.user_id },
         attributes: [
@@ -10,7 +10,8 @@ exports.get = function(APP, req, callback) {
             "notif_sensor_status_update",
             "notif_device_connected",
             "notif_email_login",
-            "notif_tax_update"
+            "notif_tax_update",
+            "notif_update_token"
         ]
     };
 
@@ -30,7 +31,7 @@ exports.get = function(APP, req, callback) {
         });
 };
 
-exports.set = (APP, req, callback) => {
+exports.setSetting = (APP, req, callback) => {
     let values = {},
         options = {
             where: { user_id: req.auth.user_id },
@@ -40,13 +41,15 @@ exports.set = (APP, req, callback) => {
                 "notif_sensor_status_update",
                 "notif_device_connected",
                 "notif_email_login",
-                "notif_tax_update"
+                "notif_tax_update",
+                "notif_update_token"
             ]
         };
 
     User(APP)
         .findOne(options)
         .then(resGet => {
+            // CHECK USER LEVEL
             if (
                 req.body.notif_token_alert &&
                 req.body.notif_token_alert != resGet.notif_token_alert
@@ -107,10 +110,18 @@ exports.set = (APP, req, callback) => {
                     else throw new Error("FORBIDDEN");
                 });
 
+            if (req.body.notif_update_token && req.body.notif_update_token != resGet.notif_update_token)
+                APP.roles.can(req, "notif_update_token", (err, permission) => {
+                    if (err) return callback(err);
+                    if (permission.granted) values.notif_update_token = req.body.notif_update_token;
+                    else throw new Error("FORBIDDEN");
+                });
+            // END CHECK USER LEVEL
+
             return User(APP).update(values, options);
         })
         .then(res => {
-            this.get(APP, req, (err, resGet) => {
+            this.getSetting(APP, req, (err, resGet) => {
                 if (err) throw new Error(err);
 
                 callback(null, {
