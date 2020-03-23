@@ -225,13 +225,13 @@ exports.tokenUpdate = function(APP, req, cb) {
                                 max_token = (power * 720) / 1000;
 
                                 /* SUM token with previous */
-                                // values.token = user.token
-                                //     ? parseFloat(user.token) +
-                                //       parseFloat(req.body.token)
-                                //     : parseFloat(req.body.token);
+                                values.token = user.token
+                                    ? parseFloat(user.token) +
+                                      parseFloat(req.body.token)
+                                    : parseFloat(req.body.token);
 
                                 /* INSERT new token */
-                                values.token = parseFloat(req.body.token);
+                                // values.token = parseFloat(req.body.token);
                                 
                                 if (values.token > max_token)
                                     throw new Error("MAX_TOKEN");
