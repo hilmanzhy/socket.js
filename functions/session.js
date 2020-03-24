@@ -5,36 +5,30 @@ exports.put = function (APP, req, callback) {
     if(!req.headers['session-key']) return callback({ code: 'INVALID_HEADERS' })
 
     const Session = APP.models.mongo.session
-    let query = {
-        find: {
-            user_id: req.body.user_id,
-            username: req.body.username,
-            session_key: req.headers['session-key']
+    let { user_id, username, user_level } = req.body;
+
+    let queryOptions = {
+            user_id: user_id,
+            username: username,
+            session_key: req.headers["session-key"]
         },
-        update: {
-            user_level: req.body.user_level,
-            session_id: randomstring.generate(22)
-        }
-    }
+        queryValue = { user_level: user_level };
 
-    Session.updateOne(
-        query.find,
-        query.update,
-        { upsert : true },
-        function(err, result) {
-            if (err) {
-                return callback({
-                    code: 'ERR_DATABASE',
-                    data: JSON.stringify(err)
-                })
-            }
+    if (!req.auth) queryValue.session_id = randomstring.generate(22)
 
-            callback(null, {
-                code: '00',
-                data: query.update
-            })
+    Session.updateOne(queryOptions, queryValue, { upsert: true }, function(err, result) {
+        if (err) {
+            return callback({
+                code: "ERR_DATABASE",
+                data: JSON.stringify(err)
+            });
         }
-    )
+
+        callback(null, {
+            code: "00",
+            data: queryValue
+        });
+    });
 }
 
 exports.check = function (APP, req, callback) {

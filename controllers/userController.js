@@ -1,4 +1,5 @@
 const async = require("async");
+roles = require("../functions/roles.js");
 session = require("../functions/session.js");
 validation = require("../functions/validation.js");
 
@@ -6,7 +7,11 @@ let query = {};
 output = {};
 
 exports.get = function(APP, req, callback) {
-    let User = APP.models.mysql.user;
+    let User = APP.models.mysql.user,
+        queryOptions = {
+            include: "user_level",
+            where: { username: req.auth.username }
+        };
 
     async.waterfall(
         [
@@ -19,22 +24,52 @@ exports.get = function(APP, req, callback) {
             },
 
             function(data, callback) {
-                req.body = { username: data.username };
-                queries = APP.queries.select("user.get", req, APP.models);
-
-                User.findOne(queries)
-                    .then(result => {
-                        callback(null, {
-                            code: "OK",
-                            data: result
+                User.findOne(queryOptions)
+                    .then(result => callback(null, result.toJSON()))
+                    .catch(err => {
+                        console.log(err);
+                        callback({
+                            code: "ERR_DATABASE",
+                            data: err.message
                         });
+                    });
+            },
+
+            function getRole(data, callback) {
+                let mapFeature = roles.feature(req, data.user_level.level_previledge);
+
+                Promise.all(mapFeature)
+                    .then(result => {
+                        data.user_level = result.filter(Boolean);
+
+                        callback(null, data);
                     })
                     .catch(err => {
                         callback({
-                            code: "ERR_DATABASE",
+                            code: "GENERAL_ERR",
                             data: JSON.stringify(err)
                         });
                     });
+            },
+
+            function putSession(data, callback) {
+                req.body = data;
+
+                session.put(APP, req, (err, res) => {
+                    if (err) {
+                        return callback({
+                            code: err.code,
+                            message: err.message
+                        });
+                    }
+
+                    let output = {
+                        code: data ? "FOUND" : "NOT_FOUND",
+                        data: data
+                    };
+
+                    callback(null, output);
+                });
             }
         ],
         function(err, result) {
