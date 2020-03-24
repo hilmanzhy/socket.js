@@ -129,7 +129,7 @@ exports.update = function(APP, req, cb) {
 
             if (resultUser) {
                 resultUser.map(user => {
-                    if (user.device_key && user.notif_tax_update == 1) {
+                    if (user.notif_tax_update == 1) {
                         let notif = {
                             notif: {
                                 title: "Road Elecrticity Tax Update",
@@ -137,11 +137,12 @@ exports.update = function(APP, req, cb) {
                                 tag: user.name
                             },
                             data: {
+                                user_id: user.user_id,
                                 device_key: user.device_key
                             }
                         };
 
-                        request(APP).sendNotif(notif, (err, res) => {
+                        request(APP).sendNotif(APP.models, notif, (err, res) => {
                             if (err) console.error(err);
                             if (res)
                                 console.log(
@@ -150,7 +151,7 @@ exports.update = function(APP, req, cb) {
                         });
                     }
 
-                    if (user.email && user.notif_tax_update == 1) {
+                    if (user.notif_tax_update == 1) {
                         let payload = {
                             to      : user.email,
                             subject : `Road Elecrticity Tax Update`,

@@ -89,22 +89,39 @@ exports.sendEmail = function(params, callback) {
     }
 };
 
-exports.sendNotif = function (payload, callback) {
+exports.sendNotif = function(models, payload, callback) {
     let url = "https://fcm.googleapis.com/fcm/send",
         params = {
-            'to'	: payload.data.device_key,
-            'notification'	: {
-                'title'	: payload.notif.title,
-                'body'	: payload.notif.body,
-                'tag'   : payload.notif.tag ? payload.notif.tag : 'Default'
+            to: payload.data.device_key,
+            notification: {
+                title: payload.notif.title,
+                body: payload.notif.body,
+                tag: payload.notif.tag ? payload.notif.tag : "Default"
             },
-            'data'	: payload.data,
-            'headers'	: { 'Authorization': "key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ" }
-        }
+            data: payload.data,
+            headers: {
+                Authorization:
+                    "key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ"
+            }
+        };
 
-	this.post(url, params, (err, res) => {
-		if (err) return callback(err);
+    this.post(url, params, (err, res) => {
+        if (err) return callback(err);
 
-		return callback(null, res)
-	})
-}
+        models.mongo.notif.create(
+            {
+                user_id: params.data.user_id,
+                notification: params.notification
+            },
+            (err, result) => {
+                if (err)
+                    return callback({
+                        code: "ERR_DATABASE",
+                        data: JSON.stringify(err)
+                    });
+
+                return callback(null, res);
+            }
+        );
+    });
+};

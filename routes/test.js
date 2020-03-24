@@ -75,11 +75,12 @@ router.post("/notif", (req, res, next) => {
                     tag: req.body.user_id
                 },
                 data: {
-                    device_key: user.device_key
+                    device_key: user.device_key,
+                    user_id: user.user_id
                 }
             };
 
-            req.APP.request.sendNotif(params, (err, response) => {
+            req.APP.request.sendNotif(req.APP.models, params, (err, response) => {
                 if (err) throw err;
 
                 return req.APP.output.print(req, res, {

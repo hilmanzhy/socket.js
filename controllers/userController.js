@@ -310,7 +310,7 @@ exports.tokenUpdate = function(APP, req, cb) {
                         }
                     };
     
-                    APP.request.sendNotif(params, (err, res) => {
+                    APP.request.sendNotif(APP.models, params, (err, res) => {
                         if (err)
                             return cb({
                                 code: "GENERAL_ERR",

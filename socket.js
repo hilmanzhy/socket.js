@@ -327,6 +327,7 @@ io.on('connection', (socket) => {
                     User.findOne({ where: req.body })
                         .then(user => {
                             callback(null, {
+								user_id: user.user_id,
                                 device_id: device.device_id,
 								device_key: user.device_key,
 								notification: user.notif_device_disconnected
@@ -337,24 +338,25 @@ io.on('connection', (socket) => {
                         });
                 },
 
-                function(device, callback) {
+                function(data, callback) {
 					// Notif Disconnect
-					if (device.notification == 1) {
+					if (data.notification == 1) {
 						let params = {
 							notif: {
 								title: "Device Disconnected",
 								body: `Device ID ${
-									device.device_id
+									data.device_id
 								} disconnected at ${vascommkit.time.now()}`,
-								tag: device.device_id
+								tag: data.device_id
 							},
 							data: {
-								device_id: `${device.device_id}`,
-								device_key: `${device.device_key}`
+								user_id: data.user_id,
+								device_id: data.device_id,
+								device_key: data.device_key
 							}
 						};
 
-						APP.request.sendNotif(params, (err, res) => {
+						APP.request.sendNotif(APP.models, params, (err, res) => {
 							if (err) return callback(err);
 
 							log.message =

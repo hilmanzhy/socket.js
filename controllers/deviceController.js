@@ -65,21 +65,22 @@ exports.register = function(APP, req, callback) {
 
                         query = {
                             where: { user_id: req.auth.user_id },
-                            attributes: ["notif_device_disconnected", "device_key"]
+                            attributes: ["notif_device_connected", "device_key"]
                         };
 
                         // Check Existing User
                         return User(APP).findOne(query);
                     })
                     .then(resUser => {
-                        if (!resUser) throw new Error("USER_NOT_FOUND");
+						if (!resUser) throw new Error("USER_NOT_FOUND");
 
-                        if (resUser.device_key) data.device_key = resUser.device_key;
-                        if (resUser.notif_device_disconnected)
-                            data.resUser.notif_device_disconnected =
-                                resUser.resUser.notif_device_disconnected;
+                        data.user_id = resUser.user_id ? resUser.user_id : null;
+                        data.device_key = resUser.device_key ? resUser.device_key : null;
+                        data.notif_device_connected = resUser.notif_device_connected
+                            ? resUser.notif_device_connected
+                            : null;
 
-                        callback(null, payloadNotif);
+                        callback(null, true);
                     })
                     .catch(err => {
                         let output;
@@ -111,7 +112,7 @@ exports.register = function(APP, req, callback) {
                     });
             },
             // Call SP Creating Device
-            (notif, callback) => {
+            (bool, callback) => {
                 APP.db.sequelize
                     .query(
                         "CALL sitadev_iot_2.create_devicepin (:device_id, :device_ip, :user_id, :device_name, :date, :pin, :group_id, :device_type, :mac_address)",
@@ -131,7 +132,7 @@ exports.register = function(APP, req, callback) {
                         }
                     )
                     .then(responseSP => {
-                        callback(null, notif);
+                        callback(null, true);
                     })
                     .catch(errSP => {
                         callback({
@@ -147,8 +148,9 @@ exports.register = function(APP, req, callback) {
                     (notif.body = `Your Device ${req.body.device_name} not successfully registered. Please Try Again!`);
             }
 
-            if (data.notif_device_disconnected == 1) {
-                APP.request.sendNotif(payloadNotif, (err, res) => {
+			// Notification Device Register
+            if (data.notif_device_connected == 1) {
+                APP.request.sendNotif(APP.models, payloadNotif, (err, res) => {
                     if (err) console.log(err);
                     else console.log("EMAIL SENT!");
                 });
@@ -1243,9 +1245,10 @@ exports.sensordata = function(APP, req, callback) {
 
             function updatingSensorStatus(params, callback) {
                 User.findOne(query.options)
-                    .then(resultDevice => {
-                        params.device_key = resultDevice.device_key;
-                        params.notif = resultDevice.notif_sensor_status_update;
+                    .then(resultUser => {
+                        params.user_id = resultUser.user_id;
+                        params.device_key = resultUser.device_key;
+                        params.notif = resultUser.notif_sensor_status_update;
 
                         query.options.where.device_id = params.device_id;
                         query.options.where.pin = params.pin;
@@ -1268,7 +1271,7 @@ exports.sensordata = function(APP, req, callback) {
                         		}
                         	}
 
-                        	request.sendNotif(notif, (err, res) => {
+                        	request.sendNotif(APP.models, notif, (err, res) => {
                         		if (err) return callback(err);
 
                         		console.log(`/ SENDING PUSH NOTIFICATION /`)
