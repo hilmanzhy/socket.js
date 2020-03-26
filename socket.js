@@ -328,7 +328,8 @@ io.on('connection', (socket) => {
                         .then(user => {
                             callback(null, {
 								user_id: user.user_id,
-                                device_id: device.device_id,
+								device_id: device.device_id,
+								device_name: device.device_name,
 								device_key: user.device_key,
 								notification: user.notif_device_disconnected
                             });
@@ -344,8 +345,8 @@ io.on('connection', (socket) => {
 						let params = {
 							notif: {
 								title: "Device Disconnected",
-								body: `Device ID ${
-									data.device_id
+								body: `Device ${
+									data.device_name
 								} disconnected at ${vascommkit.time.now()}`,
 								tag: data.device_id
 							},
