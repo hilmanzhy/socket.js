@@ -11,7 +11,10 @@ module.exports = function (mongo) {
         },
         date: {
             type: Date,
-            default: Date.now
+            default: Date.now,
+            get: (date) => {
+                return "0000-00-00 00:00:00";
+            }
         },
     });
 

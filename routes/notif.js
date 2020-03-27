@@ -2,6 +2,14 @@ const express = require("express");
 const router = express.Router();
 const notifController = require("../controllers/notifController.js");
 
+router.post("/get", (req, res, next) => {
+    notifController.get(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+})
+
 router.post("/setting/get", (req, res, next) => {
     if (!req.auth && !req.body.user_id)
         return req.APP.output.print(req, res, {

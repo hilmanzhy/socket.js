@@ -1,5 +1,6 @@
 const User = APP => APP.models.mysql.user,
-    async = require("async");
+    async = require("async"),
+    moment = require("moment");
 
 exports.getSetting = function(APP, req, callback) {
     let options = {
@@ -154,3 +155,17 @@ exports.setSetting = (APP, req, callback) => {
             callback(errResponse);
         });
 };
+
+exports.get = (APP, req, callback) => {
+    queryOptions = { user_id: req.auth.user_id }
+
+    APP.models.mongo.notif
+        .find(queryOptions)
+        .sort("-date")
+        .exec((err, res) => {
+            callback(null, {
+                code: "FOUND",
+                data: res
+            })
+        })
+}
