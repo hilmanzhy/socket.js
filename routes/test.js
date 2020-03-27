@@ -62,12 +62,6 @@ router.post("/notif", (req, res, next) => {
     req.APP.models.mysql.user
         .findOne({ where: { user_id: req.body.user_id } })
         .then(user => {
-            if (!user.device_key)
-                throw {
-                    code: "INVALID_REQUEST",
-                    message: "User don't have Device Key!"
-                };
-
             let params = {
                 notif: {
                     title: req.body.title,

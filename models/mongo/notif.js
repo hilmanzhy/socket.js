@@ -9,13 +9,8 @@ module.exports = function (mongo) {
             title: String,
             body: String
         },
-        date: {
-            type: Date,
-            default: Date.now,
-            get: (date) => {
-                return "0000-00-00 00:00:00";
-            }
-        },
+        date: String,
+        time: String
     });
 
 	return mongo.model('Notification', ModelSchema);

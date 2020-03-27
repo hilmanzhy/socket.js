@@ -2,6 +2,7 @@
 
 const unirest = require('unirest'),
       nodemailer = require('nodemailer'),
+      moment = require('moment'),
       mustache = require('mustache'),
       fs = require('fs'),
       path = require('path');
@@ -111,7 +112,9 @@ exports.sendNotif = function(models, payload, callback) {
         models.mongo.notif.create(
             {
                 user_id: params.data.user_id,
-                notification: params.notification
+                notification: params.notification,
+                date: moment().format("YYYY-MM-DD"),
+                time: moment().format("HH:mm:ss")
             },
             (err, result) => {
                 if (err)

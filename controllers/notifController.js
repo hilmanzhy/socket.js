@@ -157,15 +157,30 @@ exports.setSetting = (APP, req, callback) => {
 };
 
 exports.get = (APP, req, callback) => {
-    queryOptions = { user_id: req.auth.user_id }
+    let { limit, skip } = req.body,
+        queryOptions = { user_id: req.auth.user_id };
+
+    limit = limit ? parseInt(limit) : 10;
+    skip = skip ? parseInt(skip) : 0;
 
     APP.models.mongo.notif
         .find(queryOptions)
+        .limit(limit)
+        .skip(skip)
         .sort("-date")
-        .exec((err, res) => {
+        .lean()
+        .exec((err, notif) => {
+            if (err)
+                return callback({
+                    code: "ERR_DATABASE",
+                    data: err.message
+                });
+
             callback(null, {
-                code: "FOUND",
-                data: res
-            })
-        })
-}
+                code: notif && notif.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: notif.toObject()
+            });
+        });
+
+    return;
+};
