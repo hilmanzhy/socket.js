@@ -1679,93 +1679,125 @@ exports.runtimereportdaily = function (APP, req, callback) {
 	
 };
 
-exports.totalruntime = function (APP, req, callback) {
-	const Device = APP.models.mysql.device
-	let params = req.body
-	var data = {}, response = {}
+exports.totalruntime = function(APP, req, callback) {
+    const Device = APP.models.mysql.device;
+    let params = req.body;
+    var data = {},
+        response = {};
 
-	query.options = {
-		col: 'device_status',
-		where: {
-			device_status: '1',
-			user_id: params.user_id
-		},
-	}
+    query = {
+        col: "device_status",
+        where: {
+            device_status: "1",
+            user_id: params.user_id
+        }
+    };
 
-	Device.count(query.options).then((resultCount) => {
-		data.active_device = resultCount;
+    Device.count(query)
+        .then(resultCount => {
+            data.active_device = resultCount;
 
-		return APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)', { 
-			replacements: {
-				user_id: params.user_id,
-				date_from: params.date_from,		
-				date_to: params.date_to
-			}, 
-			type: APP.db.sequelize.QueryTypes.RAW 
-		})
-	}).then((resultSP) => {
-		data.total_kwh = resultSP[0].total_kwh
-		data.total_harga = resultSP[0].total_harga
-		data.token = resultSP[0].token
+            query.col = "is_connected";
+            query.where = {
+                user_id: params.user_id,
+                is_connected: "1"
+            };
 
-		async.parallel([
-			function validateKWH(cb) {
-				APP.roles.can(req, '/totalruntime/kwh', (err, permission) => {
-					if (err) return cb(err);
-					if (!permission.granted) delete data.total_kwh
+            return Device.count(query);
+        })
+        .then(resultCountConnect => {
+			data.connected_device = resultCountConnect;
 
-					cb(null, data)
-				})
-			},
+            return APP.db.sequelize.query(
+                "CALL sitadev_iot_2.runtimereport_total (:user_id, :date_from, :date_to)",
+                {
+                    replacements: {
+                        user_id: params.user_id,
+                        date_from: params.date_from,
+                        date_to: params.date_to
+                    },
+                    type: APP.db.sequelize.QueryTypes.RAW
+                }
+            );
+        })
 
-			function validateCost(cb) {
-				APP.roles.can(req, '/totalruntime/cost', (err, permission) => {
-					if (err) return cb(err);
-					if (!permission.granted) delete data.total_harga
+        .then(resultSP => {
+            data.total_kwh = resultSP[0].total_kwh;
+            data.total_harga = resultSP[0].total_harga;
+            data.token = resultSP[0].token;
 
-					cb(null, data)
-				})
-			},
+            async.parallel(
+                [
+                    function validateKWH(cb) {
+                        APP.roles.can(req, "/totalruntime/kwh", (err, permission) => {
+                            if (err) return cb(err);
+                            if (!permission.granted) delete data.total_kwh;
 
-			function validateDevice(cb) {
-				APP.roles.can(req, '/totalruntime/device', (err, permission) => {
-					if (err) return cb(err);
-					if (!permission.granted) delete data.active_device
+                            cb(null, data);
+                        });
+                    },
 
-					cb(null, data)
-				})
-			},
+                    function validateCost(cb) {
+                        APP.roles.can(req, "/totalruntime/cost", (err, permission) => {
+                            if (err) return cb(err);
+                            if (!permission.granted) delete data.total_harga;
 
-			function validateToken(cb) {
-				APP.roles.can(req, '/totalruntime/token', (err, permission) => {
-					if (err) return cb(err);
-					if (!permission.granted) delete data.token
+                            cb(null, data);
+                        });
+                    },
 
-					cb(null, data)
-				})
-			}
-		], function (err, res) {
-			if (err) return callback({
-				code: 'GENERAL_ERR',
-				message: err
-			})
+                    function validateDevice(cb) {
+                        APP.roles.can(req, "/totalruntime/device", (err, permission) => {
+                            if (err) return cb(err);
+                            if (!permission.granted) delete data.active_device;
 
-			response = {
-				code: (res && (res.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data: {
-					runtime: [{
-						'total_kwh': data.total_kwh,
-						'total_harga': data.total_harga,
-						'token': data.token
-					}],
-					device: [{ 'active_device': data.active_device }]
-				}
-			}
-			
-			return callback(null, response);
-		})
-	})
-}
+                            cb(null, data);
+                        });
+                    },
+
+                    function validateToken(cb) {
+                        APP.roles.can(req, "/totalruntime/token", (err, permission) => {
+                            if (err) return cb(err);
+                            if (!permission.granted) delete data.token;
+
+                            cb(null, data);
+                        });
+					}
+					/**
+					 * !NOTE : Belum ada validasi permission untuk count connected device
+					 */
+                ],
+                function(err, res) {
+                    if (err)
+                        return callback({
+                            code: "GENERAL_ERR",
+                            message: err
+                        });
+
+                    response = {
+                        code: res && res.length > 0 ? "FOUND" : "NOT_FOUND",
+                        data: {
+                            runtime: [
+                                {
+                                    total_kwh: data.total_kwh,
+                                    total_harga: data.total_harga,
+                                    token: data.token
+                                }
+                            ],
+                            device: [
+                                {
+                                    active_device: data.active_device,
+                                    connected_device: data.connected_device
+                                }
+                            ]
+                        }
+                    };
+
+                    return callback(null, response);
+                }
+            );
+        });
+};
 
 exports.totalruntime_range = function(APP, req, callback) {
 	let date_from,
