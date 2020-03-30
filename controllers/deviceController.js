@@ -1232,7 +1232,7 @@ exports.sensordata = function(APP, req, callback) {
         where: {
             user_id: params.user_id
         },
-        attributes: ["device_key"]
+        attributes: ["user_id", "device_key", "notif_sensor_status_update"]
     };
 
     async.waterfall(
@@ -1312,7 +1312,7 @@ exports.sensordata = function(APP, req, callback) {
                     .catch(err => {
                         return callback({
                             code: "ERR_DATABASE",
-                            data: JSON.stringify(err)
+                            data: err.message
                         });
                     });
             }
