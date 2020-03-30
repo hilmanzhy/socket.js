@@ -140,14 +140,14 @@
 		"data": {}
 	},
 
-	"DEVICE_DISSCONNECTED": {
-		"error": true,
-		"code": "DEVICE_DISSCONNECTED",
-		"name": "DEVICE_DISSCONNECTED",
+	"DEVICE_DISCONNECTED": {
+		"error": false,
+		"code": "DEVICE_DISCONNECTED",
+		"name": "DEVICE_DISCONNECTED",
 		"status": 408,
 		"from": "",
 		"info": {},
-		"message": "Device is not Connected!",
+		"message": "Device is not Connected to System!",
 		"data": {}
 	},
 

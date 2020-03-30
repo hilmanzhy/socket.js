@@ -3372,3 +3372,55 @@ exports.reset = function (APP, req, callback) {
 		return callback(null, result)
 	})
 }
+
+exports.upgradeFirmware = function(APP, req, callback) {
+    let { device_id } = req.body,
+        { user_id } = req.auth,
+        response = {};
+
+    query = {
+        where: { device_id, user_id }
+    };
+
+    Device(APP)
+        .findOne(query)
+        .then(device => {
+            if (!device) throw new Error("NOT_FOUND");
+            if (device.is_connected != "1") throw new Error("DEVICE_DISCONNECTED");
+
+            socket.emit("upgrade_firmware", {
+                device_id: device.device_id,
+                firmware_name: "SitamotoDevice_v1.0.zip"
+            });
+
+            callback(null, {
+                code: "OK",
+                message: "Progress upgrade, please wait until your device restarted"
+            });
+
+            return;
+        })
+        .catch(err => {
+            switch (err.message) {
+                case "NOT_FOUND":
+                    response.code = "NOT_FOUND";
+                    response.message = "Device not found!";
+
+                    break;
+
+                case "DEVICE_DISCONNECTED":
+                    response.code = "DEVICE_DISCONNECTED";
+
+                    break;
+
+                default:
+                    (response.code = "GENERAL_ERR"), (response.message = err.message);
+
+                    break;
+            }
+
+            callback(response);
+
+            return;
+        });
+};
