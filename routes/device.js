@@ -582,4 +582,31 @@ router.post('/generate_id', (req, res, next) => {
 	});
 })
 
+/* Route Add Share User */
+router.post('/addshareuser', (req, res, next) => {
+	deviceController.addshareuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Delete Share User */
+router.post('/deleteshareuser', (req, res, next) => {
+	deviceController.deleteshareuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Cek Username */
+router.post('/cekusername', (req, res, next) => {
+	deviceController.cekusername(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
 module.exports = router;

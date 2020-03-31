@@ -3372,3 +3372,114 @@ exports.reset = function (APP, req, callback) {
 		return callback(null, result)
 	})
 }
+
+/* Add share user controller */
+exports.addshareuser = function(APP, req, callback) {
+    var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
+
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_shared: req.body.user_id,
+                device_id: req.body.device_id
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then((rows) => {
+            callback(null, {
+				code : '00',
+				error : 'false',
+				message : 'Add share user success and saved'
+			});
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* Add share user controller */
+exports.deleteshareuser = function(APP, req, callback) {
+    var sp = "CALL `sitadev_iot_2`.`delete_shared_device`(:device_id, :user_shared);";
+
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_shared: req.body.user_id,
+                device_id: req.body.device_id
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then((rows) => {
+			if (rows[0].message == 0) {
+				callback(null, {
+					code : '01',
+					error : 'true',
+					message : 'Delete share user failed'
+				});
+			} else {
+				callback(null, {
+					code : '00',
+					error : 'false',
+					message : 'Delete share user success'
+				});
+			}
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* cek username controller */
+exports.cekusername = function(APP, req, callback) {
+	var querycek = "SELECT name, username FROM users WHERE username = :username;";
+
+	APP.db.sequelize
+        .query(querycek, {
+            replacements: {
+                username: req.body.username
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(result => {
+			callback(null, {
+				code: result[0].length > 0 ? "FOUND" : "NOT_FOUND",
+				data: result[0]
+			})
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+	
+	// const User = APP.models.mysql.user
+
+    // query = {
+    //     where: {
+    //         username: req.body.username
+    //     },
+    //     attributes: ["name", "username"]
+	// };
+
+	// User.findOne(query)
+	// 	.then((result) => {
+	// 		console.log(result.dataValues)
+	// 		callback(null, {
+	// 			code: !result.dataValues ? "NOT_FOUND" : "FOUND",
+	// 			data: result
+	// 		})
+	// 	})
+	// 	.catch(err => {
+    //         callback({
+    //             code: "GENERAL_ERR",
+    //             message: JSON.stringify(err)
+    //         });
+    //     });
+};
