@@ -84,6 +84,29 @@ router.post('/resetpassword', (req, res, next) => {
 	});
 });
 
+router.post("/verifypassword", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+
+    if (!req.body.password)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "password" }
+        });
+
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+    delete req.body.user_id;
+
+    authController.verifyPassword(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
 router.post('/checkotp', (req, res, next) => {
 	authController.checkotp(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);

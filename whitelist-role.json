@@ -5,6 +5,7 @@
 	"/auth/changepassword",
 	"/auth/forgotpassword",
 	"/auth/resetpassword",
+	"/auth/verifypassword",
 	"/auth/verify",
 	"/auth/verify/send",
 	"/auth/updatekey",

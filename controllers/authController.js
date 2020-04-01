@@ -472,6 +472,56 @@ exports.resetpassword = function (APP, req, callback) {
     })
 }
 
+exports.verifyPassword = function(APP, req, callback) {
+    let { password } = req.body,
+        { user_id } = req.auth,
+        response = {};
+        
+    query = {
+        attributes: { exclude: ["password", "created_at", "updated_at"] },
+        where: {
+            user_id: user_id,
+            password: encrypt.encrypt(password),
+            active_status: 1
+        }
+    };
+
+    User(APP)
+        .findOne(query)
+        .then(verify => {
+            if (!verify) throw new Error("INVALID_REQUEST");
+
+            callback(null, {
+                code: "OK",
+                message: "Verified",
+                data: verify
+            });
+
+            return;
+        })
+        .catch(err => {
+            switch (err.message) {
+                case "INVALID_REQUEST":
+                    response = {
+                        code: err.message,
+                        message: "Invalid credentials!"
+                    };
+
+                    break;
+
+                default:
+                    response = {
+                        code: "ERR_DATABASE",
+                        message: err.message
+                    };
+
+                    break;
+            }
+
+            return callback(response);
+        });
+};
+
 exports.checkotp = function (APP, req, callback) {
     if (!req.body.email) return callback({ code : 'MISSING_KEY', data: { parameter: 'email' } })
     if (!req.body.otp) return callback({ code : 'MISSING_KEY', data: { parameter: 'otp' } })
