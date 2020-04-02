@@ -3373,6 +3373,58 @@ exports.reset = function (APP, req, callback) {
 	})
 }
 
+exports.upgradeFirmware = function(APP, req, callback) {
+    let { device_id } = req.body,
+        { user_id } = req.auth,
+        response = {};
+
+    query = {
+        where: { device_id, user_id }
+    };
+
+    Device(APP)
+        .findOne(query)
+        .then(device => {
+            if (!device) throw new Error("NOT_FOUND");
+            if (device.is_connected != "1") throw new Error("DEVICE_DISCONNECTED");
+
+            socket.emit("upgrade_firmware", {
+                device_id: device.device_id,
+                firmware_name: "SitamotoDevice_v1.0.zip"
+            });
+
+            callback(null, {
+                code: "OK",
+                message: "Progress upgrade, please wait until your device restarted"
+            });
+
+            return;
+        })
+        .catch(err => {
+            switch (err.message) {
+                case "NOT_FOUND":
+                    response.code = "NOT_FOUND";
+                    response.message = "Device not found!";
+
+                    break;
+
+                case "DEVICE_DISCONNECTED":
+                    response.code = "DEVICE_DISCONNECTED";
+
+                    break;
+
+                default:
+                    (response.code = "GENERAL_ERR"), (response.message = err.message);
+
+                    break;
+            }
+
+            callback(response);
+
+            return;
+        });
+};
+
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
     var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
@@ -3437,7 +3489,7 @@ exports.deleteshareuser = function(APP, req, callback) {
 
 /* cek username controller */
 exports.cekusername = function(APP, req, callback) {
-	var querycek = "SELECT name, username FROM users WHERE username = :username;";
+	var querycek = "SELECT username FROM users WHERE username = :username;";
 
 	APP.db.sequelize
         .query(querycek, {
@@ -3458,28 +3510,75 @@ exports.cekusername = function(APP, req, callback) {
                 message: JSON.stringify(err)
             });
         });
-	
-	// const User = APP.models.mysql.user
+};
 
-    // query = {
-    //     where: {
-    //         username: req.body.username
-    //     },
-    //     attributes: ["name", "username"]
-	// };
+/* get shared user controller */
+exports.getshareduser = function(APP, req, callback) {
+	var sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
 
-	// User.findOne(query)
-	// 	.then((result) => {
-	// 		console.log(result.dataValues)
-	// 		callback(null, {
-	// 			code: !result.dataValues ? "NOT_FOUND" : "FOUND",
-	// 			data: result
-	// 		})
-	// 	})
-	// 	.catch(err => {
-    //         callback({
-    //             code: "GENERAL_ERR",
-    //             message: JSON.stringify(err)
-    //         });
-    //     });
+	APP.db.sequelize
+        .query(sp, {
+            replacements: {
+				user_id: req.body.user_id,
+				device_id: req.body.device_id,
+				device_ip: req.body.device_ip,
+				device_name: req.body.device_name,
+				device_status: req.body.device_status,
+				install_date: req.body.install_date,
+				active_date: req.body.active_date,
+				offset: req.body.offset,
+				limit: req.body.limit,
+				sort: req.body.sort
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(result => {
+			console.log(result)
+			callback(null, {
+				code: result.length > 0 ? "FOUND" : "NOT_FOUND",
+				data: result
+			})
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* update status shared user controller */
+exports.updatestatusshare = function(APP, req, callback) {
+	var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
+
+	APP.db.sequelize
+        .query(query_update, {
+            replacements: {
+				status: 1,
+				device_id: req.body.device_id,
+				shared_id: req.body.shared_id
+            },
+            type: APP.db.sequelize.QueryTypes.UPDATE
+        })
+        .then(result => {
+			if (result[1] == 1) {
+				callback(null, {
+					code : '00',
+					error : 'false',
+					message : 'Update status share user success'
+				});
+			} else {
+				callback(null, {
+					code : '01',
+					error : 'true',
+					message : 'Update status share user failed'
+				});
+			}
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
 };

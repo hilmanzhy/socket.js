@@ -582,6 +582,36 @@ router.post('/generate_id', (req, res, next) => {
 	});
 })
 
+/**
+ * @title ROUTE FIRMWARE
+ * @desc Below route handle Firmware Upgrade
+ * 
+ * @note Research use only, will develop soon
+ */
+
+/* Route Upgrade Firmware */
+router.post("/firmware/upgrade", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.body.device_id) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_id" }
+        });
+    }
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+    delete req.body.user_id;
+
+    deviceController.upgradeFirmware(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
 /* Route Add Share User */
 router.post('/addshareuser', (req, res, next) => {
 	deviceController.addshareuser(req.APP, req, (err, result) => {
@@ -603,6 +633,24 @@ router.post('/deleteshareuser', (req, res, next) => {
 /* Route Cek Username */
 router.post('/cekusername', (req, res, next) => {
 	deviceController.cekusername(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Get Share User */
+router.post('/getshareduser', (req, res, next) => {
+	deviceController.getshareduser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Update Status Share User */
+router.post('/updatestatusshare', (req, res, next) => {
+	deviceController.updatestatusshare(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

@@ -565,6 +565,41 @@ io.on('connection', (socket) => {
 			return fnOutput.insert(req, err, log)
 		});
 	})
+	/**
+	 * @title UPGRADE FIRMWARE
+	 * @desc This event handle Upgrade Firmware from Apps to Device
+	 * 
+	 * @param {objects} params {device_id, firmware_name}
+	 * @param {objects} callback {code, message}
+	 */
+	socket.on("upgrade_firmware", params => {
+        let log = {},
+            req = {},
+            { device_id, firmware_name } = params,
+            firmware_url = `${process.env.APP_URL}/cdn/firmware/${firmware_name}`;
+
+        req.APP = APP;
+        req.event = `upgrade_firmware`;
+        log.body = req.body = params;
+        log.info = "UPGRADE FIRMWARE";
+        log.level = { error: false };
+
+        DeviceSession.findOne({ device_id })
+            .then(result => {
+                if (!result) throw new Error("DEVICE_DISCONNECTED");
+
+                io.to(result.session_id).emit("upgrade_firmware", { firmware_url });
+
+                return fnOutput.insert(req, result, log);
+            })
+            .catch(err => {
+                log.info = `${log.info} : ERROR`;
+                log.level = { error: true };
+                log.message = log.message + `\n${JSON.stringify(err)}`;
+
+                return fnOutput.insert(req, err, log);
+            });
+    });
 });
 
 http.listen(process.env.SOCKET_PORT, function() {
