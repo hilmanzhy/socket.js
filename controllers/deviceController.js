@@ -3424,3 +3424,161 @@ exports.upgradeFirmware = function(APP, req, callback) {
             return;
         });
 };
+
+/* Add share user controller */
+exports.addshareuser = function(APP, req, callback) {
+    var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
+
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_shared: req.body.user_id,
+                device_id: req.body.device_id
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then((rows) => {
+            callback(null, {
+				code : '00',
+				error : 'false',
+				message : 'Add share user success and saved'
+			});
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* Add share user controller */
+exports.deleteshareuser = function(APP, req, callback) {
+    var sp = "CALL `sitadev_iot_2`.`delete_shared_device`(:device_id, :user_shared);";
+
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_shared: req.body.user_id,
+                device_id: req.body.device_id
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then((rows) => {
+			if (rows[0].message == 0) {
+				callback(null, {
+					code : '01',
+					error : 'true',
+					message : 'Delete share user failed'
+				});
+			} else {
+				callback(null, {
+					code : '00',
+					error : 'false',
+					message : 'Delete share user success'
+				});
+			}
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* cek username controller */
+exports.cekusername = function(APP, req, callback) {
+	var querycek = "SELECT username FROM users WHERE username = :username;";
+
+	APP.db.sequelize
+        .query(querycek, {
+            replacements: {
+                username: req.body.username
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(result => {
+			callback(null, {
+				code: result[0].length > 0 ? "FOUND" : "NOT_FOUND",
+				data: result[0]
+			})
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* get shared user controller */
+exports.getshareduser = function(APP, req, callback) {
+	var sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
+
+	APP.db.sequelize
+        .query(sp, {
+            replacements: {
+				user_id: req.body.user_id,
+				device_id: req.body.device_id,
+				device_ip: req.body.device_ip,
+				device_name: req.body.device_name,
+				device_status: req.body.device_status,
+				install_date: req.body.install_date,
+				active_date: req.body.active_date,
+				offset: req.body.offset,
+				limit: req.body.limit,
+				sort: req.body.sort
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
+        .then(result => {
+			console.log(result)
+			callback(null, {
+				code: result.length > 0 ? "FOUND" : "NOT_FOUND",
+				data: result
+			})
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};
+
+/* update status shared user controller */
+exports.updatestatusshare = function(APP, req, callback) {
+	var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
+
+	APP.db.sequelize
+        .query(query_update, {
+            replacements: {
+				status: 1,
+				device_id: req.body.device_id,
+				shared_id: req.body.shared_id
+            },
+            type: APP.db.sequelize.QueryTypes.UPDATE
+        })
+        .then(result => {
+			if (result[1] == 1) {
+				callback(null, {
+					code : '00',
+					error : 'false',
+					message : 'Update status share user success'
+				});
+			} else {
+				callback(null, {
+					code : '01',
+					error : 'true',
+					message : 'Update status share user failed'
+				});
+			}
+        })
+        .catch(err => {
+            callback({
+                code: "GENERAL_ERR",
+                message: JSON.stringify(err)
+            });
+        });
+};

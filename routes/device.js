@@ -612,4 +612,49 @@ router.post("/firmware/upgrade", (req, res, next) => {
     });
 });
 
+/* Route Add Share User */
+router.post('/addshareuser', (req, res, next) => {
+	deviceController.addshareuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Delete Share User */
+router.post('/deleteshareuser', (req, res, next) => {
+	deviceController.deleteshareuser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Cek Username */
+router.post('/cekusername', (req, res, next) => {
+	deviceController.cekusername(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Get Share User */
+router.post('/getshareduser', (req, res, next) => {
+	deviceController.getshareduser(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+/* Route Update Status Share User */
+router.post('/updatestatusshare', (req, res, next) => {
+	deviceController.updatestatusshare(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
 module.exports = router;
