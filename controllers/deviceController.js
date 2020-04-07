@@ -1740,11 +1740,8 @@ exports.totalruntime = function(APP, req, callback) {
         response = {};
 
     query = {
-        col: "device_status",
-        where: {
-            device_status: "1",
-            user_id: params.user_id
-        }
+        col: "device_id",
+        where: { user_id: params.user_id }
     };
 
     Device.count(query)
