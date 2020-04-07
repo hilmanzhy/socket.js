@@ -966,7 +966,7 @@ exports.updatename = function (APP, req, callback) {
 };
 
 exports.devicehistory = function (APP, req, callback) {
-	const DeviceHistory = APP.models.mysql.device_history
+	// const DeviceHistory = APP.models.mysql.device_history
 	var response = {},
 		params = req.body
 
@@ -1004,48 +1004,49 @@ exports.devicehistory = function (APP, req, callback) {
 	APP.db.sequelize
 	.query(sp, {
 		replacements: {
-			user_id: req.body.user_id,
-			device_id: req.body.device_id,
-			device_ip: req.body.device_ip,
-			device_name: req.body.device_name,
-			date: req.body.date,
-			offset: req.body.offset,
-			limit: req.body.limit,
-			sort: req.body.sort
+			user_id: params.user_id,
+			device_id: params.device_id,
+			device_ip: params.device_ip,
+			device_name: params.device_name,
+			date: params.date,
+			offset: params.offset,
+			limit: params.limit,
+			sort: params.sort
 		},
 		type: APP.db.sequelize.QueryTypes.RAW
 	})
-	.then((device) => {
-		let Model = APP.models.mysql.device;
-		let data = device.map( history => {
-			query = {
-				attributes : ['icon_id'],
-				raw: true,
-				where : {
-					user_id : history.user_id,
-					device_id : history.device_id
-				}
-			}
+	// .then((device) => {
+	// 	let Model = APP.models.mysql.device;
+	// 	let data = device.map( history => {
+	// 		query = {
+	// 			attributes : ['icon_id'],
+	// 			raw: true,
+	// 			where : {
+	// 				user_id : history.user_id,
+	// 				device_id : history.device_id
+	// 			}
+	// 		}
 			
-			history = history.toJSON();
-			history.icon_id = null;
+	// 		history = history.toJSON();
+	// 		history.icon_id = null;
 
-			if (history.pin) {
-				Model = APP.models.mysql.device_pin
-				query.where.pin = history.pin
-			}
+	// 		if (history.pin) {
+	// 			Model = APP.models.mysql.device_pin
+	// 			query.where.pin = history.pin
+	// 		}
 
-			return Model.findOne(query).then((result) => {
-				history.icon_id = result.icon_id;
+	// 		return Model.findOne(query).then((result) => {
+	// 			history.icon_id = result.icon_id;
 
-				return history;
-			}).catch((err) => {
-				throw new Error(err)
-			});
-		})
+	// 			return history;
+	// 		}).catch((err) => {
+	// 			throw new Error(err)
+	// 		});
+	// 	})
 
-		return Promise.all(data)
-	}).then((data) => {
+	// 	return Promise.all(data)
+	// })
+	.then((data) => {
 		response = {
 			code : (data && (data.length > 0)) ? 'FOUND' : 'NOT_FOUND',
 			data : data
@@ -2782,8 +2783,9 @@ exports.command = function (APP, req, callback) {
 	}
 
 	Device.findOne(query.options).then(resDevice => {
+		console.log(resDevice.device_id)
 		if (!resDevice) return callback({ code: "NOT_FOUND" })
-		if (resDevice.is_connected == 0) return callback({ code: "DEVICE_DISSCONNECTED" })
+		if (resDevice.is_connected == 0) return callback({ code: "DEVICE_DISCONNECTED" })
 
 		query.insert = {
 			user_id: params.user_id,
@@ -2871,7 +2873,12 @@ exports.command = function (APP, req, callback) {
 	
 						function creatingData(query, callback) {
 							console.log(`/... CREATE DATA DEVICE HISTORY .../`)
-	
+							
+							if (params.share_device == 1) {
+								query.insert.user_id = params.user_id_shared
+							} else if (params.share_device == 0) {
+								query.insert.user_id = params.user_id
+							}
 							DeviceHistory.create(query.insert)
 								.then(resultInsert => {
 									callback(null, query)
@@ -3482,50 +3489,47 @@ const authController = require('../controllers/authController.js')
 const encrypt = require('../functions/encryption.js')
 
 /* Add share user controller */
-exports.addshareuser = function(APP, req, callback) {	
-	// async.waterfall([
-		// function cekpassword(callback) {
-			let { password, device_id, user_shared } = req.body,
-				{ user_id } = req.auth,
-				response = {},
-			query = {
-				attributes: { exclude: ["password", "created_at", "updated_at"] },
-				where: {
-					user_id: user_id,
-					password: encrypt.encrypt(password),
-					active_status: 1
-				}
-			};
-		
-			User(APP)
-				.findOne(query)
-				.then(verify => {
-					if (!verify) throw new Error("INVALID_REQUEST");
+exports.addshareuser = function(APP, req, callback) {
+	let { password, device_id, user_shared } = req.body,
+		{ user_id } = req.auth,
+		response = {},
+	query = {
+		attributes: { exclude: ["password", "created_at", "updated_at"] },
+		where: {
+			user_id: user_id,
+			password: encrypt.encrypt(password),
+			active_status: 1
+		}
+	};
 
-					return
-				})
-				.catch(err => {
-					switch (err.message) {
-						case "INVALID_REQUEST":
-							response = {
-								code: err.message,
-								message: "Invalid credentials!"
-							};
-		
-							break;
-		
-						default:
-							response = {
-								code: "ERR_DATABASE",
-								message: err.message
-							};
-		
-							break;
-					}
-		
-					return callback(response);
-				});
-		// })
+	User(APP)
+		.findOne(query)
+		.then(verify => {
+			if (!verify) throw new Error("INVALID_REQUEST");
+
+			return
+		})
+		.catch(err => {
+			switch (err.message) {
+				case "INVALID_REQUEST":
+					response = {
+						code: err.message,
+						message: "Invalid credentials!"
+					};
+
+					break;
+
+				default:
+					response = {
+						code: "ERR_DATABASE",
+						message: err.message
+					};
+
+					break;
+			}
+
+			return callback(response);
+		});
 }
 
 /* Add share user controller */
