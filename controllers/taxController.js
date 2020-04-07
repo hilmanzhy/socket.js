@@ -165,7 +165,7 @@ exports.update = function(APP, req, cb) {
                                     bisnis          : tax.bisnis,
                                     publik          : tax.publik,
                                     industri        : tax.industri,
-                                    cdn_url : `${ process.env.APP_URL }/cdn`,
+                                    cdn_url         : `${ process.env.APP_URL }/cdn`,
                                 }
                             }
                         }

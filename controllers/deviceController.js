@@ -37,6 +37,7 @@ function updateSaklar(Sequelize, params, callback) {
 }
 
 exports.register = function(APP, req, callback) {
+	// Default Register Notification params
     let payloadNotif = {
             notif: {
                 title: "Device Registered",
@@ -143,16 +144,20 @@ exports.register = function(APP, req, callback) {
             }
         ],
         (errAsync, resAsync) => {
+			// Failed Register Notification params
             if (errAsync) {
                 (notif.title = "Device not Registered!"),
                     (notif.body = `Your Device ${req.body.device_name} not successfully registered. Please Try Again!`);
             }
 
-			// Notification Device Register
+			/**
+			 * SEND NOTIFICAION
+			 * if notif device connected is turned on
+			 */
             if (data.notif_device_connected == 1) {
                 APP.request.sendNotif(APP.models, payloadNotif, (err, res) => {
                     if (err) console.log(err);
-                    else console.log("EMAIL SENT!");
+                    else console.log("NOTIF SENT!");
                 });
             }
 
@@ -1314,16 +1319,21 @@ exports.sensordata = function(APP, req, callback) {
                         // NOTIF SENSOR UPDATE
                         if (params.sensor_status == '0' && updated[0] > 0 && params.notif == 1) {
                         	let notif = {
-                        		'notif': {
-                        			'title': 'Sensor Notice',
-                        			'body': `Sensor Notice on Device ID ${params.device_id} PIN ${params.pin} at ${vascommkit.time.now()}`,
-                        			'tag': params.device_id
-                        		},
-                        		'data': {
-                        			'device_id': `${params.device_id}`,
-                        			'device_key': `${params.device_key}`
-                        		}
-                        	}
+                                notif: {
+                                    title: "Sensor Notice",
+                                    body: `Sensor Notice on Device ID ${
+                                        params.device_id
+                                    } PIN ${
+                                        params.pin
+                                    } at ${vascommkit.time.now()}`,
+                                    tag: params.device_id,
+                                },
+                                data: {
+                                    user_id: params.user_id,
+                                    device_id: params.device_id,
+                                    device_key: params.device_key,
+                                },
+                            };
 
                         	request.sendNotif(APP.models, notif, (err, res) => {
                         		if (err) return callback(err);

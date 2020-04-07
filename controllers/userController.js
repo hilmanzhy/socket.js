@@ -339,9 +339,9 @@ exports.tokenUpdate = function(APP, req, cb) {
                                 `Total balance ${token.total_balance}`
                         },
                         data: {
-                            user_id: `${user.user_id}`,
-                            user_name: `${user.name}`,
-                            device_key: `${user.device_key}`
+                            user_id: user.user_id,
+                            user_name: user.name,
+                            device_key: user.device_key
                         }
                     };
     
