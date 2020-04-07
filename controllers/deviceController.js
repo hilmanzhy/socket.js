@@ -468,38 +468,57 @@ exports.registerdevice_backup = function (APP, req, callback) {
 };
 
 exports.getdevice = function(APP, req, callback) {
-    const Device = APP.models.mysql.device;
+    // const Device = APP.models.mysql.device;
 
-    if (req.body.install_date_from && req.body.install_date_to) {
-        req.body.install_date = {
-            [APP.db.Sequelize.Op.between]: [
-                `${req.body.install_date_from}`,
-                `${req.body.install_date_to} 23:59:59`
-            ]
-        };
-    }
-    if (req.body.total_pin_from) {
-        req.body.number_of_pin = {
-            ...req.body.number_of_pin,
-            [APP.db.Sequelize.Op.gte]: req.body.total_pin_from
-        };
-    }
-    if (req.body.total_pin_to) {
-        req.body.number_of_pin = {
-            ...req.body.number_of_pin,
-            [APP.db.Sequelize.Op.lte]: req.body.total_pin_to
-        };
-    }
+    // if (req.body.install_date_from && req.body.install_date_to) {
+    //     req.body.install_date = {
+    //         [APP.db.Sequelize.Op.between]: [
+    //             `${req.body.install_date_from}`,
+    //             `${req.body.install_date_to} 23:59:59`
+    //         ]
+    //     };
+    // }
+    // if (req.body.total_pin_from) {
+    //     req.body.number_of_pin = {
+    //         ...req.body.number_of_pin,
+    //         [APP.db.Sequelize.Op.gte]: req.body.total_pin_from
+    //     };
+    // }
+    // if (req.body.total_pin_to) {
+    //     req.body.number_of_pin = {
+    //         ...req.body.number_of_pin,
+    //         [APP.db.Sequelize.Op.lte]: req.body.total_pin_to
+    //     };
+    // }
 
-    delete req.body.install_date_from;
-    delete req.body.install_date_to;
-    delete req.body.total_pin_from;
-    delete req.body.total_pin_to;
+    // delete req.body.install_date_from;
+    // delete req.body.install_date_to;
+    // delete req.body.total_pin_from;
+    // delete req.body.total_pin_to;
 
-    query.where = { ...req.body, user_id: req.auth.user_id, is_deleted: "0" };
-    query.attributes = { exclude: ["is_deleted", "created_at", "updated_at"] };
+    // query.where = { ...req.body, user_id: req.auth.user_id, is_deleted: "0" };
+    // query.attributes = { exclude: ["is_deleted", "created_at", "updated_at"] };
 
-    Device.findAll(query)
+	// Device.findAll(query)
+	
+	var sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
+
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_id: req.auth.user_id,
+				device_id: req.body.device_id,
+				device_ip: req.body.device_ip,
+				device_name: req.body.device_name,
+				device_status: req.body.device_status,
+				install_date: req.body.install_date,
+				active_date: req.body.active_date,
+				offset: req.body.offset,
+				limit: req.body.limit,
+				sort: req.body.sort
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
+        })
         .then(result => {
             return callback(null, {
                 code: result && result.length > 0 ? "FOUND" : "NOT_FOUND",
@@ -515,39 +534,57 @@ exports.getdevice = function(APP, req, callback) {
 };
 
 exports.getpindevice = function(APP, req, callback) {
-    const Device = APP.models.mysql.device,
-        DevicePIN = APP.models.mysql.device_pin;
+    // const Device = APP.models.mysql.device,
+    //     DevicePIN = APP.models.mysql.device_pin;
 
-    query.attributes = { exclude: ["created_at", "updated_at"] };
-    query.where = {
-        user_id: req.auth.user_id,
-        device_id: req.body.device_id,
-        is_deleted: "0"
-    };
+    // query.attributes = { exclude: ["created_at", "updated_at"] };
+    // query.where = {
+    //     user_id: req.auth.user_id,
+    //     device_id: req.body.device_id,
+    //     is_deleted: "0"
+    // };
 
-    Device.findOne(query)
-        .then(resDevice => {
-            if (!resDevice) throw new Error("NOT_FOUND");
+	// Device.findOne(query)
+	var sp = "CALL `sitadev_iot_2`.`get_pin_list`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
 
-            if (req.body.install_date_from && req.body.install_date_to) {
-                req.body.install_date = {
-                    [APP.db.Sequelize.Op.between]: [
-                        `${req.body.install_date_from}`,
-                        `${req.body.install_date_to} 23:59:59`
-                    ]
-                };
-            }
-
-            delete req.body.install_date_from;
-            delete req.body.install_date_to;
-
-            query.where = {
-                ...req.body,
-                user_id: req.auth.user_id
-            };
-
-            return DevicePIN.findAll(query);
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_id: req.auth.user_id,
+				device_id: req.body.device_id,
+				device_ip: req.body.device_ip,
+				device_name: req.body.device_name,
+				device_status: req.body.device_status,
+				install_date: req.body.install_date,
+				active_date: req.body.active_date,
+				offset: req.body.offset,
+				limit: req.body.limit,
+				sort: req.body.sort
+            },
+            type: APP.db.sequelize.QueryTypes.RAW
         })
+        // .then(resDevice => {
+        //     if (!resDevice) throw new Error("NOT_FOUND");
+
+        //     if (req.body.install_date_from && req.body.install_date_to) {
+        //         req.body.install_date = {
+        //             [APP.db.Sequelize.Op.between]: [
+        //                 `${req.body.install_date_from}`,
+        //                 `${req.body.install_date_to} 23:59:59`
+        //             ]
+        //         };
+        //     }
+
+        //     delete req.body.install_date_from;
+        //     delete req.body.install_date_to;
+
+        //     query.where = {
+        //         ...req.body,
+        //         user_id: req.auth.user_id
+        //     };
+
+        //     return DevicePIN.findAll(query);
+        // })
         .then(resDevicePIN => {
             if (!resDevicePIN) throw new Error("NOT_FOUND");
 
@@ -558,7 +595,7 @@ exports.getpindevice = function(APP, req, callback) {
         })
         .catch(err => {
             if (err.message == "NOT_FOUND")
-                return callback(null, { code: "NOT_FOND" });
+                return callback(null, { code: "NOT_FOUND" });
 
             return callback({
                 code: "ERR_DATABASE",
@@ -933,18 +970,18 @@ exports.devicehistory = function (APP, req, callback) {
 	var response = {},
 		params = req.body
 
-	query = {
-		attributes : { exclude: ['created_at', 'updated_at'] },
-		where : {
-			user_id : params.user_id,
-			date: {
-				[APP.db.Sequelize.Op.between]: [params.date_from, `${params.date_to} 23:59:59`]
-			  }
-		}
-	}
+	// query = {
+	// 	attributes : { exclude: ['created_at', 'updated_at'] },
+	// 	where : {
+	// 		user_id : params.user_id,
+	// 		date: {
+	// 			[APP.db.Sequelize.Op.between]: [params.date_from, `${params.date_to} 23:59:59`]
+	// 		  }
+	// 	}
+	// }
 
-	if (params.device_id) query.where.device_id = params.device_id
-	if (params.pin) query.where.pin = params.pin
+	// if (params.device_id) query.where.device_id = params.device_id
+	// if (params.pin) query.where.pin = params.pin
 	
 	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + params.user_id + "' and date > '" + params.date_from + "' and date < '" + params.date_to + "'"
 
@@ -962,7 +999,23 @@ exports.devicehistory = function (APP, req, callback) {
 	
 	// .then(device => {
 
-	DeviceHistory.findAll(query).then((device) => {
+	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date, :offset, :limit, :sort);";
+
+	APP.db.sequelize
+	.query(sp, {
+		replacements: {
+			user_id: req.body.user_id,
+			device_id: req.body.device_id,
+			device_ip: req.body.device_ip,
+			device_name: req.body.device_name,
+			date: req.body.date,
+			offset: req.body.offset,
+			limit: req.body.limit,
+			sort: req.body.sort
+		},
+		type: APP.db.sequelize.QueryTypes.RAW
+	})
+	.then((device) => {
 		let Model = APP.models.mysql.device;
 		let data = device.map( history => {
 			query = {
@@ -3425,32 +3478,55 @@ exports.upgradeFirmware = function(APP, req, callback) {
         });
 };
 
-/* Add share user controller */
-exports.addshareuser = function(APP, req, callback) {
-    var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
+const authController = require('../controllers/authController.js')
+const encrypt = require('../functions/encryption.js')
 
-    APP.db.sequelize
-        .query(sp, {
-            replacements: {
-                user_shared: req.body.user_id,
-                device_id: req.body.device_id
-            },
-            type: APP.db.sequelize.QueryTypes.RAW
-        })
-        .then((rows) => {
-            callback(null, {
-				code : '00',
-				error : 'false',
-				message : 'Add share user success and saved'
-			});
-        })
-        .catch(err => {
-            callback({
-                code: "GENERAL_ERR",
-                message: JSON.stringify(err)
-            });
-        });
-};
+/* Add share user controller */
+exports.addshareuser = function(APP, req, callback) {	
+	// async.waterfall([
+		// function cekpassword(callback) {
+			let { password, device_id, user_shared } = req.body,
+				{ user_id } = req.auth,
+				response = {},
+			query = {
+				attributes: { exclude: ["password", "created_at", "updated_at"] },
+				where: {
+					user_id: user_id,
+					password: encrypt.encrypt(password),
+					active_status: 1
+				}
+			};
+		
+			User(APP)
+				.findOne(query)
+				.then(verify => {
+					if (!verify) throw new Error("INVALID_REQUEST");
+
+					return
+				})
+				.catch(err => {
+					switch (err.message) {
+						case "INVALID_REQUEST":
+							response = {
+								code: err.message,
+								message: "Invalid credentials!"
+							};
+		
+							break;
+		
+						default:
+							response = {
+								code: "ERR_DATABASE",
+								message: err.message
+							};
+		
+							break;
+					}
+		
+					return callback(response);
+				});
+		// })
+}
 
 /* Add share user controller */
 exports.deleteshareuser = function(APP, req, callback) {

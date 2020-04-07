@@ -12,18 +12,18 @@ router.post("/getdevice", (req, res, next) => {
             code: "MISSING_KEY",
             data: { missing_parameter: "user_id" }
         });
-    if (req.body.install_date_from && !req.body.install_date_to) {
-        return req.APP.output.print(req, res, {
-            code: "MISSING_KEY",
-            data: { missing_parameter: "install_date_to" }
-        });
-    }
-    if (!req.body.install_date_from && req.body.install_date_to) {
-        return req.APP.output.print(req, res, {
-            code: "MISSING_KEY",
-            data: { missing_parameter: "install_date_from" }
-        });
-    }
+    // if (req.body.install_date_from && !req.body.install_date_to) {
+    //     return req.APP.output.print(req, res, {
+    //         code: "MISSING_KEY",
+    //         data: { missing_parameter: "install_date_to" }
+    //     });
+    // }
+    // if (!req.body.install_date_from && req.body.install_date_to) {
+    //     return req.APP.output.print(req, res, {
+    //         code: "MISSING_KEY",
+    //         data: { missing_parameter: "install_date_from" }
+    //     });
+    // }
     if (!req.auth) req.auth = { user_id: req.body.user_id };
     delete req.body.user_id;
 
@@ -188,14 +188,14 @@ router.post('/devicehistory', (req, res, next) => {
 		code: 'MISSING_KEY',
 		data: { missing_parameter: 'user_id' }
 	})
-	if (!req.body.date_from) return req.APP.output.print(req, res, {
-		code: 'MISSING_KEY',
-		data: { missing_parameter: 'date_from' }
-	})
-	if (!req.body.date_to) return req.APP.output.print(req, res, {
-		code: 'MISSING_KEY',
-		data: { missing_parameter: 'date_to' }
-	})
+	// if (!req.body.date_from) return req.APP.output.print(req, res, {
+	// 	code: 'MISSING_KEY',
+	// 	data: { missing_parameter: 'date_from' }
+	// })
+	// if (!req.body.date_to) return req.APP.output.print(req, res, {
+	// 	code: 'MISSING_KEY',
+	// 	data: { missing_parameter: 'date_to' }
+	// })
 
 	deviceController.devicehistory(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
