@@ -1004,7 +1004,7 @@ exports.devicehistory = function (APP, req, callback) {
 	
 	// .then(device => {
 
-	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date, :offset, :limit, :sort);";
+	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort);";
 
 	APP.db.sequelize
 	.query(sp, {
@@ -1013,7 +1013,8 @@ exports.devicehistory = function (APP, req, callback) {
 			device_id: params.device_id,
 			device_ip: params.device_ip,
 			device_name: params.device_name,
-			date: params.date,
+			date_from: params.date_from,
+			date_to: params.date_to,
 			offset: params.offset,
 			limit: params.limit,
 			sort: params.sort
@@ -1162,11 +1163,13 @@ exports.commandpanel = function (APP, req, callback) {
 								.then((rows) => {
 
 									console.log('checking all switch')
-									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)',
+									APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :user_id_shared, :share_device)',
 										{ 
 											replacements: {
 												device_id: datareq.device_id,
-												user_id: datareq.user_id
+												user_id: datareq.user_id,
+												user_id_shared: '',
+												share_device: 0
 											}, 
 											type: APP.db.sequelize.QueryTypes.RAW 
 										}
@@ -1221,9 +1224,11 @@ exports.commandpanel = function (APP, req, callback) {
 				else if (datareq.mode == '1')
 				{
 					console.log('execute single device')
-					APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)',
+					APP.db.sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch, :user_id_shared, :share_device)',
 						{ 
 							replacements: {
+								user_id_shared: '',
+								share_device: 0,
 								device_id: datareq.device_id,
 								user_id: datareq.user_id,
 								switch: datareq.switch
@@ -1336,7 +1341,7 @@ exports.sensordata = function(APP, req, callback) {
                             };
 
                         	request.sendNotif(APP.models, notif, (err, res) => {
-                        		if (err) return callback(err);
+								if (err) return callback(err);
 
                         		console.log(`/ SENDING PUSH NOTIFICATION /`)
                         	})
@@ -3505,46 +3510,91 @@ exports.upgradeFirmware = function(APP, req, callback) {
 
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
-	const authController = require('../controllers/authController.js')
-	
-	async.waterfall([
-		function(callback) {
-			authController.verifyPassword(APP, req, (err, result) => {
-				if (err) return err
+	const encrypt = require('../functions/encryption.js')
 
-				callback(null, result)
-			});
-		},
-		function(APP, req, callback) {
-			var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
+	let { password } = req.body,
+		{ user_id } = req.auth,
+		response = {};
 		
-			APP.db.sequelize
-				.query(sp, {
-					replacements: {
-						user_shared: req.body.user_id,
-						device_id: req.body.device_id
-					},
-					type: APP.db.sequelize.QueryTypes.RAW
-				})
-				.then((rows) => {
-					callback(null, {
-						code : '00',
-						error : 'false',
-						message : 'Add share user success and saved'
-					});
-				})
-				.catch(err => {
-					callback({
-						code: "GENERAL_ERR",
-						message: JSON.stringify(err)
-					});
-				});
-		},		
-	], function (err, result) {
-		if (err) return callback(err)
+	query = {
+		attributes: { exclude: ["password", "created_at", "updated_at"] },
+		where: {
+			user_id: user_id,
+			password: encrypt.encrypt(password),
+			active_status: 1
+		}
+	};
 
-		return callback(null, result)
-	})
+	User(APP)
+		.findOne(query)
+		.then(verify => {
+			if (!verify) throw new Error("INVALID_REQUEST");
+
+			var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
+
+			APP.db.sequelize
+			.query(sp, {
+				replacements: {
+					owner_id: req.auth.user_id,
+					user_shared: req.body.user_shared,
+					device_id: req.body.device_id
+				},
+				type: APP.db.sequelize.QueryTypes.RAW
+			})
+			.then((rows) => {
+				let notif = {
+					'notif': {
+						'title': 'Share Device',
+						'body': `Your Device ${req.body.device_id} has successfully share`,
+						'tag': req.body.device_id
+					},
+					'data': {
+						'device_id': `${req.body.device_id}`
+					}
+				}
+
+				request.sendNotif(APP.models, notif, (err, res) => {
+					console.log("gagal")
+					if (err) return callback(err);
+					console.log("berhasil")
+
+					console.log(`/ SENDING PUSH NOTIFICATION /`)
+				})
+
+				callback(null, {
+					code : 'OK',
+					error : 'false',
+					message : 'Add share user success and saved'
+				});
+			})
+			.catch(err => {
+				callback({
+					code: "GENERAL_ERR",
+					message: JSON.stringify(err)
+				});
+			});
+		})
+		.catch(err => {
+			switch (err.message) {
+				case "INVALID_REQUEST":
+					response = {
+						code: err.message,
+						message: "Invalid credentials!"
+					};
+
+					break;
+
+				default:
+					response = {
+						code: "ERR_DATABASE",
+						message: err.message
+					};
+
+					break;
+			}
+
+			return callback(response);
+		})
 }
 
 /* Add share user controller */
