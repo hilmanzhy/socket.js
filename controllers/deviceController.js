@@ -17,7 +17,7 @@ let socket = io(process.env.SOCKET_URL);
 var query = {};
 
 function updateSaklar(Sequelize, params, callback) {
-	Sequelize.query('CALL sitadev_iot_2.update_saklar (:user_id, :device_id, :switch)', {
+	Sequelize.query('CALL `sitadev_iot_2`.`update_saklar`(:user_id, :device_id, :switch, :user_id_shared, :share_device);', {
 		replacements: params,
 		type: Sequelize.QueryTypes.RAW
 	}).then(device => {
@@ -2790,10 +2790,13 @@ exports.command = function (APP, req, callback) {
 		query.insert = {
 			user_id: params.user_id,
 			device_id: params.device_id,
-			switch: params.switch
+			switch: params.switch,
+			user_id_shared: params.user_id_shared,
+			share_device: params.share_device
 		}
 
 		if (resDevice.device_type == 0) {
+			if (params.share_device == 1) query.insert.user_id = ''
 			console.log(`/ COMMAND MINI CCU DEVICE /`)
 
 			updateSaklar(Sequelize, query.insert, (err, response) => {
@@ -2873,12 +2876,13 @@ exports.command = function (APP, req, callback) {
 	
 						function creatingData(query, callback) {
 							console.log(`/... CREATE DATA DEVICE HISTORY .../`)
-							
+
 							if (params.share_device == 1) {
 								query.insert.user_id = params.user_id_shared
 							} else if (params.share_device == 0) {
 								query.insert.user_id = params.user_id
 							}
+
 							DeviceHistory.create(query.insert)
 								.then(resultInsert => {
 									callback(null, query)
@@ -2894,10 +2898,16 @@ exports.command = function (APP, req, callback) {
 						},
 	
 						function checkSwitchPIN(query, callback) {
-							APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id)', {
+							var user
+							if (params.share_device == 1) user = ''
+							if (params.share_device == 0) user = params.user_id
+
+							APP.db.sequelize.query('CALL sitadev_iot_2.cek_saklar_pin (:user_id, :device_id, :user_id_shared, :share_device)', {
 								replacements: {
 									device_id: params.device_id,
-									user_id: params.user_id
+									user_id: user,
+									user_id_shared: params.user_id_shared,
+									share_device: params.share_device
 								},
 								type: APP.db.sequelize.QueryTypes.RAW
 							}).then(device => {
@@ -2927,6 +2937,7 @@ exports.command = function (APP, req, callback) {
 
 				case "2":
 					console.log(`/...ALL PIN.../`)
+					if (params.share_device == 1) query.insert.user_id = ''
 
 					updateSaklar(Sequelize, query.insert, (err, response) => {
 						if (err) {
@@ -3485,51 +3496,48 @@ exports.upgradeFirmware = function(APP, req, callback) {
         });
 };
 
-const authController = require('../controllers/authController.js')
-const encrypt = require('../functions/encryption.js')
-
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
-	let { password, device_id, user_shared } = req.body,
-		{ user_id } = req.auth,
-		response = {},
-	query = {
-		attributes: { exclude: ["password", "created_at", "updated_at"] },
-		where: {
-			user_id: user_id,
-			password: encrypt.encrypt(password),
-			active_status: 1
-		}
-	};
+	const authController = require('../controllers/authController.js')
+	
+	async.waterfall([
+		function(callback) {
+			authController.verifyPassword(APP, req, (err, result) => {
+				if (err) return err
 
-	User(APP)
-		.findOne(query)
-		.then(verify => {
-			if (!verify) throw new Error("INVALID_REQUEST");
+				callback(null, result)
+			});
+		},
+		function(APP, req, callback) {
+			var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:device_id, :user_shared);";
+		
+			APP.db.sequelize
+				.query(sp, {
+					replacements: {
+						user_shared: req.body.user_id,
+						device_id: req.body.device_id
+					},
+					type: APP.db.sequelize.QueryTypes.RAW
+				})
+				.then((rows) => {
+					callback(null, {
+						code : '00',
+						error : 'false',
+						message : 'Add share user success and saved'
+					});
+				})
+				.catch(err => {
+					callback({
+						code: "GENERAL_ERR",
+						message: JSON.stringify(err)
+					});
+				});
+		},		
+	], function (err, result) {
+		if (err) return callback(err)
 
-			return
-		})
-		.catch(err => {
-			switch (err.message) {
-				case "INVALID_REQUEST":
-					response = {
-						code: err.message,
-						message: "Invalid credentials!"
-					};
-
-					break;
-
-				default:
-					response = {
-						code: "ERR_DATABASE",
-						message: err.message
-					};
-
-					break;
-			}
-
-			return callback(response);
-		});
+		return callback(null, result)
+	})
 }
 
 /* Add share user controller */
