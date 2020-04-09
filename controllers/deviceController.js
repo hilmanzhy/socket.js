@@ -44,13 +44,13 @@ function deleteShareUser(Sequelize, params, callback) {
 	})
 	.then((rows) => {
 		if (rows[0].message == 0) {
-			return callback(null, {
+			callback(null, {
 				code : '01',
 				error : 'true',
 				message : 'Delete share user failed'
 			});
 		} else {
-			return callback(null, {
+			callback(null, {
 				code : 'OK',
 				error : 'false',
 				message : 'Delete share user success'
@@ -58,7 +58,7 @@ function deleteShareUser(Sequelize, params, callback) {
 		}
 	})
 	.catch(err => {
-		return callback({
+		callback({
 			code: "GENERAL_ERR",
 			message: JSON.stringify(err)
 		});
@@ -3530,62 +3530,84 @@ exports.upgradeFirmware = function(APP, req, callback) {
         });
 };
 
+// function selectUser(Sequelize, params, callback) {
+
+// }
+
 const authController = require('../controllers/authController.js')
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
+	let User = APP.models.mysql.user
 	authController.verifyPassword(APP, req, (err, result) => {
         if (err) return callback(err)
 
-		var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
-
-		APP.db.sequelize
-		.query(sp, {
-			replacements: {
-				owner_id: req.auth.user_id,
-				user_shared: req.body.user_shared,
-				device_id: req.body.device_id
+		query.select = {
+			where: {
+				user_id: req.auth.user_id
 			},
-			type: APP.db.sequelize.QueryTypes.RAW
-		})
-		.then((rows) => {
-			// if (rows.length > 0) {
-			// 	let notif = {
-			// 		'notif': {
-			// 			'title': 'Share Device',
-			// 			'body': `Your Device ${req.body.device_id} has successfully share`,
-			// 			'tag': req.body.device_id
-			// 		},
-			// 		'data': {
-			// 			'device_id': `${req.body.device_id}`
-			// 		}
-			// 	}
+			attributes: ['device_key']
+		}
 
-			// 	request.sendNotif(APP.models, notif, (err, res) => {
-			// 		console.log("gagal")
-			// 		if (err) return callback(err);
-			// 		console.log("berhasil")
+		User.findOne(query.select)
+			.then(resultUser => {
 
-			// 		console.log(`/ SENDING PUSH NOTIFICATION /`)
-			// 	})
-			// }
-			return callback(null, {
-				code : 'OK',
-				error : 'false',
-				message : 'Add share user success and saved'
-			});
-		})
-		.catch(err => {
-			return callback({
-				code: "GENERAL_ERR",
-				message: JSON.stringify(err)
-			});
-		});
+				var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
+
+				APP.db.sequelize
+				.query(sp, {
+					replacements: {
+						owner_id: req.auth.user_id,
+						user_shared: req.body.shared_id,
+						device_id: req.body.device_id
+					},
+					type: APP.db.sequelize.QueryTypes.RAW
+				})
+				.then((rows) => {
+
+					let payload = {
+						notif: {
+							title: "Share Device",
+							body: `Your Device ${req.body.device_id} has successfully share`,
+							tag: req.body.device_id
+						},
+						data: {
+							device_key: resultUser.device_key,
+							user_id: req.auth.user_id,
+							device_id: req.body.device_id
+						}
+					}
+
+					APP.request.sendNotif(APP.models, payload, (err, res) => {
+						if (err) console.log("push notif error")
+						else console.log("push notif berhasil")
+					})
+
+					callback(null, {
+						code : 'OK',
+						error : 'false',
+						message : 'Add share user success and saved'
+					});
+				})
+				.catch(err => {
+					return callback({
+						code: "GENERAL_ERR",
+						message: JSON.stringify(err)
+					});
+				});
+			})
+			.catch(err => {
+				return callback({
+					code: "GENERAL_ERR",
+					message: JSON.stringify(err)
+				});
+			})
     });
 }
 
 /* Add share user controller */
 exports.deleteshareuser = function(APP, req, callback) {
-	const Sequelize = APP.db.sequelize;
+	const Sequelize = APP.db.sequelize
+	let User = APP.models.mysql.user
 
 	authController.verifyPassword(APP, req, (err, result) => {
         if (err) return callback(err)
@@ -3598,6 +3620,39 @@ exports.deleteshareuser = function(APP, req, callback) {
 			if (err) {
 				return callback(err)
 			} else {
+				query.select = {
+					where: {
+						user_id: req.auth.user_id
+					},
+					attributes: ['device_key']
+				}
+		
+				User.findOne(query.select)
+					.then(resultUser => {
+						let payload = {
+							notif: {
+								title: "Share Device Deleted",
+								body: `Your Device ${req.body.device_id} is deleted`,
+								tag: req.body.device_id
+							},
+							data: {
+								device_key: resultUser.device_key,
+								user_id: req.auth.user_id,
+								device_id: req.body.device_id
+							}
+						}
+	
+						APP.request.sendNotif(APP.models, payload, (err, res) => {
+							if (err) console.log("push notif error")
+							else console.log("push notif berhasil")
+						})
+					})
+					.catch(err => {
+						return callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					})
 				return callback(null, res)
 			}
 		})
@@ -3667,57 +3722,96 @@ exports.getshareduser = function(APP, req, callback) {
 /* update status shared user controller */
 exports.updatestatusshare = function(APP, req, callback) {
 	const Sequelize = APP.db.sequelize;
-
+	let User = APP.models.mysql.user
+	
 	query.delete = {
 		user_shared: req.body.shared_id,
 		device_id: req.body.device_id
 	}
 
 	authController.verifyPassword(APP, req, (err, result) => {
-		if (err.code == "INVALID_REQUEST") {
-			console.log("data berhasil dihapus")
-			deleteShareUser(Sequelize, query.delete, (err, res) => {
-				return callback(null, {
-					code : 'OK',
-					error : 'false',
-					message : 'Konfirmasi gagal, harus share ulang'
-				});
+		if (result) {
+			var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
+
+			APP.db.sequelize
+			.query(query_update, {
+				replacements: {
+					status: 1,
+					device_id: req.body.device_id,
+					shared_id: req.body.shared_id
+				},
+				type: APP.db.sequelize.QueryTypes.UPDATE
 			})
-		}
-
-		if (err) return callback(err)
-
-		var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
-
-		APP.db.sequelize
-		.query(query_update, {
-			replacements: {
-				status: 1,
-				device_id: req.body.device_id,
-				shared_id: req.body.shared_id
-			},
-			type: APP.db.sequelize.QueryTypes.UPDATE
-		})
-		.then(result => {
-			if (result[1] == 1) {
-				return callback(null, {
-					code : '00',
-					error : 'false',
-					message : 'Update status share user success'
+			.then(result => {
+				if (result[1] == 1) {
+					return callback(null, {
+						code : 'OK',
+						error : 'false',
+						message : 'Update status share user success'
+					});
+				} else {
+					return callback(null, {
+						code : '01',
+						error : 'true',
+						message : 'Update status share user failed'
+					});
+				}
+			})
+			.catch(err => {
+				return callback({
+					code: "GENERAL_ERR",
+					message: JSON.stringify(err)
 				});
-			} else {
-				return callback(null, {
-					code : '01',
-					error : 'true',
-					message : 'Update status share user failed'
-				});
-			}
-		})
-		.catch(err => {
-			return callback({
-				code: "GENERAL_ERR",
-				message: JSON.stringify(err)
 			});
-		});
+		} else if (err.code == "INVALID_REQUEST") {
+			deleteShareUser(Sequelize, query.delete, (err, res) => {
+				if (err) {
+					return callback(err)
+				} else if (res.code == "01") {
+					return callback(res)
+				} else {
+					query.select = {
+						where: {
+							user_id: req.auth.user_id
+						},
+						attributes: ['device_key']
+					}
+			
+					User.findOne(query.select)
+						.then(resultUser => {
+							let payload = {
+								notif: {
+									title: "Confirmation Share Device is Failed",
+									body: `Your Device ${req.body.device_id} Confirmation is failed`,
+									tag: req.body.device_id
+								},
+								data: {
+									device_key: resultUser.device_key,
+									user_id: req.auth.user_id,
+									device_id: req.body.device_id
+								}
+							}
+		
+							APP.request.sendNotif(APP.models, payload, (err, res) => {
+								if (err) console.log("push notif error")
+								else console.log("push notif berhasil")
+							})
+						})
+						.catch(err => {
+							return callback({
+								code: "GENERAL_ERR",
+								message: JSON.stringify(err)
+							});
+						})
+					return callback(null, {
+						code : 'OK',
+						error : 'false',
+						message : 'Konfirmasi gagal, harus share ulang'
+					})
+				}
+			})
+		} else if (err.code == "ERR_DATABASE") {
+			return callback(err)
+		}
 	})
 };
