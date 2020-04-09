@@ -473,15 +473,13 @@ exports.resetpassword = function (APP, req, callback) {
 }
 
 exports.verifyPassword = function(APP, req, callback) {
-    let { password } = req.body,
-        { user_id } = req.auth,
-        response = {};
+    let response = {};
         
     query = {
         attributes: { exclude: ["password", "created_at", "updated_at"] },
         where: {
-            user_id: user_id,
-            password: encrypt.encrypt(password),
+            user_id: req.auth.user_id,
+            password: encrypt.encrypt(req.body.password),
             active_status: 1
         }
     };
