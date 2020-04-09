@@ -36,6 +36,35 @@ function updateSaklar(Sequelize, params, callback) {
 	});
 }
 
+function deleteShareUser(Sequelize, params, callback) {
+	var sp = "CALL `sitadev_iot_2`.`delete_shared_device`(:device_id, :user_shared);";
+	Sequelize.query(sp, {
+		replacements: params,
+		type: Sequelize.QueryTypes.RAW
+	})
+	.then((rows) => {
+		if (rows[0].message == 0) {
+			return callback(null, {
+				code : '01',
+				error : 'true',
+				message : 'Delete share user failed'
+			});
+		} else {
+			return callback(null, {
+				code : 'OK',
+				error : 'false',
+				message : 'Delete share user success'
+			});
+		}
+	})
+	.catch(err => {
+		return callback({
+			code: "GENERAL_ERR",
+			message: JSON.stringify(err)
+		});
+	});
+}
+
 exports.register = function(APP, req, callback) {
     let payloadNotif = {
             notif: {
@@ -3501,128 +3530,78 @@ exports.upgradeFirmware = function(APP, req, callback) {
         });
 };
 
+const authController = require('../controllers/authController.js')
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
-	const encrypt = require('../functions/encryption.js')
+	authController.verifyPassword(APP, req, (err, result) => {
+        if (err) return callback(err)
 
-	let { password } = req.body,
-		{ user_id } = req.auth,
-		response = {};
-		
-	query = {
-		attributes: { exclude: ["password", "created_at", "updated_at"] },
-		where: {
-			user_id: user_id,
-			password: encrypt.encrypt(password),
-			active_status: 1
-		}
-	};
+		var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
 
-	User(APP)
-		.findOne(query)
-		.then(verify => {
-			if (!verify) throw new Error("INVALID_REQUEST");
+		APP.db.sequelize
+		.query(sp, {
+			replacements: {
+				owner_id: req.auth.user_id,
+				user_shared: req.body.user_shared,
+				device_id: req.body.device_id
+			},
+			type: APP.db.sequelize.QueryTypes.RAW
+		})
+		.then((rows) => {
+			// if (rows.length > 0) {
+			// 	let notif = {
+			// 		'notif': {
+			// 			'title': 'Share Device',
+			// 			'body': `Your Device ${req.body.device_id} has successfully share`,
+			// 			'tag': req.body.device_id
+			// 		},
+			// 		'data': {
+			// 			'device_id': `${req.body.device_id}`
+			// 		}
+			// 	}
 
-			var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
+			// 	request.sendNotif(APP.models, notif, (err, res) => {
+			// 		console.log("gagal")
+			// 		if (err) return callback(err);
+			// 		console.log("berhasil")
 
-			APP.db.sequelize
-			.query(sp, {
-				replacements: {
-					owner_id: req.auth.user_id,
-					user_shared: req.body.user_shared,
-					device_id: req.body.device_id
-				},
-				type: APP.db.sequelize.QueryTypes.RAW
-			})
-			.then((rows) => {
-				let notif = {
-					'notif': {
-						'title': 'Share Device',
-						'body': `Your Device ${req.body.device_id} has successfully share`,
-						'tag': req.body.device_id
-					},
-					'data': {
-						'device_id': `${req.body.device_id}`
-					}
-				}
-
-				request.sendNotif(APP.models, notif, (err, res) => {
-					console.log("gagal")
-					if (err) return callback(err);
-					console.log("berhasil")
-
-					console.log(`/ SENDING PUSH NOTIFICATION /`)
-				})
-
-				callback(null, {
-					code : 'OK',
-					error : 'false',
-					message : 'Add share user success and saved'
-				});
-			})
-			.catch(err => {
-				callback({
-					code: "GENERAL_ERR",
-					message: JSON.stringify(err)
-				});
+			// 		console.log(`/ SENDING PUSH NOTIFICATION /`)
+			// 	})
+			// }
+			return callback(null, {
+				code : 'OK',
+				error : 'false',
+				message : 'Add share user success and saved'
 			});
 		})
 		.catch(err => {
-			switch (err.message) {
-				case "INVALID_REQUEST":
-					response = {
-						code: err.message,
-						message: "Invalid credentials!"
-					};
-
-					break;
-
-				default:
-					response = {
-						code: "ERR_DATABASE",
-						message: err.message
-					};
-
-					break;
-			}
-
-			return callback(response);
-		})
+			return callback({
+				code: "GENERAL_ERR",
+				message: JSON.stringify(err)
+			});
+		});
+    });
 }
 
 /* Add share user controller */
 exports.deleteshareuser = function(APP, req, callback) {
-    var sp = "CALL `sitadev_iot_2`.`delete_shared_device`(:device_id, :user_shared);";
+	const Sequelize = APP.db.sequelize;
 
-    APP.db.sequelize
-        .query(sp, {
-            replacements: {
-                user_shared: req.body.user_id,
-                device_id: req.body.device_id
-            },
-            type: APP.db.sequelize.QueryTypes.RAW
-        })
-        .then((rows) => {
-			if (rows[0].message == 0) {
-				callback(null, {
-					code : '01',
-					error : 'true',
-					message : 'Delete share user failed'
-				});
+	authController.verifyPassword(APP, req, (err, result) => {
+        if (err) return callback(err)
+
+		query.delete = {
+			user_shared: req.body.shared_id,
+			device_id: req.body.device_id
+		}
+		deleteShareUser(Sequelize, query.delete, (err, res) => {
+			if (err) {
+				return callback(err)
 			} else {
-				callback(null, {
-					code : '00',
-					error : 'false',
-					message : 'Delete share user success'
-				});
+				return callback(null, res)
 			}
-        })
-        .catch(err => {
-            callback({
-                code: "GENERAL_ERR",
-                message: JSON.stringify(err)
-            });
-        });
+		})
+	})
 };
 
 /* cek username controller */
@@ -3687,36 +3666,58 @@ exports.getshareduser = function(APP, req, callback) {
 
 /* update status shared user controller */
 exports.updatestatusshare = function(APP, req, callback) {
-	var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
+	const Sequelize = APP.db.sequelize;
 
-	APP.db.sequelize
-        .query(query_update, {
-            replacements: {
+	query.delete = {
+		user_shared: req.body.shared_id,
+		device_id: req.body.device_id
+	}
+
+	authController.verifyPassword(APP, req, (err, result) => {
+		if (err.code == "INVALID_REQUEST") {
+			console.log("data berhasil dihapus")
+			deleteShareUser(Sequelize, query.delete, (err, res) => {
+				return callback(null, {
+					code : 'OK',
+					error : 'false',
+					message : 'Konfirmasi gagal, harus share ulang'
+				});
+			})
+		}
+
+		if (err) return callback(err)
+
+		var query_update = "UPDATE shared_device SET status = :status WHERE device_id = :device_id AND shared_id = :shared_id;";
+
+		APP.db.sequelize
+		.query(query_update, {
+			replacements: {
 				status: 1,
 				device_id: req.body.device_id,
 				shared_id: req.body.shared_id
-            },
-            type: APP.db.sequelize.QueryTypes.UPDATE
-        })
-        .then(result => {
+			},
+			type: APP.db.sequelize.QueryTypes.UPDATE
+		})
+		.then(result => {
 			if (result[1] == 1) {
-				callback(null, {
+				return callback(null, {
 					code : '00',
 					error : 'false',
 					message : 'Update status share user success'
 				});
 			} else {
-				callback(null, {
+				return callback(null, {
 					code : '01',
 					error : 'true',
 					message : 'Update status share user failed'
 				});
 			}
-        })
-        .catch(err => {
-            callback({
-                code: "GENERAL_ERR",
-                message: JSON.stringify(err)
-            });
-        });
+		})
+		.catch(err => {
+			return callback({
+				code: "GENERAL_ERR",
+				message: JSON.stringify(err)
+			});
+		});
+	})
 };
