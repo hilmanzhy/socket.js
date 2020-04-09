@@ -178,9 +178,44 @@ exports.get = (APP, req, callback) => {
 
             callback(null, {
                 code: notif && notif.length > 0 ? "FOUND" : "NOT_FOUND",
-                data: notif.toObject()
+                data: notif
             });
         });
 
     return;
+};
+
+exports.set = (APP, req, callback) => {
+    let { id, read_status } = req.body,
+        { user_id } = req.auth,
+        update = {},
+        condition = {
+            _id: id,
+            user_id,
+        };
+
+    switch (req.type) {
+        case "SET_STATUS":
+            update = { read_status };
+
+            break;
+    }
+
+    APP.models.mongo.notif
+        .findOneAndUpdate(condition, update)
+        .exec((err, doc) => {
+            if (err)
+                return callback({
+                    code: "ERR_DATABASE",
+                    data: err.message,
+                });
+            if (!doc) return callback({ code: "NOT_FOUND" });
+
+            callback(null, {
+                code: "OK",
+                message: "Status updated",
+            });
+
+            return;
+        });
 };

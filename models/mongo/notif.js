@@ -9,6 +9,7 @@ module.exports = function (mongo) {
             title: String,
             body: String
         },
+        read_status: Number,
         date: String,
         time: String
     });

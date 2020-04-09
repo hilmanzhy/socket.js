@@ -113,6 +113,7 @@ exports.sendNotif = function(models, payload, callback) {
             {
                 user_id: params.data.user_id,
                 notification: params.notification,
+                read_status: 0,
                 date: moment().format("YYYY-MM-DD"),
                 time: moment().format("HH:mm:ss")
             },
