@@ -8,7 +8,25 @@ router.post("/get", (req, res, next) => {
 
         return req.APP.output.print(req, res, result);
     });
-})
+});
+
+router.post("/set/status", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" },
+        });
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+    delete req.body.user_id;
+
+    req.type = "SET_STATUS";
+
+    notifController.set(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
 
 router.post("/setting/get", (req, res, next) => {
     if (!req.auth && !req.body.user_id)
