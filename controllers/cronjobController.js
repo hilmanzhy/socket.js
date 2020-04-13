@@ -110,7 +110,9 @@ module.exports = function () {
                                     ? device.device_name.toString()
                                     : null,
                                 mode: "1",
-                                pin: device.pin.toString()
+                                pin: device.pin.toString(),
+                                share_device: "0",
+                                user_id_shared: ""
                             };
 
                         // Timer ON
