@@ -70,7 +70,10 @@ router.post("/notif", (req, res, next) => {
                 },
                 data: {
                     device_key: user.device_key,
-                    user_id: user.user_id
+                    user_id: user.user_id,
+                    data1: "hape",
+                    data2: "tv",
+                    data3: "internet"
                 }
             };
 
