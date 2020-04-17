@@ -3543,7 +3543,7 @@ exports.addshareuser = function(APP, req, callback) {
 
 		query.select = {
 			where: {
-				user_id: req.auth.user_id
+				user_id: req.body.shared_id
 			},
 			attributes: ['device_key']
 		}
@@ -3572,7 +3572,7 @@ exports.addshareuser = function(APP, req, callback) {
 						},
 						data: {
 							device_key: resultUser.device_key,
-							user_id: req.auth.user_id,
+							user_id: req.body.shared_id,
 							device_id: req.body.device_id
 						}
 					}
