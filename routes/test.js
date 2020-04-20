@@ -74,7 +74,8 @@ router.post("/notif", (req, res, next) => {
                     data1: "hape",
                     data2: "tv",
                     data3: "internet"
-                }
+                },
+                click_action : "TEST_DEVICE"
             };
 
             req.APP.request.sendNotif(req.APP.models, params, (err, response) => {
