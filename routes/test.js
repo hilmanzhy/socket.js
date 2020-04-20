@@ -66,7 +66,8 @@ router.post("/notif", (req, res, next) => {
                 notif: {
                     title: req.body.title,
                     body: req.body.body,
-                    tag: req.body.user_id
+                    tag: req.body.user_id,
+                    click_action : "TEST_DEVICE"
                 },
                 data: {
                     device_key: user.device_key,
@@ -74,8 +75,7 @@ router.post("/notif", (req, res, next) => {
                     data1: "hape",
                     data2: "tv",
                     data3: "internet"
-                },
-                click_action : "TEST_DEVICE"
+                }
             };
 
             req.APP.request.sendNotif(req.APP.models, params, (err, response) => {
