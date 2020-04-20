@@ -3556,7 +3556,7 @@ exports.addshareuser = function(APP, req, callback) {
 		function(data, callback) {
 			query.select = {
 				where: {
-					user_id: req.body.shared_id
+					username: req.body.shared_id
 				},
 				attributes: ['device_key', 'name']
 			}
@@ -3614,12 +3614,13 @@ exports.addshareuser = function(APP, req, callback) {
 					},
 					data: {
 						device_key: resultUser.device_key,
-						user_id: req.body.shared_id,
+						username: req.body.shared_id,
 						device_id: req.body.device_id,
 						icon_id: resultDevice.icon_id,
 						device_name: resultDevice.device_name,
 						active_date: resultDevice.active_date
-					}
+					},
+					click_action : "SHARE_DEVICE_ACTIVITY"
 				}
 
 				APP.request.sendNotif(APP.models, payload, (err, res) => {

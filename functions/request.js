@@ -100,6 +100,7 @@ exports.sendNotif = function(models, payload, callback) {
                 tag: payload.notif.tag ? payload.notif.tag : "Default"
             },
             data: payload.data,
+            click_action: payload.click_action,
             headers: {
                 Authorization:
                     "key=AAAApNlKMJk:APA91bH2y94mcN6soiTrMJzZf7t52eiR4cRfUdoNA7lIeCWU_BkzGHApidOHIK5IHfIH_80v_BJ8JfJXPvi1xIUJZjptYKQ56Qu8wxojxDlNxeMbj9SVRm6jwBUjGhQRcskAbLqfcqPZ"
