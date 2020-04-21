@@ -66,15 +66,15 @@ router.post("/notif", (req, res, next) => {
                 notif: {
                     title: req.body.title,
                     body: req.body.body,
-                    tag: req.body.user_id,
-                    click_action : "TEST_DEVICE"
+                    tag: req.body.user_id
                 },
                 data: {
                     device_key: user.device_key,
                     user_id: user.user_id,
                     data1: "hape",
                     data2: "tv",
-                    data3: "internet"
+                    data3: "internet",
+                    click_action : "TEST_DEVICE"
                 }
             };
 
