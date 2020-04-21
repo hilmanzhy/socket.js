@@ -278,8 +278,20 @@ exports.tokenUpdate = function(APP, req, cb) {
                         }
                     })
                     .then(resUpdate => {
-                        if (req.body.type == "rph" && resUpdate[0].message < 1)
-                            throw new Error("MAX_TOKEN");
+                        if (req.body.type == "rph") {
+                            switch (resUpdate[0].message) {
+                                case "1":
+                                    throw new Error("MAX_TOKEN");
+
+                                    break;
+                            
+                                case "2":
+                                    throw new Error("TAX_UNAVAILABLE");
+
+                                    break;
+
+                            }
+                        }
 
                         options.attributes = ["token", "notif_update_token"];
                         delete options.include;
@@ -314,6 +326,12 @@ exports.tokenUpdate = function(APP, req, cb) {
                             case "MAX_TOKEN":
                                 output.code = "INVALID_REQUEST";
                                 output.message = "Max token reached!";
+
+                                break;
+
+                            case "TAX_UNAVAILABLE":
+                                output.code = "INVALID_REQUEST";
+                                output.message = "Sorry, you can't use this feature, city tax unavailable!";
 
                                 break;
 
