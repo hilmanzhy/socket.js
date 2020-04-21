@@ -3607,7 +3607,7 @@ exports.addshareuser = function(APP, req, callback) {
 					},
 					data: {
 						device_key: resultUser.device_key,
-						username: req.body.shared_id,
+						user_id: req.body.shared_id,
 						device_id: req.body.device_id,
 						icon_id: resultDevice.icon_id,
 						device_name: resultDevice.device_name,
