@@ -3602,16 +3602,16 @@ exports.addshareuser = function(APP, req, callback) {
 				let payload = {
 					notif: {
 						title: "Share Device",
-						body: `Username ${resultUser.name} has been share device ${resultDevice.device_name} with you , confirmation if its okay`,
+						body: `Username ${resultUser.name} has been share device ${resultDevice[0].device_name} with you , confirmation if its okay`,
 						tag: req.body.device_id
 					},
 					data: {
 						device_key: resultUser.device_key,
-						user_id: req.body.shared_id,
+						user_id: req.auth.user_id,
 						device_id: req.body.device_id,
-						icon_id: resultDevice.icon_id,
-						device_name: resultDevice.device_name,
-						active_date: resultDevice.active_date,
+						icon_id: resultDevice[0].icon_id,
+						device_name: resultDevice[0].device_name,
+						active_date: resultDevice[0].active_date,
 						click_action : "SHARE_DEVICE_ACTIVITY"
 					}
 				}
