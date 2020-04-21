@@ -97,8 +97,7 @@ exports.sendNotif = function(models, payload, callback) {
             notification: {
                 title: payload.notif.title,
                 body: payload.notif.body,
-                tag: payload.notif.tag ? payload.notif.tag : "Default",
-                click_action: payload.notif.click_action ? payload.notif.click_action : ""
+                tag: payload.notif.tag ? payload.notif.tag : "Default"
             },
             data: payload.data,
             headers: {

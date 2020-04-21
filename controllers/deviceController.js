@@ -3610,8 +3610,7 @@ exports.addshareuser = function(APP, req, callback) {
 					notif: {
 						title: "Share Device",
 						body: `Username ${resultUser.name} has been share device ${resultDevice.device_name} with you , confirmation if its okay`,
-						tag: req.body.device_id,
-						click_action : "SHARE_DEVICE_ACTIVITY"
+						tag: req.body.device_id
 					},
 					data: {
 						device_key: resultUser.device_key,
@@ -3619,7 +3618,8 @@ exports.addshareuser = function(APP, req, callback) {
 						device_id: req.body.device_id,
 						icon_id: resultDevice.icon_id,
 						device_name: resultDevice.device_name,
-						active_date: resultDevice.active_date
+						active_date: resultDevice.active_date,
+						click_action : "SHARE_DEVICE_ACTIVITY"
 					}
 				}
 
@@ -3746,7 +3746,8 @@ exports.deleteshareuser = function(APP, req, callback) {
 							data: {
 								device_key: resultUser.device_key,
 								user_id: req.auth.user_id,
-								device_id: req.body.device_id
+								device_id: req.body.device_id,
+								click_action : "DELETE_SHARE_USER_DEVICE"
 							}
 						}
 	
