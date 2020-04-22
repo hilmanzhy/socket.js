@@ -3598,11 +3598,11 @@ exports.addshareuser = function(APP, req, callback) {
 				type: APP.db.sequelize.QueryTypes.RAW
 			})
 			.then((rows) => {
-
+				
 				let payload = {
 					notif: {
 						title: "Share Device",
-						body: `Username ${resultUser.name} has been share device ${resultDevice[0].device_name} with you , confirmation if its okay`,
+						body: `${req.auth.username} has been ${resultUser.name} share device ${resultDevice[0].device_name} with you , confirmation if its okay`,
 						tag: req.body.device_id
 					},
 					data: {
@@ -3639,70 +3639,6 @@ exports.addshareuser = function(APP, req, callback) {
 
 		return callback(null, result)
 	})
-	// authController.verifyPassword(APP, req, (err, result) => {
-    //     if (err) return callback(err)
-
-	// 	query.select = {
-	// 		where: {
-	// 			user_id: req.body.shared_id
-	// 		},
-	// 		attributes: ['device_key', 'name']
-	// 	}
-
-	// 	User.findOne(query.select)
-	// 		.then(resultUser => {
-	// 			var sp = "CALL `sitadev_iot_2`.`create_shared_device`(:owner_id, :device_id, :user_shared);";
-
-	// 			APP.db.sequelize
-	// 			.query(sp, {
-	// 				replacements: {
-	// 					owner_id: req.auth.user_id,
-	// 					user_shared: req.body.shared_id,
-	// 					device_id: req.body.device_id
-	// 				},
-	// 				type: APP.db.sequelize.QueryTypes.RAW
-	// 			})
-	// 			.then((rows) => {
-	// 				console.log(rows)
-
-	// 				let payload = {
-	// 					notif: {
-	// 						title: "Share Device",
-	// 						body: `Username ${resultUser.name} has been share device ${req.body.device_id} with you , confirmation if its okay`,
-	// 						tag: req.body.device_id
-	// 					},
-	// 					data: {
-	// 						device_key: resultUser.device_key,
-	// 						user_id: req.body.shared_id,
-	// 						device_id: req.body.device_id
-	// 					}
-	// 				}
-
-	// 				APP.request.sendNotif(APP.models, payload, (err, res) => {
-	// 					if (err) console.log("push notif error")
-	// 					else console.log("push notif berhasil")
-	// 				})
-
-	// 				callback(null, {
-	// 					code : 'OK',
-	// 					error : 'false',
-	// 					message : 'Add share user success and saved'
-	// 				});
-	// 			})
-	// 			.catch(err => {
-	// 				return callback({
-	// 					code: "GENERAL_ERR",
-	// 					message: JSON.stringify(err)
-	// 				});
-	// 			});
-	// 		})
-	// 		.catch(err => {
-	// 			return callback({
-	// 				code: "GENERAL_ERR",
-	// 				message: JSON.stringify(err)
-	// 			});
-	// 		})
-    // });
 }
 
 /* Add share user controller */
