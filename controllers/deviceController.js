@@ -3607,6 +3607,7 @@ exports.addshareuser = function(APP, req, callback) {
 					},
 					data: {
 						device_key: resultUser.device_key,
+						username: req.auth.username,
 						user_id: req.auth.user_id,
 						device_id: req.body.device_id,
 						icon_id: resultDevice[0].icon_id,
@@ -3724,37 +3725,58 @@ exports.cekusername = function(APP, req, callback) {
 
 /* get shared user controller */
 exports.getshareduser = function(APP, req, callback) {
-	var sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
+	let User = APP.models.mysql.user
+	async.waterfall([
+		function(callback) {
+			query.select = {
+				where: {
+					username: req.body.username
+				},
+				attributes: ['phone']
+			}
 
-	APP.db.sequelize
-        .query(sp, {
-            replacements: {
-				user_id: req.body.user_id,
-				device_id: req.body.device_id,
-				device_ip: req.body.device_ip,
-				device_name: req.body.device_name,
-				device_status: req.body.device_status,
-				install_date: req.body.install_date,
-				active_date: req.body.active_date,
-				offset: req.body.offset,
-				limit: req.body.limit,
-				sort: req.body.sort
-            },
-            type: APP.db.sequelize.QueryTypes.RAW
-        })
-        .then(result => {
-			console.log(result)
-			callback(null, {
-				code: result.length > 0 ? "FOUND" : "NOT_FOUND",
-				data: result
+			User.findOne(query.select)
+				.then(resultUser => {
+					callback(null, resultUser)
+				})
+				.catch(err => {
+					callback({
+						code: "GENERAL_ERR",
+						message: JSON.stringify(err)
+					});
+				});
+		},
+		function(resultUser, callback) {
+			var sp = "CALL `sitadev_iot_2`.`get_shared_user`(:device_id, :username, :phone);"
+
+			APP.db.sequelize
+			.query(sp, {
+				replacements: {
+					device_id: req.body.device_id,
+					username: req.body.username,
+					phone: resultUser.phone
+				},
+				type: APP.db.sequelize.QueryTypes.RAW
 			})
-        })
-        .catch(err => {
-            callback({
-                code: "GENERAL_ERR",
-                message: JSON.stringify(err)
-            });
-        });
+			.then(result => {
+				console.log(result)
+				callback(null, {
+					code: result && result.length > 0 ? "FOUND" : "NOT_FOUND",
+					data: result
+				})
+			})
+			.catch(err => {
+				callback({
+					code: "GENERAL_ERR",
+					message: JSON.stringify(err)
+				});
+			});
+		}
+	], function (err, result) {
+		if (err) return callback(err)
+
+		return callback(null, result)
+	})
 };
 
 /* update status shared user controller */
