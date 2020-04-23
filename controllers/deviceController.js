@@ -3602,7 +3602,7 @@ exports.addshareuser = function(APP, req, callback) {
 				let payload = {
 					notif: {
 						title: "Share Device",
-						body: `${req.auth.username} has been ${resultUser.name} share device ${resultDevice[0].device_name} with you , confirmation if its okay`,
+						body: `${req.auth.username} has been share device ${resultDevice[0].device_name} with you , confirmation if its okay`,
 						tag: req.body.device_id
 					},
 					data: {
@@ -3727,34 +3727,34 @@ exports.cekusername = function(APP, req, callback) {
 exports.getshareduser = function(APP, req, callback) {
 	let User = APP.models.mysql.user
 	async.waterfall([
-		function(callback) {
-			query.select = {
-				where: {
-					username: req.body.username
-				},
-				attributes: ['phone']
-			}
+		// function(callback) {
+		// 	query.select = {
+		// 		where: {
+		// 			username: req.body.username
+		// 		},
+		// 		attributes: ['phone']
+		// 	}
 
-			User.findOne(query.select)
-				.then(resultUser => {
-					callback(null, resultUser)
-				})
-				.catch(err => {
-					callback({
-						code: "GENERAL_ERR",
-						message: JSON.stringify(err)
-					});
-				});
-		},
-		function(resultUser, callback) {
+		// 	User.findOne(query.select)
+		// 		.then(resultUser => {
+		// 			callback(null, resultUser)
+		// 		})
+		// 		.catch(err => {
+		// 			callback({
+		// 				code: "GENERAL_ERR",
+		// 				message: JSON.stringify(err)
+		// 			});
+		// 		});
+		// },
+		function(callback) {
 			var sp = "CALL `sitadev_iot_2`.`get_shared_user`(:device_id, :username, :phone);"
 
 			APP.db.sequelize
 			.query(sp, {
 				replacements: {
 					device_id: req.body.device_id,
-					username: req.body.username,
-					phone: resultUser.phone
+					username: "",
+					phone: ""
 				},
 				type: APP.db.sequelize.QueryTypes.RAW
 			})
