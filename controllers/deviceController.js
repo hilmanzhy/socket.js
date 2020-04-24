@@ -3798,7 +3798,7 @@ exports.updatestatusshare = function(APP, req, callback) {
 				replacements: {
 					status: 1,
 					device_id: req.body.device_id,
-					shared_id: req.body.shared_id
+					shared_id: req.auth.user_id
 				},
 				type: APP.db.sequelize.QueryTypes.UPDATE
 			})
@@ -3832,7 +3832,7 @@ exports.updatestatusshare = function(APP, req, callback) {
 				} else {
 					query.select = {
 						where: {
-							user_id: req.auth.user_id
+							user_id: req.body.owner_id
 						},
 						attributes: ['device_key']
 					}
