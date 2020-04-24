@@ -3785,7 +3785,7 @@ exports.updatestatusshare = function(APP, req, callback) {
 	let User = APP.models.mysql.user
 	
 	query.delete = {
-		user_shared: req.body.shared_id,
+		user_shared: req.auth.user_id,
 		device_id: req.body.device_id
 	}
 
