@@ -3,6 +3,7 @@ variables:
 
 stages:
   - development
+  - release
   - production
 
 cache:
@@ -26,6 +27,16 @@ development:
     - development
   only:
     - development
+
+release:
+  stage: release
+  script:
+    - sed -i 's/development/testing/' app.json
+    - docker-compose -f docker-compose.release.yml up -d --force-recreate --build release-sita
+  tags:
+    - release
+  only:
+    - release
 
 production:
   stage: production
