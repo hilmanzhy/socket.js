@@ -280,7 +280,7 @@ exports.tokenUpdate = function(APP, req, cb) {
                     .then(resUpdate => {
                         if (req.body.type == "rph") {
                             switch (resUpdate[0].message) {
-                                case "1":
+                                case "0":
                                     throw new Error("MAX_TOKEN");
 
                                     break;
