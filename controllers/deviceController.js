@@ -3551,7 +3551,7 @@ exports.addshareuser = function(APP, req, callback) {
 				where: {
 					username: req.body.shared_id
 				},
-				attributes: ['device_key', 'name']
+				attributes: ['device_key', 'username', 'user_id']
 			}
 
 			User.findOne(query.select)
@@ -3606,8 +3606,10 @@ exports.addshareuser = function(APP, req, callback) {
 					},
 					data: {
 						device_key: resultUser.device_key,
-						username: req.auth.username,
-						user_id: req.auth.user_id,
+						user_id: resultUser.user_id,
+						username: resultUser.username,
+						username_owner: req.auth.username,
+						user_id_owner: req.auth.user_id,
 						device_id: req.body.device_id,
 						icon_id: resultDevice[0].icon_id,
 						device_name: resultDevice[0].device_name,
@@ -3721,7 +3723,7 @@ exports.deleteshareuser = function(APP, req, callback) {
 
 /* cek username controller */
 exports.cekusername = function(APP, req, callback) {
-	var querycek = "SELECT username FROM users WHERE username = :username;";
+	var querycek = "SELECT username, user_id FROM users WHERE username = :username;";
 
 	APP.db.sequelize
         .query(querycek, {
