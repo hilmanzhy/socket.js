@@ -3598,6 +3598,7 @@ exports.addshareuser = function(APP, req, callback) {
 				type: APP.db.sequelize.QueryTypes.RAW
 			})
 			.then((rows) => {
+				console.log(resultUser.user_id)
 				let payload = {
 					notif: {
 						title: "Share Device",
@@ -3621,7 +3622,7 @@ exports.addshareuser = function(APP, req, callback) {
 				if (resultUser.device_key === "") {
 					APP.models.mongo.notif.create(
 						{
-							user_id: req.auth.user_id,
+							user_id: resultUser.user_id,
 							notification: payload.notif,
 							date: moment().format("YYYY-MM-DD"),
 							time: moment().format("HH:mm:ss")
