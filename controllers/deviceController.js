@@ -3605,7 +3605,6 @@ exports.addshareuser = function(APP, req, callback) {
 				type: APP.db.sequelize.QueryTypes.RAW
 			})
 			.then((rows) => {
-				
 				let payload = {
 					notif: {
 						title: "Share Device",
@@ -3624,10 +3623,21 @@ exports.addshareuser = function(APP, req, callback) {
 					}
 				}
 
-				APP.request.sendNotif(APP.models, payload, (err, res) => {
-					if (err) console.log("push notif error")
-					else console.log("push notif berhasil")
-				})
+				if (resultUser.device_key === "") {
+					APP.models.mongo.notif.create(
+						{
+							user_id: req.auth.user_id,
+							notification: payload.notif,
+							date: moment().format("YYYY-MM-DD"),
+							time: moment().format("HH:mm:ss")
+						}
+					);
+				} else {
+					APP.request.sendNotif(APP.models, payload, (err, res) => {
+						if (err) console.log("push notif error")
+						else console.log("push notif berhasil")
+					})
+				}
 
 				callback(null, {
 					code : 'OK',
@@ -3688,10 +3698,21 @@ exports.deleteshareuser = function(APP, req, callback) {
 							}
 						}
 	
-						APP.request.sendNotif(APP.models, payload, (err, res) => {
-							if (err) console.log("push notif error")
-							else console.log("push notif berhasil")
-						})
+						if (resultUser.device_key === "") {
+							APP.models.mongo.notif.create(
+								{
+									user_id: req.auth.user_id,
+									notification: payload.notif,
+									date: moment().format("YYYY-MM-DD"),
+									time: moment().format("HH:mm:ss")
+								}
+							);
+						} else {
+							APP.request.sendNotif(APP.models, payload, (err, res) => {
+								if (err) console.log("push notif error")
+								else console.log("push notif berhasil")
+							})
+						}
 					})
 					.catch(err => {
 						return callback({
@@ -3859,10 +3880,21 @@ exports.updatestatusshare = function(APP, req, callback) {
 								}
 							}
 		
-							APP.request.sendNotif(APP.models, payload, (err, res) => {
-								if (err) console.log("push notif error")
-								else console.log("push notif berhasil")
-							})
+							if (resultUser.device_key === "") {
+								APP.models.mongo.notif.create(
+									{
+										user_id: req.auth.user_id,
+										notification: payload.notif,
+										date: moment().format("YYYY-MM-DD"),
+										time: moment().format("HH:mm:ss")
+									}
+								);
+							} else {
+								APP.request.sendNotif(APP.models, payload, (err, res) => {
+									if (err) console.log("push notif error")
+									else console.log("push notif berhasil")
+								})
+							}
 						})
 						.catch(err => {
 							return callback({
