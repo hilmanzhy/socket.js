@@ -3558,7 +3558,7 @@ exports.addshareuser = function(APP, req, callback) {
 				where: {
 					username: req.body.shared_id
 				},
-				attributes: ['device_key', 'name']
+				attributes: ['device_key', 'username', 'user_id']
 			}
 
 			User.findOne(query.select)
@@ -3605,6 +3605,7 @@ exports.addshareuser = function(APP, req, callback) {
 				type: APP.db.sequelize.QueryTypes.RAW
 			})
 			.then((rows) => {
+				console.log(resultUser.user_id)
 				let payload = {
 					notif: {
 						title: "Share Device",
@@ -3613,8 +3614,10 @@ exports.addshareuser = function(APP, req, callback) {
 					},
 					data: {
 						device_key: resultUser.device_key,
-						username: req.auth.username,
-						user_id: req.auth.user_id,
+						user_id: resultUser.user_id,
+						username: resultUser.username,
+						username_owner: req.auth.username,
+						user_id_owner: req.auth.user_id,
 						device_id: req.body.device_id,
 						icon_id: resultDevice[0].icon_id,
 						device_name: resultDevice[0].device_name,
@@ -3626,7 +3629,7 @@ exports.addshareuser = function(APP, req, callback) {
 				if (resultUser.device_key === "") {
 					APP.models.mongo.notif.create(
 						{
-							user_id: req.auth.user_id,
+							user_id: resultUser.user_id,
 							notification: payload.notif,
 							date: moment().format("YYYY-MM-DD"),
 							time: moment().format("HH:mm:ss")
@@ -3728,7 +3731,7 @@ exports.deleteshareuser = function(APP, req, callback) {
 
 /* cek username controller */
 exports.cekusername = function(APP, req, callback) {
-	var querycek = "SELECT username FROM users WHERE username = :username;";
+	var querycek = "SELECT username, user_id FROM users WHERE username = :username;";
 
 	APP.db.sequelize
         .query(querycek, {
