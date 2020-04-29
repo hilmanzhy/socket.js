@@ -535,21 +535,26 @@ exports.getdevice = function(APP, req, callback) {
 
 	// Device.findAll(query)
 	
-	var sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
+	let sp = "CALL `sitadev_iot_2`.`get_shared_device`(:user_id, :device_id, :device_ip, :device_name, :device_status, :device_type, :switch, :total_pin_from, :total_pin_to, :install_date_from , :install_date_to, :active_date, :offset, :limit, :sort);";
 
     APP.db.sequelize
         .query(sp, {
             replacements: {
                 user_id: req.auth.user_id,
-				device_id: req.body.device_id,
-				device_ip: req.body.device_ip,
-				device_name: req.body.device_name,
-				device_status: req.body.device_status,
-				install_date: req.body.install_date,
-				active_date: req.body.active_date,
-				offset: req.body.offset,
-				limit: req.body.limit,
-				sort: req.body.sort
+				device_id: req.body.device_id || "",
+				device_ip: req.body.device_ip || "",
+				device_name: req.body.device_name || "",
+				device_status: req.body.device_status || "",
+				device_type: req.body.device_type || "",
+				switch: req.body.switch || "",
+				total_pin_from: req.body.total_pin_from || "",
+				total_pin_to: req.body.total_pin_to || "",
+				install_date_from: req.body.install_date_from || "",
+				install_date_to: req.body.install_date_to || "",
+				active_date: req.body.active_date || "",
+				offset: req.body.offset || "",
+				limit: req.body.limit || "",
+				sort: req.body.sort || ""
             },
             type: APP.db.sequelize.QueryTypes.RAW
         })
@@ -579,21 +584,24 @@ exports.getpindevice = function(APP, req, callback) {
     // };
 
 	// Device.findOne(query)
-	var sp = "CALL `sitadev_iot_2`.`get_pin_list`(:user_id, :device_id, :device_ip, :device_name, :device_status, :install_date, :active_date, :offset, :limit, :sort);";
+	var sp = "CALL `sitadev_iot_2`.`get_pin_list`(:user_id, :device_id, :device_ip, :device_name, :device_status, :pin, :switch, :install_date_form, :install_date_to, :active_date, :offset, :limit, :sort );";
 
     APP.db.sequelize
         .query(sp, {
             replacements: {
                 user_id: req.auth.user_id,
-				device_id: req.body.device_id,
-				device_ip: req.body.device_ip,
-				device_name: req.body.device_name,
-				device_status: req.body.device_status,
-				install_date: req.body.install_date,
-				active_date: req.body.active_date,
-				offset: req.body.offset,
-				limit: req.body.limit,
-				sort: req.body.sort
+				device_id: req.body.device_id || "",
+				device_ip: req.body.device_ip || "",
+				device_name: req.body.device_name || "",
+				device_status: req.body.device_status || "",
+				pin: req.body.pin || "",
+				switch: req.body.switch || "",
+				install_date_form: req.body.install_date_form || "",
+				install_date_to: req.body.install_date_to || "",
+				active_date: req.body.active_date || "",
+				offset: req.body.offset || "",
+				limit: req.body.limit || "",
+				sort: req.body.sort || ""
             },
             type: APP.db.sequelize.QueryTypes.RAW
         })
@@ -620,6 +628,8 @@ exports.getpindevice = function(APP, req, callback) {
         //     return DevicePIN.findAll(query);
         // })
         .then(resDevicePIN => {
+			console.log(resDevicePIN);
+			
             if (!resDevicePIN) throw new Error("NOT_FOUND");
 
             return callback(null, {
@@ -1031,7 +1041,7 @@ exports.devicehistory = function (APP, req, callback) {
 	
 	// APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
 	
-	// .then(device => {
+	// .then(device => {	
 
 	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort);";
 
@@ -1088,6 +1098,8 @@ exports.devicehistory = function (APP, req, callback) {
 		}
 		return callback(null, response);
 	}).catch((err) => {
+		console.log(err);
+		
 		response = {
 			code: 'ERR_DATABASE',
 			data: JSON.stringify(err)
