@@ -633,7 +633,7 @@ exports.getpindevice = function(APP, req, callback) {
             if (!resDevicePIN) throw new Error("NOT_FOUND");
 
             return callback(null, {
-                code: "FOUND",
+                code: resDevicePIN && resDevicePIN.length > 0 ? "FOUND" : "NOT_FOUND",
                 data: resDevicePIN
             });
         })
