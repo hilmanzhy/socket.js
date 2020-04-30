@@ -451,17 +451,49 @@ exports.resetpassword = function (APP, req, callback) {
             }
             
             APP.models.mysql.user.update(query.value, query.options).then((user) => {
-                console.log(user);
 
-                callback(null, {
-                    code    : 'OK',
-                    message : 'Success change password.'
-                })
+                callback( null , {} );
             }).catch((err) => {
                 callback({
                     code    : 'ERR_DATABASE',
                     message : 'Failed change password',
                     data : JSON.stringify(err)
+                })
+            })
+        },
+
+        function getUser( data , callback ) {
+            
+            APP.models.mysql.user.findOne(query.options).then((user) => {
+                if (!user) {
+                    return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
+                }
+
+                callback(null, user)
+            })
+  
+        },
+
+        function sendEmail(user, callback) {            
+            let payload = {
+                to      : user.email,
+                subject : `Reset password notification`,
+                html    : {
+                    file    : 'reset_password.html',
+                    data    : {
+                        name    : user.name,
+                        cdn_url : `${ process.env.APP_URL }/cdn`,
+                    }
+                }
+            }
+
+            request.sendEmail(payload, (err, res) => {
+
+                if (err) return callback({ code : 'MAIL_ERR', message : err })
+
+                callback(null, {
+                    code    : 'OK',
+                    message : 'Success change password.'
                 })
             })
         }
