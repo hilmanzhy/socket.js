@@ -167,7 +167,7 @@ exports.get = (APP, req, callback) => {
         .find(queryOptions)
         .limit(limit)
         .skip(skip)
-        .sort("-date")
+        .sort({ date: -1, time: -1 })
         .lean()
         .exec((err, notif) => {
             if (err)

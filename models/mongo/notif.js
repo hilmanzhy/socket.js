@@ -10,7 +10,10 @@ module.exports = function (mongo) {
             body: String
         },
         data: Object,
-        read_status: Number,
+        read_status: {
+            type: Number,
+            default: 0
+        },
         date: String,
         time: String
     });
