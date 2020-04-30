@@ -202,15 +202,13 @@ exports.get = (APP, req, callback) => {
             data: err.message
         })
 
+        res[1].result = res[0]
+
         if (res) callback({
             code: res[0] && res[0].length > 0 ? "FOUND" : "NOT_FOUND",
-            data: res[0],
-            info: res[1]
+            data: res[1]
         })
     })
-    
-
-    
 };
 
 exports.set = (APP, req, callback) => {
