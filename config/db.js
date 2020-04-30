@@ -44,7 +44,7 @@ var options = {
 	port: process.env.MYSQL_PORT,
 	timezone: '+07:00',
 	dialect: mysqlDialect,
-	dialectOptions: mysqlDialectOptions,
+	// dialectOptions: mysqlDialectOptions,
 	pool: mysqlPool,
 	define: define,
 	logging: true
