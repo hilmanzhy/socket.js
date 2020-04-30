@@ -32,7 +32,6 @@ exports.print = function (req, res, params) {
 			output.code = message.company.code || params.code;
 			output.message = params.message || message.company.message;
 			output.data = params.data || message.company.data;
-			output.info = params.info || message.company.info;
 			output.debug = undefined;
 
 			if (process.env.NODE_ENV !== 'production') {
