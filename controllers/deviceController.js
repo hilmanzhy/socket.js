@@ -628,19 +628,12 @@ exports.getpindevice = function(APP, req, callback) {
         //     return DevicePIN.findAll(query);
         // })
         .then(resDevicePIN => {
-			console.log(resDevicePIN);
-			
-            if (!resDevicePIN) throw new Error("NOT_FOUND");
-
             return callback(null, {
-                code: "FOUND",
+                code: resDevicePIN && resDevicePIN.length > 0 ? "FOUND" : 'NOT_FOUND',
                 data: resDevicePIN
             });
         })
         .catch(err => {
-            if (err.message == "NOT_FOUND")
-                return callback(null, { code: "NOT_FOUND" });
-
             return callback({
                 code: "ERR_DATABASE",
                 data: err.message
