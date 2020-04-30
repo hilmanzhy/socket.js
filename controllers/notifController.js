@@ -163,26 +163,54 @@ exports.get = (APP, req, callback) => {
     limit = limit ? parseInt(limit) : 10;
     skip = skip ? parseInt(skip) : 0;
 
-    APP.models.mongo.notif
-        .find(queryOptions)
-        .limit(limit)
-        .skip(skip)
-        .sort({ date: -1, time: -1 })
-        .lean()
-        .exec((err, notif) => {
-            if (err)
-                return callback({
-                    code: "ERR_DATABASE",
-                    data: err.message
+    async.parallel([
+        function getDataNotif(callback) {
+            APP.models.mongo.notif
+                .find(queryOptions)
+                .limit(limit)
+                .skip(skip)
+                .sort({ date: -1, time: -1 })
+                .lean()
+                .exec((err, notif) => {
+                    if (err) return callback(err);
+
+                    callback(null, notif);
                 });
 
-            callback(null, {
-                code: notif && notif.length > 0 ? "FOUND" : "NOT_FOUND",
-                data: notif
-            });
-        });
+            return;
+        },
 
-    return;
+        function getCountNotif(callback) {
+            APP.models.mongo.notif
+                .count(queryOptions)
+                .lean()
+                .exec((err, count) => {
+                    if (err) return callback(err);
+
+                    callback(null, {
+                        limit: limit,
+                        skip: skip,
+                        total: count,
+                    });
+                })
+
+            return;
+        }
+    ], (err, res) => {
+        if (err) callback({
+            code: "ERR_DATABASE",
+            data: err.message
+        })
+
+        if (res) callback({
+            code: res[0] && res[0].length > 0 ? "FOUND" : "NOT_FOUND",
+            data: res[0],
+            info: res[1]
+        })
+    })
+    
+
+    
 };
 
 exports.set = (APP, req, callback) => {
