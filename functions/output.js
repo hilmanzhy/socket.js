@@ -32,19 +32,18 @@ exports.print = function (req, res, params) {
 			output.code = message.company.code || params.code;
 			output.message = params.message || message.company.message;
 			output.data = params.data || message.company.data;
-			output.info = params.info || message.company.info;
 			output.debug = undefined;
 
-			if (process.env.NODE_ENV !== 'production') {
-				if (message.company.error === true || (!message.company.code && params.code !== '00')) {
-					output.debug = {
-						from: (params.from || process.env.SERVICE_NAME) || message.company.from,
-						status: params.status || message.company.status,
-						name: params.name || message.company.name,
-						info: params.info || message.company.info
-					};
-				}
-			}
+			// if (process.env.NODE_ENV !== 'production') {
+			// 	if (message.company.error === true || (!message.company.code && params.code !== '00')) {
+			// 		output.debug = {
+			// 			from: (params.from || process.env.SERVICE_NAME) || message.company.from,
+			// 			status: params.status || message.company.status,
+			// 			name: params.name || message.company.name,
+			// 			info: params.info || message.company.info
+			// 		};
+			// 	}
+			// }
 
 			console.log(chalk.bold.blue('======================================================================')+'\n'+
 					'LEVEL     : '+(message.company.error ? chalk.bold.red('ERROR') : chalk.bold.green('INFO')) +'\n'+

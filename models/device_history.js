@@ -14,10 +14,7 @@ module.exports = function (sequelize, Sequelize) {
 		date: {
             type: Sequelize.DATE,
             allowNull: false,
-            defaultValue: Sequelize.NOW,
-            get: function () {
-                return moment(this.getDataValue('date')).format('DD-MM-YYYY HH:mm:ss')
-            }
+            defaultValue: Sequelize.NOW
         },
 		created_at: {
             allowNull: false,

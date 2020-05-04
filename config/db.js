@@ -29,20 +29,23 @@ const mysqlPool = {
 };
 const define = {
 	timestamps: false,
-	//paranoid: true,
 	freezeTableName: true
-};
-const mysqlDialectOptions = {
-	requestTimeout: Number(process.env.MYSQL_DIALECT_REQUEST_TIMEOUT)
+	// paranoid: true,
 };
 const mysqlDialect = process.env.MYSQL_DIALECT;
+const mysqlDialectOptions = {
+	useUTC: false,
+	dateStrings: true,
+	typeCast: true,
+	// requestTimeout: Number(process.env.MYSQL_DIALECT_REQUEST_TIMEOUT)
+};
 var options = {
 	host: process.env.MYSQL_HOST,
 	port: process.env.MYSQL_PORT,
 	timezone: '+07:00',
 	dialect: mysqlDialect,
-	pool: mysqlPool,
 	// dialectOptions: mysqlDialectOptions,
+	pool: mysqlPool,
 	define: define,
 	logging: true
 };
