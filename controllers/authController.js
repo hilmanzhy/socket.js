@@ -343,15 +343,49 @@ exports.changepassword = function (APP, req, callback) {
             query.value = { password : data.encrypted.new_password }
 
             APP.models.mysql.user.update(query.value, query.options).then((user) => {
-                callback(null, {
-                    code    : 'OK',
-                    message : 'Success change password.'
-                })
+               callback( null , {});
             }).catch((err) => {
                 callback({
                     code    : 'ERR_DATABASE',
                     message : 'Failed change password',
                     data : JSON.stringify(err)
+                })
+            })
+        },
+
+        
+        function getUser( data , callback ) {
+            
+            APP.models.mysql.user.findOne(query.options).then((user) => {
+                if (!user) {
+                    return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
+                }
+
+                callback(null, user)
+            })
+  
+        },
+
+        function sendEmail(user, callback) {            
+            let payload = {
+                to      : user.email,
+                subject : `Change password notification`,
+                html    : {
+                    file    : 'change_password.html',
+                    data    : {
+                        name    : user.name,
+                        cdn_url : `${ process.env.APP_URL }/cdn`,
+                    }
+                }
+            }
+
+            request.sendEmail(payload, (err, res) => {
+
+                if (err) return callback({ code : 'MAIL_ERR', message : err })
+
+                callback(null, {
+                    code    : 'OK',
+                    message : 'Success change password.'
                 })
             })
         }
