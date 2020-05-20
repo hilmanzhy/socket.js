@@ -341,7 +341,8 @@ router.post("/runtimereport/weekly", (req, res, next) => {
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
             data: { missing_parameter: "user_id" }
-        });
+		});
+		
     if (!req.auth) req.auth = { user_id: req.body.user_id };
 
     req.body.range = "WEEKLY";

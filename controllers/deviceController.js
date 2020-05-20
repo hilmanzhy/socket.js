@@ -1579,8 +1579,11 @@ exports.runtimereport = function(APP, req, callback) {
             date_to = `${req.body.date_to} 23:59:59`;
 
             break;
-    }
+	}
 
+	console.log(date_from , date_to);
+	
+	
     APP.db.sequelize
         .query(sp, {
             replacements: {
