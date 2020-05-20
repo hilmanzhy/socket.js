@@ -260,7 +260,7 @@ module.exports = function () {
     // });
 
     // Scheduler Alert Token
-    scheduler.scheduleJob("36 * * * *", function (time) {
+    scheduler.scheduleJob("0 * * * *", function (time) {
         let payloadLog = {},
             query = {};
 
