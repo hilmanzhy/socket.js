@@ -6,6 +6,7 @@ module.exports = function (mongo) {
     const ModelSchema = mongo.Schema({
         email: String,
         otp: Number,
+        failed_attempt: Number,
         date: Date,
     });
 
