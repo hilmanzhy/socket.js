@@ -50,11 +50,16 @@ exports.create = function (APP, req, callback) {
                         if (timeDiff < requestLimit) return callback({ message: "Wait a minute to request new OTP!" });
                         // If request OTP attempt more than termss today
                         if (isToday && (result.request_attempt >= requestMax)) return callback({ message: "You have reached maximum attempt, so please try again tomorrow!" });
+                        
+                        callback(null, isToday);
+    
+                        return;
                     }
 
-                    callback(null, isToday);
-
+                    callback(null, false);
+    
                     return;
+
                 }
             )
         },
