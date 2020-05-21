@@ -5,7 +5,7 @@ const // External Library
       datetime = require('../functions/datetime.js'),
       // Declare Variable
       OTP = (APP) => APP.models.mongo.otp,
-      dateNow = new Date()
+      dateNow = new Date();
 
 /**
  * Generate OTP
@@ -23,12 +23,13 @@ function generateOTP() {
 }
 
 exports.create = function (APP, req, callback) {
-    req.body.otp = generateOTP()
+    req.body.otp = generateOTP();
 
     async.waterfall([
         /**
          * Check Existing OTP
-         * @param {err, res} callback 
+         * 
+         * @param {err, res} callback
          */
         function checkExisting(callback) {
             OTP(APP).findOne(
@@ -36,16 +37,22 @@ exports.create = function (APP, req, callback) {
                 (err, result) => {
                     if (result) {
                         // Date & time declaration
-                        let dateOTP = result.date,
+                        let dateOTP = result.updatedAt,
                             requestLimit = parseInt(process.env.OTP_REQUEST_LIMIT),
-                            requestUnit = process.env.OTP_REQUEST_UNIT,
-                            timeDiff = parseInt(datetime.timeDiff(dateOTP, dateNow, requestUnit));
-                        
+                            requestUnit = process.env.OTP_REQUEST_UNIT;
+                            requestMax = parseInt(process.env.OTP_REQUEST_ATTEMPT_MAX)
+
+                        // Call function declaration
+                        let timeDiff = parseInt(datetime.timeDiff(dateOTP, dateNow, requestUnit));
+                            isToday = datetime.isToday(dateOTP)
+
                         // If request OTP before, less than terms
                         if (timeDiff < requestLimit) return callback({ message: "Wait a minute to request new OTP!" });
+                        // If request OTP attempt more than termss today
+                        if (isToday && (result.request_attempt >= requestMax)) return callback({ message: "You have reached maximum attempt, so please try again tomorrow!" });
                     }
 
-                    callback();
+                    callback(null, isToday);
 
                     return;
                 }
@@ -53,17 +60,39 @@ exports.create = function (APP, req, callback) {
         },
 
         /**
-         * Generate & Store OTP to Database
+         * Generate Query Logic for OTP Database
+         * 
+         * @param {boolean} isToday check if last update token is today
          * @param {err, res} callback 
          */
-        function create(callback) {
+
+        function generateQuery(isToday, callback) {
+            let queryUpdate = {
+                otp : req.body.otp,
+                failed_attempt : 0,
+                date : vascommkit.time.now()
+            }
+
+            if (!isToday) queryUpdate.request_attempt = 1 
+            else queryUpdate.$inc = {
+                request_attempt : +1
+            }
+
+            callback(null, queryUpdate);
+
+            return;
+        },
+
+        /**
+         * Generate & Store OTP to Database
+         * 
+         * @param {object} queryUpdate query for storing otp to database
+         * @param {err, res} callback
+         */
+        function create(queryUpdate, callback) {
             OTP(APP).updateOne(
                 { email : req.body.email },
-                {
-                    otp : req.body.otp,
-                    failed_attempt : 0,
-                    date : vascommkit.time.now()
-                },
+                queryUpdate,
                 { upsert : true },
                 (err, result) => {
                     if (err){
@@ -74,13 +103,14 @@ exports.create = function (APP, req, callback) {
                         result.otp = req.body.otp;
                         
                         callback(null, result);
+
+                        return;
                     }
                 }
             )
         }
     ], (err, res) => {
-        if (err && err.code) return callback(err);
-        else if (err) return callback({
+        if (err) return callback({
             code: "OTP_ERR",
             message: err.message || err
         }) 
