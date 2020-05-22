@@ -362,7 +362,7 @@ exports.changepassword = function (APP, req, callback) {
     })
 }
 
-exports.forgotpassword = function (APP, req, callback) {
+exports.forgotPassword = function (APP, req, callback) {
     async.waterfall([
         function validateRequest(callback) {
             if (!req.body.email) return callback({ code: 'MISSING_KEY', data: 'email' });
@@ -372,9 +372,7 @@ exports.forgotpassword = function (APP, req, callback) {
             }
             
             APP.models.mysql.user.findOne(query.options).then((user) => {
-                if (!user) {
-                    return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
-                }
+                if (!user) return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })
 
                 callback(null, user)
             })
@@ -431,7 +429,7 @@ exports.resetpassword = function (APP, req, callback) {
         },
 
         function checkOTP(validate, callback) {
-            req.body.otp_checked = true
+            req.body.delete_otp = true
 
             otp.validate(APP, req, (err, result) => {
                 if (err) return callback(err)

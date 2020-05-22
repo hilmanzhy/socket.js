@@ -12,24 +12,23 @@ exports.formatYMD = function (datetime) {
     return moment(datetime).format("YYYY-MM-DD")
 }
 
-exports.isToday = function (datetime) {
-    let today = moment()
-    let params = moment(datetime)
+/**
+ * Check datetime params is today
+ * 
+ * @param {datetime} datetime is datetime to compare
+ * @return {boolean} is today or not
+ */
+exports.isToday = (datetime) => moment().isSame(datetime, "day");
 
-    if (today.year() != params.year()) return false
-    if (today.month() != params.month()) return false
-    if (today.date() != params.date()) return false
-    
-    return true
-}
-
-exports.timeDiff = function (start, end, unit) {
-    let startTime = moment(start);
-    let endTime = moment(end);
-    let duration = moment.duration(endTime.diff(startTime)).as(unit);
-    
-    return duration.toFixed()
-}
+/**
+ * Different between 2 date with unit
+ * 
+ * @param {datetime} start is datetime start to compare
+ * @param {datetime} end is datetime end to compare
+ * @param {string} unit is unit to compare, example : minutes, hours, days
+ * @return {number} duration between 2 date based on unit
+ */
+exports.timeDiff = (start, end, unit) => moment.duration(moment(end).diff(moment(start))).as(unit).toFixed();
 
 function hmsToSeconds(hms) {
     let split = hms.split(':')
