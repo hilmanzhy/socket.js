@@ -429,7 +429,7 @@ exports.resetpassword = function (APP, req, callback) {
         },
 
         function checkOTP(validate, callback) {
-            req.body.otp_checked = true
+            req.body.delete_otp = true
 
             otp.validate(APP, req, (err, result) => {
                 if (err) return callback(err)

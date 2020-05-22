@@ -127,35 +127,148 @@ exports.create = function (APP, req, callback) {
 }
 
 exports.validate = function (APP, req, callback) {
-    OTP(APP).findOne({
-        email : req.body.email,
-        otp : req.body.otp
-    }).then((rows) => {
-        if (!rows) return callback({ code : 'OTP_ERR', message : 'OTP not match!' })
+    // Find existing data otp
+    OTP(APP).findOne({ email: req.body.email }, (err, result) => {
+        async.waterfall(
+            [
+                /**
+                 * If there is an error when querying data in database
+                 *
+                 * @param {err, res} callback
+                 */
+                function errCatching(callback) {
+                    if (err)
+                        return callback({
+                            code: "ERR_DATABASE",
+                            message: err.message,
+                        });
 
-        let expiredDuration = parseInt(process.env.OTP_EXPIRED_DURATION),
-            expiredUnit = process.env.OTP_EXPIRED_UNIT,
-            timeDiff = parseInt(datetime.timeDiff(rows.date, dateNow, expiredUnit));
+                    callback();
 
-        if (timeDiff > expiredDuration) return callback({ code : 'OTP_ERR', message : 'OTP Expired!' })
-        
-        if (req.body.otp_checked) deleteOTP(APP, rows, (err, res) => { if (err) return callback(err) })
-                
-        return callback(null, {
-            code    : 'OK',
-            message : 'OTP match',
-            data    : {
-                "email" : req.body.email,
-                "otp"   : req.body.otp
+                    return;
+                },
+
+                /**
+                 * Check if otp not found, that means the user hasn't requested otp
+                 *
+                 * @param {err, res} callback
+                 */
+                function otpNotFound(callback) {
+                    if (!result) return callback({ code: "NOT_FOUND" });
+
+                    callback();
+
+                    return;
+                },
+
+                /**
+                 * Check if otp validate more than terms
+                 *
+                 * @param {err, res} callback
+                 */
+                function otpFailedAttempt(callback) {
+                    let failedLimit = process.env.OTP_FAILED_LIMIT;
+
+                    if (result.failed_attempt >= failedLimit)
+                        return callback({
+                            code: "OTP_ERR",
+                            message:
+                                "You have reached maximum attempts, so please request new OTP!",
+                        });
+
+                    callback();
+
+                    return;
+                },
+
+                /**
+                 * Check if otp not match, increment failed attempt
+                 *
+                 * @param {err, res} callback
+                 */
+                function otpDismatch(callback) {
+                    if (result.otp != req.body.otp) {
+                        OTP(APP).updateOne(
+                            { email: req.body.email },
+                            {
+                                $inc: {
+                                    failed_attempt: +1,
+                                },
+                            },
+                            (err, result) => {
+                                callback({
+                                    code: "OTP_ERR",
+                                    message: "OTP not match!",
+                                });
+
+                                return;
+                            }
+                        );
+                    } else {
+                        callback();
+
+                        return;
+                    }
+                },
+
+                /**
+                 * Check if OTP expired
+                 *
+                 * @param {err, res} callback
+                 */
+                function otpExpired(callback) {
+                    let expiredDuration = parseInt(
+                            process.env.OTP_EXPIRED_DURATION
+                        ),
+                        expiredUnit = process.env.OTP_EXPIRED_UNIT,
+                        timeDiff = parseInt(
+                            datetime.timeDiff(
+                                result.updatedAt,
+                                dateNow,
+                                expiredUnit
+                            )
+                        );
+
+                    if (timeDiff > expiredDuration)
+                        return callback({
+                            code: "OTP_ERR",
+                            message: "OTP Expired!",
+                        });
+
+                    if (req.body.otp_checked)
+                        deleteOTP(APP, rows, (err, res) => {
+                            if (err) return callback(err);
+                        });
+                },
+            ],
+            (err, res) => {
+                if (err) return callback(err);
+
+                callback(null, {
+                    code: "OK",
+                    message: "OTP match",
+                    data: {
+                        email: req.body.email,
+                        otp: req.body.otp,
+                    },
+                });
+
+                return;
             }
-        })        
-    })
-}
+        );
+    });
+};
 
 function deleteOTP(APP, params, callback) {
     OTP(APP).deleteOne(params, (err, info) => {
-        if (err) return callback({ code : 'DATABASE_ERR', message : 'Failed delete OTP!' })
-    })
+        if (err)
+            return callback({
+                code: "DATABASE_ERR",
+                message: "Failed delete OTP!",
+            });
 
-    return callback(null, true)
+        callback(null, true);
+
+        return;
+    });
 }
