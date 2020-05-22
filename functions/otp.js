@@ -263,7 +263,7 @@ function deleteOTP(APP, params, callback) {
     OTP(APP).deleteOne(params, (err, info) => {
         if (err)
             return callback({
-                code: "DATABASE_ERR",
+                code: "ERR_DATABASE",
                 message: "Failed delete OTP!",
             });
 
