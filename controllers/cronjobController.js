@@ -274,14 +274,16 @@ module.exports = function () {
         APP.models.mysql.user
             .findAll(query)
             .then(result => {
-                if (result) {
-                    result.map(user => {
+
+                if (result.length > 0) {
+                    result.map(( user , index ) => {                    
                         /**
                          * CONDITION
                          * if notif token alert is turned on
                          * if user token less than 20kwh
                          */
-                        if (user.notif_token_alert == 1 && user.token <= 20) {
+                        if (user.token <= 20) {
+
                             let pricing = user.electricity_pricing,
                                 token_kwh = parseFloat(user.token).toFixed(2),
                                 token_rph = parseInt(token_kwh * parseInt(pricing.rp_lbwp)),
@@ -310,7 +312,7 @@ module.exports = function () {
                                 return output.log(payloadLog);
                             });
                         } else {
-                            throw new Error("NOT_FOUND");
+                            console.log('NOT_FOUND');
                         }
                     });
                 } else {
