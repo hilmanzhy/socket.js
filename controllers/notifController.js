@@ -170,6 +170,8 @@ exports.get = (APP, req, callback) => {
         .sort({ date: -1, time: -1 })
         .lean()
         .exec((err, notif) => {
+            console.log(notif);
+            
             if (err)
                 return callback({
                     code: "ERR_DATABASE",
