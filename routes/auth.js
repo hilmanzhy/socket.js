@@ -69,7 +69,7 @@ router.post('/changepassword', (req, res, next) => {
 });
 
 router.post('/forgotpassword', (req, res, next) => {
-	authController.forgotpassword(req.APP, req, (err, result) => {
+	authController.forgotPassword(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 
 		return req.APP.output.print(req, res, result);

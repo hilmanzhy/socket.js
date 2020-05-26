@@ -6,13 +6,13 @@ const app = require('express')(),
 let socket = io('http://localhost:5005');
 
 socket.emit('handshake', {
-    "device_id": "TESTING",
-    "user_id": "1",
-    "device_ip": "21.0.0.107",
-    "device_name": "TESTING",
-    "device_type": "0",
-    "pin": "1",
-    "mac_address": "80:C5:F2:F8:49:EE"
+    "device_id": "SitamotoDevice-v1_8-634",
+    "user_id": "8",
+    "device_ip": "192.168.1.7",
+    "device_name": "Wijaya Kost",
+    "device_type": "1",
+    "pin": "11",
+    "mac_address": "b8:27:eb:c8:78:ec"
 })
 
 http.listen(5555, function() {

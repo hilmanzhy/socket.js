@@ -3185,6 +3185,8 @@ exports.check = function (APP, req, callback) {
             });
         })
         .catch(e => {
+			console.log("ERR CHECK DEVICE", err)
+			
             switch (e.message) {
                 case "1":
                     response = {
@@ -3212,7 +3214,7 @@ exports.check = function (APP, req, callback) {
 
                 default:
                     return callback({
-                        code: "DATABASE_ERR",
+                        code: "ERR_DATABASE",
                         message: e.message
                     });
             }
