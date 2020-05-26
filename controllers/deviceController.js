@@ -3570,7 +3570,7 @@ exports.addshareuser = function(APP, req, callback) {
 			}
 
 			User.findOne(query.select)
-				.then(resultUser => {
+				.then(resultUser => {					
 					callback(null, resultUser)
 				})
 				.catch(err => {
@@ -3636,22 +3636,27 @@ exports.addshareuser = function(APP, req, callback) {
 						click_action : "SHARE_DEVICE_ACTIVITY"
 					}
 				}
-				console.log(payload)
-				if (resultUser.device_key === "") {
-					APP.models.mongo.notif.create(
-						{
-							user_id: resultUser.user_id,
-							notification: payload.notif,
-							date: moment().format("YYYY-MM-DD"),
-							time: moment().format("HH:mm:ss")
-						}
-					);
-				} else {
-					APP.request.sendNotif(APP.models, payload, (err, res) => {
-						if (err) console.log("push notif error")
-						else console.log("push notif berhasil")
-					})
-				}
+	
+				// if (resultUser.device_key === "") {
+				// 	APP.models.mongo.notif.create(
+				// 		{
+				// 			user_id: resultUser.user_id,
+				// 			notification: payload.notif,
+				// 			date: moment().format("YYYY-MM-DD"),
+				// 			time: moment().format("HH:mm:ss")
+				// 		}
+				// 	);
+				// } else {
+				// 	APP.request.sendNotif(APP.models, payload, (err, res) => {
+				// 		if (err) console.log("push notif error")
+				// 		else console.log("push notif berhasil")
+				// 	})
+				// }
+
+				APP.request.sendNotif(APP.models, payload, (err, res) => {
+					if (err) console.log("push notif error")
+					else console.log("push notif berhasil")
+				})
 
 				callback(null, {
 					code : 'OK',

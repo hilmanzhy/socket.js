@@ -163,6 +163,7 @@ exports.get = (APP, req, callback) => {
     limit = limit ? parseInt(limit) : 10;
     skip = skip ? parseInt(skip) : 0;
 
+<<<<<<< HEAD
     async.parallel([
         function getDataNotif(callback) {
             APP.models.mongo.notif
@@ -175,6 +176,21 @@ exports.get = (APP, req, callback) => {
                     if (err) return callback(err);
 
                     callback(null, notif);
+=======
+    APP.models.mongo.notif
+        .find(queryOptions)
+        .limit(limit)
+        .skip(skip)
+        .sort({ date: -1, time: -1 })
+        .lean()
+        .exec((err, notif) => {
+            console.log(notif);
+            
+            if (err)
+                return callback({
+                    code: "ERR_DATABASE",
+                    data: err.message
+>>>>>>> brian_dev
                 });
 
             return;
