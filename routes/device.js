@@ -1,10 +1,13 @@
 "use strict";
 
-const express = require('express');
-const vascommkit = require('vascommkit');
-const moment = require('moment');
-const router = express.Router();
-const deviceController = require('../controllers/deviceController.js');
+const // External Library
+	  express = require('express'),
+	  router = express.Router(),
+	  vascommkit = require('vascommkit'),
+	  // Internal Library
+	  valid = require('../functions/validation.js'),
+	  // Declare Variable
+	  deviceController = require('../controllers/deviceController.js');
 
 router.post("/getdevice", (req, res, next) => {
     if (!req.auth && !req.body.user_id)
@@ -321,11 +324,21 @@ router.post("/runtimereport", (req, res, next) => {
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
             data: { missing_parameter: "date_from" }
+		});
+	if (!valid.date(req.body.date_from))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "date_from" }
         });
     if (!req.body.date_to)
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
             data: { missing_parameter: "date_to" }
+		});
+	if (!valid.date(req.body.date_to))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "date_to" }
         });
     if (!req.auth) req.auth = { user_id: req.body.user_id };
 

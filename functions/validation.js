@@ -1,6 +1,6 @@
 "use strict";
 
-const validateJS = require('validate.js');
+const moment = require('moment');
 
 exports.username = function (str) {
 	return (!str || str == '' || str.length < 4 || typeof str !== 'string' || / /g.test(str) || str.length > 20)
@@ -51,3 +51,5 @@ exports.phone = function (str) {
 			}
 		} : true;
 };
+
+exports.date = (date) => moment(date).isValid();
