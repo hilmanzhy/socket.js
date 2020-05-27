@@ -658,8 +658,8 @@ router.post('/updatestatusshare', (req, res, next) => {
 	});
 })
 
-router.post('/updatefirmware', (req, res, next) => {
-	deviceController.updateFirmware(req.APP, req, (err, result) => {
+router.post('/uploadfirmware', (req, res, next) => {
+	deviceController.uploadFirmware(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

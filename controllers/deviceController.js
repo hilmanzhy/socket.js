@@ -3939,7 +3939,7 @@ exports.updatestatusshare = function(APP, req, callback) {
 };
 
 /* update firmware device ( brian ) */
-exports.updateFirmware = ( APP, req, callback ) =>{
+exports.uploadFirmware = ( APP, req, callback ) =>{
 	let { device_type, firmware_id, description } = req.body;
 	let { firmware_device } = APP.models.mysql;
 
