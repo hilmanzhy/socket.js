@@ -658,4 +658,20 @@ router.post('/updatestatusshare', (req, res, next) => {
 	});
 })
 
+router.post('/updatefirmware', (req, res, next) => {
+	deviceController.updateFirmware(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+router.post('/cekversion', (req, res, next) => {
+	deviceController.cekVersion(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
 module.exports = router;
