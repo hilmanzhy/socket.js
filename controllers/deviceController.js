@@ -3985,7 +3985,7 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 exports.cekVersion = ( APP, req, callback ) => {
 	let { device_id } = req.body;
 	let { device, firmware_device } = APP.models.mysql;
-
+	
 	async.waterfall(
 		[
 			function cekParam( callback ) {
@@ -4012,7 +4012,7 @@ exports.cekVersion = ( APP, req, callback ) => {
 
 							callback( null, data );
 						} else {
-							callback(null, {
+							callback({
 								code: "NOT_FOUND",
 								message: 'Device id not found'
 							});
@@ -4043,6 +4043,7 @@ exports.cekVersion = ( APP, req, callback ) => {
 									message: 'Firmware latest version',
 									data: {
 										firmware_id: data.firmware_id,
+										new_firmware: res[0].firmware_id,
 										last_version: true
 									}
 								});
@@ -4052,13 +4053,14 @@ exports.cekVersion = ( APP, req, callback ) => {
 									message: 'Outdated frimware needs updating',
 									data: {
 										firmware_id: data.firmware_id,
+										new_firmware: res[0].firmware_id,
 										last_version: false
 									}
 
 								});
 							}
 						} else {
-							callback(null, {
+							callback({
 								code: "NOT_FOUND",
 								message: 'Firmware id not found'
 							});
@@ -4113,7 +4115,7 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 
 							callback( null, data );
 						} else {
-							callback(null, {
+							callback({
 								code: "NOT_FOUND",
 								message: 'Device id not found'
 							});
@@ -4141,13 +4143,15 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 
 							callback( null, data );
 						} else {
-							callback(null, {
+							callback({
 								code: "NOT_FOUND",
 								message: 'Firmware id not found'
 							});
 						}
 					})	
 					.catch(err => {
+						console.log(err);
+						
 						callback({
 							code: "GENERAL_ERR",
 							message: JSON.stringify(err)
@@ -4155,7 +4159,8 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 					});
 			},
 			function cekVeFirmware( data, callback ) {
-				this.cekVersion( APP, req, ( err, result ) =>{
+				exports.cekVersion( APP, req, ( err, result ) =>{
+		
 					if ( err ) return callback( err );
 
 					if ( result.data.last_version ) return callback( result );
@@ -4176,7 +4181,7 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 		function ( err, result ) {
 			if ( err ) return callback( err );
 
-			return callback( result );
+			return callback( null, result );
 		}
 	)
 
