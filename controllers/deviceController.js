@@ -13,6 +13,7 @@ const request = require('../functions/request.js');
 const cdnController = require('./cdnController');
 
 const Device = APP => APP.models.mysql.device
+const DevicePIN = APP => APP.models.mysql.device_pin
 const User = APP => APP.models.mysql.user
 
 let socket = io(process.env.SOCKET_URL);
@@ -863,44 +864,37 @@ exports.devicedetail = function (APP, req, callback) {
 };
 
 exports.pindetail = function (APP, req, callback) {
-	
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device_pin
+    let { device_id, pin } = req.body,
+        { user_id } = req.auth;
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
+    query.where = {
+        user_id: user_id,
+        device_id: device_id,
+        pin: pin,
+    };
+    query.attributes = {
+        exclude: ["created_at", "updated_at"],
+        include: [["id", "pin_id"]],
+    };
 
-	console.log(datareq)
+    DevicePIN(APP)
+        .findAll(query)
+        .then((device) => {
+            callback(null, {
+                code: device && device.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: device,
+            });
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	query.where = { 
-		user_id : datareq.user_id,
-		device_id : datareq.device_id,
-		pin : datareq.pin
-	}
-	query.attributes = { exclude: ['created_at', 'updated_at'] }
-	
-	Device.findAll(query).then(device => {
-		console.log(device)
-		
-		return callback(null, {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
-		});
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: err.message,
+            });
 
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
+            return;
+        });
 };
 
 exports.updatename = function (APP, req, callback) {

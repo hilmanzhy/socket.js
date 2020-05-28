@@ -215,12 +215,43 @@ router.post('/devicedetail', (req, res, next) => {
 	});
 });
 
-router.post('/pindetail', (req, res, next) => {
-	deviceController.pindetail(req.APP, req, (err, result) => {
-		if (err) return req.APP.output.print(req, res, err);
-		
-		return req.APP.output.print(req, res, result);
-	});
+router.post("/pindetail", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" },
+        });
+    if (req.body.device_id) {
+        if (!valid.device_id(req.body.device_id))
+            return req.APP.output.print(req, res, {
+                code: "INVALID_REQUEST",
+                data: { invalid_parameter: "device_id" },
+            });
+    } else {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_id" },
+        });
+    }
+    if (req.body.pin) {
+        if (!valid.pin(req.body.pin))
+            return req.APP.output.print(req, res, {
+                code: "INVALID_REQUEST",
+                data: { invalid_parameter: "pin" },
+            });
+    } else {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "pin" },
+        });
+    }
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+
+    deviceController.pindetail(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
 });
 
 router.post('/updatename', (req, res, next) => {
