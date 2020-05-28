@@ -41,25 +41,70 @@ router.post("/getpindevice", (req, res, next) => {
     if (!req.auth && !req.body.user_id)
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
-            data: { missing_parameter: "user_id" }
+            data: { missing_parameter: "user_id" },
         });
     if (!req.body.device_id)
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
-            data: { missing_parameter: "device_id" }
+            data: { missing_parameter: "device_id" },
+        });
+    if (req.body.device_id && !valid.device_id(req.body.device_id))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "device_id" },
+        });
+    if (req.body.device_name && !valid.device_name(req.body.device_name))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "device_name" },
+		});
+	if (req.body.device_ip && !valid.ip_address(req.body.device_ip))
+		return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "device_ip" },
+		});
+	if (req.body.device_status && !valid.number(req.body.device_status))
+		return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "device_status" },
+		});
+	if (req.body.switch && !valid.number(req.body.switch))
+		return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "switch" },
+		});
+    if (req.body.pin && !valid.pin(req.body.pin))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "pin" },
         });
     if (req.body.install_date_from && !req.body.install_date_to) {
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
-            data: { missing_parameter: "install_date_to" }
+            data: { missing_parameter: "install_date_to" },
         });
     }
     if (!req.body.install_date_from && req.body.install_date_to) {
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",
-            data: { missing_parameter: "install_date_from" }
+            data: { missing_parameter: "install_date_from" },
         });
     }
+    if (req.body.install_date_from && !valid.date(req.body.install_date_from))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "install_date_from" },
+        });
+    if (req.body.install_date_to && !valid.date(req.body.install_date_to))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "install_date_to" },
+        });
+    if (req.body.active_date && !valid.date(req.body.active_date))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "active_date" },
+        });
     if (!req.auth) req.auth = { user_id: req.body.user_id };
     delete req.body.user_id;
 
