@@ -1697,88 +1697,52 @@ exports.runtimereportperdev = function (APP, req, callback) {
 };
 
 exports.runtimereportdaily = function (APP, req, callback) {
-  
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
-	
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.type) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-	
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+    let { device_id, date_from, date_to, type } = req.body,
+        { user_id } = req.auth,
+        sp,
+        params = {
+            user_id: user_id,
+            device_id: device_id,
+            date_from: date_from,
+            date_to: date_to,
+        };
 
-	if (datareq.type == '0')
-	{
-		console.log('runtimereport_perdevice')
-		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
-			{ 
-				replacements: {
-					user_id: datareq.user_id,
-					device_id: datareq.device_id,
-					date_from: datareq.date_from,		
-					date_to: datareq.date_to
-				}, 
-				type: APP.db.sequelize.QueryTypes.RAW 
-			}
-		)
+    switch (type) {
+        case "0":
+            sp =
+                "CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)";
 
-		.then(device => {
+            break;
 
-			return callback(null, {
-				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data : device
-			});
+        case "1":
+            sp =
+                "CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)";
+            params.pin = req.body.pin;
 
-		}).catch((err) => {
+            break;
+    }
 
-			response = {
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			}
-			return callback(response);
-			
-		});
-	}
-	else
-	{
-		console.log('runtimereport_perdevice')
-		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)',
-			{ 
-				replacements: {
-					user_id: datareq.user_id,
-					device_id: datareq.device_id,
-					pin : datareq.pin,
-					date_from: datareq.date_from,		
-					date_to: datareq.date_to
-				}, 
-				type: APP.db.sequelize.QueryTypes.RAW 
-			}
-		)
+    APP.db.sequelize
+        .query(sp, {
+            replacements: params,
+            type: APP.db.sequelize.QueryTypes.RAW,
+        })
+        .then((device) => {
+            callback(null, {
+                code: device && device.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: device,
+            });
 
-		.then(device => {
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: JSON.stringify(err),
+            });
 
-			return callback(null, {
-				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data : device
-			});
-
-		}).catch((err) => {
-
-			response = {
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			}
-			return callback(response);
-			
-		});
-	}
-	
+            return;
+        });
 };
 
 exports.totalruntime = function(APP, req, callback) {

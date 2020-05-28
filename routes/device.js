@@ -283,9 +283,7 @@ router.post('/devicehistory', (req, res, next) => {
 	});
 });
 
-/**
- * Route Command
- */
+/* Route Command */
 router.post('/command', (req, res, next) => {
 	if (!req.auth && !req.body.user_id) return req.APP.output.print(req, res, {
 		code: 'MISSING_KEY',
@@ -383,6 +381,79 @@ router.post('/runtimereportperdev', (req, res, next) => {
 });
 
 router.post('/runtimereportdaily', (req, res, next) => {
+	if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" },
+		});
+		
+    if (req.body.device_id) {
+        if (!valid.device_id(req.body.device_id))
+            return req.APP.output.print(req, res, {
+                code: "INVALID_REQUEST",
+                data: { invalid_parameter: "device_id" },
+            });
+    } else {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "device_id" },
+        });
+	}
+	
+	if (req.body.type) {
+		if (!valid.number(req.body.type))
+			return req.APP.output.print(req, res, {
+				code: "INVALID_REQUEST",
+				data: { invalid_parameter: "type" }
+			});
+	} else {
+		return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "type" },
+        });
+	}
+	
+	if (req.body.pin) {
+        if (!valid.pin(req.body.pin))
+            return req.APP.output.print(req, res, {
+                code: "INVALID_REQUEST",
+                data: { invalid_parameter: "pin" },
+            });
+    } else if (req.body.type == 1) {
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "pin" },
+        });
+	}
+
+	if (req.body.date_from) {
+		if (!valid.date(req.body.date_from))
+			return req.APP.output.print(req, res, {
+				code: "INVALID_REQUEST",
+				data: { invalid_parameter: "date_from" }
+			});
+	} else {
+		return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_from" },
+        });
+	}
+	
+	if (req.body.date_to) {
+		if (!valid.date(req.body.date_to))
+			return req.APP.output.print(req, res, {
+				code: "INVALID_REQUEST",
+				data: { invalid_parameter: "date_to" }
+			});
+	} else {
+		return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_to" },
+        });
+	}
+	
+	if (!req.auth) req.auth = { user_id: req.body.user_id };
+	
 	deviceController.runtimereportdaily(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
@@ -671,13 +742,6 @@ router.post('/generate_id', (req, res, next) => {
 		data: { device_id: generated }
 	});
 })
-
-/**
- * @title ROUTE FIRMWARE
- * @desc Below route handle Firmware Upgrade
- * 
- * @note Research use only, will develop soon
- */
 
 /* Route Upgrade Firmware */
 router.post("/firmwareupgrade", (req, res, next) => {
