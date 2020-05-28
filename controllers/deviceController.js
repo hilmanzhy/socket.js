@@ -3187,7 +3187,7 @@ exports.check = function (APP, req, callback) {
             });
         })
         .catch(e => {
-			console.log("ERR CHECK DEVICE", err)
+			console.log("ERR CHECK DEVICE", e)
 			
             switch (e.message) {
                 case "1":
