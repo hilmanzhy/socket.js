@@ -999,103 +999,51 @@ exports.updatename = function (APP, req, callback) {
 };
 
 exports.devicehistory = function (APP, req, callback) {
-	// const DeviceHistory = APP.models.mysql.device_history
-	var response = {},
-		params = req.body
+    let { user_id } = req.auth,
+        {
+            device_id,
+            device_ip,
+            device_name,
+            date_from,
+            date_to,
+            offset,
+            limit,
+            sort,
+        } = req.body,
+        sp =
+            "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort)";
 
-	// query = {
-	// 	attributes : { exclude: ['created_at', 'updated_at'] },
-	// 	where : {
-	// 		user_id : params.user_id,
-	// 		date: {
-	// 			[APP.db.Sequelize.Op.between]: [params.date_from, `${params.date_to} 23:59:59`]
-	// 		  }
-	// 	}
-	// }
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_id: user_id,
+                device_id: device_id || "",
+                device_ip: device_ip || "",
+                device_name: device_name || "",
+                date_from: date_from,
+                date_to: date_to,
+                offset: offset || "",
+                limit: limit || "",
+                sort: sort || "",
+            },
+            type: APP.db.sequelize.QueryTypes.RAW,
+        })
+        .then((data) => {
+            callback(null, {
+                code: data && data.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: data,
+            });
 
-	// if (params.device_id) query.where.device_id = params.device_id
-	// if (params.pin) query.where.pin = params.pin
-	
-	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + params.user_id + "' and date > '" + params.date_from + "' and date < '" + params.date_to + "'"
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: err.message,
+            });
 
-	// if (params.device_id != '')
-	// {
-	// 	query = query + " and device_id = '" + params.device_id + "'"
-	// }
-
-	// if (params.pin != '')
-	// {
-	// 	query = query + " and pin = '" + params.pin + "'"
-	// }
-	
-	// APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
-	
-	// .then(device => {	
-
-	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort);";
-
-	APP.db.sequelize
-	.query(sp, {
-		replacements: {
-			user_id: params.user_id,
-			device_id: params.device_id,
-			device_ip: params.device_ip,
-			device_name: params.device_name,
-			date_from: params.date_from,
-			date_to: params.date_to,
-			offset: params.offset,
-			limit: params.limit,
-			sort: params.sort
-		},
-		type: APP.db.sequelize.QueryTypes.RAW
-	})
-	// .then((device) => {
-	// 	let Model = APP.models.mysql.device;
-	// 	let data = device.map( history => {
-	// 		query = {
-	// 			attributes : ['icon_id'],
-	// 			raw: true,
-	// 			where : {
-	// 				user_id : history.user_id,
-	// 				device_id : history.device_id
-	// 			}
-	// 		}
-			
-	// 		history = history.toJSON();
-	// 		history.icon_id = null;
-
-	// 		if (history.pin) {
-	// 			Model = APP.models.mysql.device_pin
-	// 			query.where.pin = history.pin
-	// 		}
-
-	// 		return Model.findOne(query).then((result) => {
-	// 			history.icon_id = result.icon_id;
-
-	// 			return history;
-	// 		}).catch((err) => {
-	// 			throw new Error(err)
-	// 		});
-	// 	})
-
-	// 	return Promise.all(data)
-	// })
-	.then((data) => {
-		response = {
-			code : (data && (data.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : data
-		}
-		return callback(null, response);
-	}).catch((err) => {
-		console.log(err);
-		
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
+            return;
+        });
 };
 
 exports.commandpanel = function (APP, req, callback) {

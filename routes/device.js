@@ -263,18 +263,75 @@ router.post('/updatename', (req, res, next) => {
 });
 
 router.post('/devicehistory', (req, res, next) => {
-	if (!req.body.user_id) return req.APP.output.print(req, res, {
-		code: 'MISSING_KEY',
-		data: { missing_parameter: 'user_id' }
-	})
-	// if (!req.body.date_from) return req.APP.output.print(req, res, {
-	// 	code: 'MISSING_KEY',
-	// 	data: { missing_parameter: 'date_from' }
-	// })
-	// if (!req.body.date_to) return req.APP.output.print(req, res, {
-	// 	code: 'MISSING_KEY',
-	// 	data: { missing_parameter: 'date_to' }
-	// })
+	if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" },
+		});
+		
+	if (req.body.device_id && !valid.device_id(req.body.device_id))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "device_id" },
+		});
+	
+	if (req.body.device_ip && !valid.ip_address(req.body.device_ip))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "device_ip" },
+		});
+	
+	if (req.body.device_name && !valid.device_name(req.body.device_name))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "device_name" },
+		});
+	
+	if (req.body.date_from) {
+		if (!valid.date(req.body.date_from))
+			return req.APP.output.print(req, res, {
+				code: "INVALID_REQUEST",
+				data: { invalid_parameter: "date_from" }
+			});
+	} else {
+		return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_from" },
+        });
+	}
+	
+	if (req.body.date_to) {
+		if (!valid.date(req.body.date_to))
+			return req.APP.output.print(req, res, {
+				code: "INVALID_REQUEST",
+				data: { invalid_parameter: "date_to" }
+			});
+	} else {
+		return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "date_to" },
+        });
+	}
+
+	if (req.body.offset && !valid.number(req.body.offset))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "offset" },
+		});
+	
+	if (req.body.limit && !valid.number(req.body.limit))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "limit" },
+		});
+	
+	if (req.body.sort && !valid.number(req.body.sort))
+		return req.APP.output.print(req, res, {
+			code: "INVALID_REQUEST",
+			data: { invalid_parameter: "sort" },
+		});
+	
+	if (!req.auth) req.auth = { user_id: req.body.user_id };
 
 	deviceController.devicehistory(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
