@@ -604,21 +604,7 @@ router.post('/generate_id', (req, res, next) => {
  */
 
 /* Route Upgrade Firmware */
-router.post("/firmware/upgrade", (req, res, next) => {
-    if (!req.auth && !req.body.user_id)
-        return req.APP.output.print(req, res, {
-            code: "MISSING_KEY",
-            data: { missing_parameter: "user_id" }
-        });
-    if (!req.body.device_id) {
-        return req.APP.output.print(req, res, {
-            code: "MISSING_KEY",
-            data: { missing_parameter: "device_id" }
-        });
-    }
-    if (!req.auth) req.auth = { user_id: req.body.user_id };
-    delete req.body.user_id;
-
+router.post("/firmwareupgrade", (req, res, next) => {
     deviceController.upgradeFirmware(req.APP, req, (err, result) => {
         if (err) return req.APP.output.print(req, res, err);
 
@@ -665,6 +651,22 @@ router.post('/getshareduser', (req, res, next) => {
 /* Route Update Status Share User */
 router.post('/updatestatusshare', (req, res, next) => {
 	deviceController.updatestatusshare(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+router.post('/uploadfirmware', (req, res, next) => {
+	deviceController.uploadFirmware(req.APP, req, (err, result) => {
+		if (err) return req.APP.output.print(req, res, err);
+		
+		return req.APP.output.print(req, res, result);
+	});
+})
+
+router.post('/cekversion', (req, res, next) => {
+	deviceController.cekVersion(req.APP, req, (err, result) => {
 		if (err) return req.APP.output.print(req, res, err);
 		
 		return req.APP.output.print(req, res, result);

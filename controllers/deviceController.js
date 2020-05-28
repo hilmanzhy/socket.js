@@ -10,6 +10,8 @@ const moment = require('moment');
 
 const request = require('../functions/request.js');
 
+const cdnController = require('./cdnController');
+
 const Device = APP => APP.models.mysql.device
 const User = APP => APP.models.mysql.user
 
@@ -3495,58 +3497,6 @@ exports.reset = function (APP, req, callback) {
 	})
 }
 
-exports.upgradeFirmware = function(APP, req, callback) {
-    let { device_id } = req.body,
-        { user_id } = req.auth,
-        response = {};
-
-    query = {
-        where: { device_id, user_id }
-    };
-
-    Device(APP)
-        .findOne(query)
-        .then(device => {
-            if (!device) throw new Error("NOT_FOUND");
-            if (device.is_connected != "1") throw new Error("DEVICE_DISCONNECTED");
-
-            socket.emit("upgrade_firmware", {
-                device_id: device.device_id,
-                firmware_name: "SitamotoDevice_v1.0.zip"
-            });
-
-            callback(null, {
-                code: "OK",
-                message: "Progress upgrade, please wait until your device restarted"
-            });
-
-            return;
-        })
-        .catch(err => {
-            switch (err.message) {
-                case "NOT_FOUND":
-                    response.code = "NOT_FOUND";
-                    response.message = "Device not found!";
-
-                    break;
-
-                case "DEVICE_DISCONNECTED":
-                    response.code = "DEVICE_DISCONNECTED";
-
-                    break;
-
-                default:
-                    (response.code = "GENERAL_ERR"), (response.message = err.message);
-
-                    break;
-            }
-
-            callback(response);
-
-            return;
-        });
-};
-
 // function selectUser(Sequelize, params, callback) {
 
 // }
@@ -3934,4 +3884,350 @@ exports.updatestatusshare = function(APP, req, callback) {
 			return callback(err)
 		}
 	})
+};
+
+/* upload firmware device ( brian ) */
+exports.uploadFirmware = ( APP, req, callback ) =>{
+	let { device_type, firmware_id, description } = req.body;
+	let { firmware_device } = APP.models.mysql;
+
+	async.waterfall(
+		[
+			function cekParam( callback ) {
+				if ( device_type && ( device_type == 0 || device_type == 1 ) && firmware_id && description ) {
+					callback( null, {} );
+				} else {
+					callback({
+                        code: "INVALID_REQUEST",
+                        message: "Kesalahan parameter",
+                        data: {}
+                    });
+				}
+			},
+			function uploadFile( data, callback ) {
+				try {
+					req.body.folder_name = 'firmware';
+					
+					cdnController.uploadCDN( APP, req, ( err, result ) =>{
+						if ( err ) {
+							callback({
+								code: "INVALID_REQUEST",
+								message: "Gagal upload file",
+								data: {}
+							});
+						} else {
+							callback( null, result );
+						}
+					});
+				} catch ( err ) {
+					callback({
+                        code: "INVALID_REQUEST",
+                        message: "File tidak ada",
+                        info: err
+                    });
+				}
+			},
+			function cekFirmwareId( data, callback ) {
+				firmware_device
+					.findAll({
+						where: { firmware_id: firmware_id }
+					})
+					.then(res =>{
+						if ( res.length > 0 ) {
+							callback({
+								code: "INVALID_REQUEST",
+								message: "Firmware_id invalid"
+							});
+						} else {
+							callback( null, data );
+						}
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			},
+			function insertData( data, callback ) {
+				firmware_device
+					.create({
+						firmware_id: firmware_id,
+						description: description,
+						device_type: device_type,
+						path: data.data.directory
+					})
+					.then(res => {
+						callback(null, {
+							code : 'OK',
+							message : 'Success upload file firmware',
+							data: res
+						});
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+
+			}
+		],
+		function ( err, result ) {
+			if ( err ) return callback( err );
+
+			return callback ( null, result );
+		}
+	)
+};
+
+/* cek version firmware ( brian ) */
+exports.cekVersion = ( APP, req, callback ) => {
+	let { device_id } = req.body;
+	let { device, firmware_device } = APP.models.mysql;
+	
+	async.waterfall(
+		[
+			function cekParam( callback ) {
+				if ( device_id ) {
+					callback( null, {} );
+				} else {
+					callback({
+                        code: "INVALID_REQUEST",
+                        message: "Kesalahan parameter",
+                        data: {}
+                    });
+				}
+			},
+			function cekDevice( data, callback ) {
+				device
+					.findAll({
+						attributes: ['firmware_id','device_type','device_id'],
+						where: { device_id: device_id, user_id: req.auth.user_id }
+					})
+					.then(res => {
+						if ( res.length > 0 ) {
+							data.firmware_id = res[0].firmware_id;
+							data.device_type = res[0].device_type;
+
+							callback( null, data );
+						} else {
+							callback({
+								code: "NOT_FOUND",
+								message: 'Device id not found'
+							});
+						}
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			},
+			function cekVersion( data, callback ) {
+
+				firmware_device
+					.findAll({
+						attributes: ['firmware_id'],
+						where: { device_type: data.device_type },
+						order: [
+							['created_at','DESC']
+						]
+					})
+					.then(res => {	
+						if ( res.length > 0 ) {
+							if ( res[0].firmware_id == data.firmware_id ) {
+								callback(null, {
+									code: "OK",
+									message: 'Firmware latest version',
+									data: {
+										firmware_id: data.firmware_id,
+										new_firmware: res[0].firmware_id,
+										last_version: true
+									}
+								});
+							} else {
+								callback(null, {
+									code: "OK",
+									message: 'Outdated frimware needs updating',
+									data: {
+										firmware_id: data.firmware_id,
+										new_firmware: res[0].firmware_id,
+										last_version: false
+									}
+
+								});
+							}
+						} else {
+							callback({
+								code: "NOT_FOUND",
+								message: 'Firmware id not found'
+							});
+						}
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			}
+		],
+		function ( err, result ) {
+			if ( err ) return callback( err )
+
+			return callback( null, result )
+		}
+	)
+};
+
+/* upgrade firmware ( brian ) */
+exports.upgradeFirmware = ( APP, req, callback ) => {
+	let { device_id } = req.body;
+	let { user_id } = req.auth;
+	let { device, firmware_device } = APP.models.mysql;
+	
+	async.waterfall(
+		[
+			function cekParam( callback ) {
+				if ( device_id && device_id != null ) {
+					callback( null, { 
+						device_id: device_id 
+					});
+				} else {
+					callback({
+                        code: "INVALID_REQUEST",
+                        message: "Kesalahan parameter",
+                        data: {}
+                    });
+				}
+			},
+			function getDataDevice ( data, callback ) {
+				device
+					.findAll({
+						attributes: ['device_type'],
+						where: { device_id: device_id, user_id: user_id }
+					})
+					.then(res => {
+						if ( res.length > 0 ) {
+							data.device_type = res[0].device_type;
+
+							callback( null, data );
+						} else {
+							callback({
+								code: "NOT_FOUND",
+								message: 'Device id not found'
+							});
+						}
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			},
+			function getDataFirmware ( data, callback ) {
+				firmware_device
+					.findAll({
+						attributes: ['firmware_id','path'],
+						where: { device_type: data.device_type }
+					})
+					.then(res => {
+						if ( res.length > 0 ) {
+							let { firmware_id, path } = res[0];
+
+							data.firmware_version = firmware_id;
+							data.firmware_url = `${process.env.APP_URL}${path}`;
+
+							callback( null, data );
+						} else {
+							callback({
+								code: "NOT_FOUND",
+								message: 'Firmware id not found'
+							});
+						}
+					})	
+					.catch(err => {
+						console.log(err);
+						
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			},
+			function cekVeFirmware( data, callback ) {
+				exports.cekVersion( APP, req, ( err, result ) =>{
+		
+					if ( err ) return callback( err );
+
+					if ( result.data.last_version ) return callback( result );
+
+					callback( null, data );
+				});
+			},
+			function upgradeFrimware( data, callback ) {
+				socket.emit( "upgrade_firmware", data );
+
+				callback( null, {
+					code: 'OK',
+					message: 'Process update firmware',
+					data: data
+				});
+			}
+		],
+		function ( err, result ) {
+			if ( err ) return callback( err );
+
+			return callback( null, result );
+		}
+	)
+
+    // query = {
+    //     where: { device_id, user_id }
+    // };
+
+    // Device(APP)
+    //     .findOne(query)
+    //     .then(device => {
+    //         if (!device) throw new Error("NOT_FOUND");
+    //         if (device.is_connected != "1") throw new Error("DEVICE_DISCONNECTED");
+
+    //         socket.emit("upgrade_firmware", {
+    //             device_id: device.device_id,
+    //             firmware_name: "SitamotoDevice_v1.0.zip"
+    //         });
+
+    //         callback(null, {
+    //             code: "OK",
+    //             message: "Progress upgrade, please wait until your device restarted"
+    //         });
+
+    //         return;
+    //     })
+    //     .catch(err => {
+    //         switch (err.message) {
+    //             case "NOT_FOUND":
+    //                 response.code = "NOT_FOUND";
+    //                 response.message = "Device not found!";
+
+    //                 break;
+
+    //             case "DEVICE_DISCONNECTED":
+    //                 response.code = "DEVICE_DISCONNECTED";
+
+    //                 break;
+
+    //             default:
+    //                 (response.code = "GENERAL_ERR"), (response.message = err.message);
+
+    //                 break;
+    //         }
+
+    //         callback(response);
+
+    //         return;
+    //     });
 };

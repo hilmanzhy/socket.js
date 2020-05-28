@@ -70,27 +70,30 @@ io.on('connection', (socket) => {
 
 	// Handshake Device
 	socket.on('handshake', (device) => {
-		let log = {}, req = {};
+		let log = {}; 
+		let req = {};
+		let { device_id, user_id, firmware_version, flag_update } = device;
+
 		req.APP = APP
 		req.event = `handshake`
 		log.info = `DEVICE HANDSHAKE`
 		log.body = req.body = device
 		log.level = { error : false }
 		log.message = `SOCKET ID : ${socket.id}` +
-					  `\nDEVICE ID : ${device.device_id}`
+					  `\nDEVICE ID : ${device_id}`
 
 		req.auth = {
-			user_id: req.body.user_id
+			user_id: user_id
 		}
 
 		query.sql = {
-			where : { device_id : device.device_id },
+			where : { device_id : device_id },
 			attributes : [ 'device_id' ]
 		};
 		query.mongo = {
 			find : {
-				device_id: device.device_id,
-				user_id: device.user_id
+				device_id: device_id,
+				user_id: user_id
 			},
 			update : { session_id : socket.id }
 		};
@@ -116,7 +119,7 @@ io.on('connection', (socket) => {
 						
 						case '2':
 							log.message = log.message + ' : DEVICE DELETED' +
-														`\nSending Reset Command to Device ID : ${device.device_id}`;
+														`\nSending Reset Command to Device ID : ${device_id}`;
 
 							io.to(socket.id).emit('reset', { reset: '1' });
 		
@@ -142,7 +145,7 @@ io.on('connection', (socket) => {
 			function updateDeviceStatus(data, callback) {
 				log.message = log.message + `\n> UPDATE DEVICE STATUS`
 
-				Device.update({ is_connected : 1 }, query.sql).then((result) => {
+				Device.update({ is_connected : 1, firmware_id: firmware_version }, query.sql).then((result) => {
 					callback(null, data);
 				}).catch((err) => {
 					callback(err);

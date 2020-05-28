@@ -136,10 +136,11 @@ app.use((req, res, next) => {
 	if (!req.auth) return next();
 	if (whitelistRole.indexOf(req.originalUrl) >= 0) return next();
 	
-	roles.can(req, req.originalUrl,(err, permission) => {
+	roles.can(req, req.originalUrl,(err, permission) => {		
 		if (err) return output.print(req, res, err)
 		if (permission.granted) return next();
-
+		
+		
 		return output.print(req, res, { code: 'FORBIDDEN' })
 	})
 })
