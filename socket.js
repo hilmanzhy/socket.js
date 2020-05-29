@@ -619,7 +619,10 @@ io.on('connection', (socket) => {
                 if (!result) throw new Error("DEVICE_DISCONNECTED");
 				console.log(params);
 				
-                io.to(result.session_id).emit("upgrade_firmware", { firmware_url , firmware_version } );
+                io.to(result.session_id).emit("upgrade_firmware", { 
+					firmware_url: `${process.env.APP_URL}${firmware_url}` , 
+					firmware_version: firmware_version 
+				});
 
                 return fnOutput.insert(req, result, log);
             })
