@@ -4045,7 +4045,7 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 							let { firmware_id, path } = res[0];
 
 							data.firmware_version = firmware_id;
-							data.firmware_url = path.replace('/cdn/firmware/','');
+							data.firmware_url = path;
 
 							callback( null, data );
 						} else {
@@ -4073,8 +4073,6 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 				});
 			},
 			function upgradeFrimware( data, callback ) {
-				
-				console.log(data);
 				
 				socket.emit("upgrade_firmware", data);
 

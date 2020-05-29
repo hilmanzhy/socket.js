@@ -177,6 +177,35 @@ io.on('connection', (socket) => {
 				}).catch((err) => {
 					callback(err);
 				});
+			},
+			function sendNotification(data, callback) {
+				if ( flag_update == 1 ) {
+					let params = {
+						notif: {
+							title: "Upgrade Firmware",
+							body: `Device ${device_id} success upgrade firmware at ${vascommkit.time.now()}`,
+							tag: device_id
+						},
+						data: {
+							device_id, 
+							user_id, 
+							firmware_version
+						}
+					};
+
+					APP.request.sendNotif(APP.models, params, (err, res) => {
+						if (err) return callback(err);
+
+						log.message =
+							log.message + `\n> PUSH NOTIFICATION`;
+
+						callback(null, data);
+					});
+
+
+				} else {
+					callback(null, data);
+				}
 			}
 
 		], function (err, res) {
