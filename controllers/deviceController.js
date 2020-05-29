@@ -4139,7 +4139,7 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 							let { firmware_id, path } = res[0];
 
 							data.firmware_version = firmware_id;
-							data.firmware_url = `${process.env.APP_URL}${path}`;
+							data.firmware_url = path.replace('/cdn/firmware/','');
 
 							callback( null, data );
 						} else {
@@ -4150,8 +4150,6 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 						}
 					})	
 					.catch(err => {
-						console.log(err);
-						
 						callback({
 							code: "GENERAL_ERR",
 							message: JSON.stringify(err)
@@ -4169,7 +4167,8 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 				});
 			},
 			function upgradeFrimware( data, callback ) {
-				socket.emit( "upgrade_firmware", data );
+				
+				socket.emit("upgrade_firmware", data);
 
 				callback( null, {
 					code: 'OK',
