@@ -187,9 +187,9 @@ io.on('connection', (socket) => {
 							tag: device_id
 						},
 						data: {
-							device_id, 
-							user_id, 
-							firmware_version
+							device_id: device_id, 
+							user_id :user_id, 
+							firmware_version: firmware_version
 						}
 					};
 
