@@ -9,7 +9,6 @@ const vascommkit = require('vascommkit');
 const moment = require('moment');
 
 const request = require('../functions/request.js');
-const session = require('../functions/session.js');
 
 const cdnController = require('./cdnController');
 
@@ -4070,13 +4069,6 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 					if ( err ) return callback( err );
 
 					if ( result.data.last_version ) return callback( result );
-
-					callback( null, data );
-				});
-			},
-			function destroySession ( data, callback ) {
-				session.delete( APP, req, ( err, result ) =>{
-					if ( err ) return callback( err );
 
 					callback( null, data );
 				});

@@ -301,6 +301,7 @@ io.on('connection', (socket) => {
 			return callback(null, res);
 		})
 	});
+	
 	// Disconnect Device
 	socket.on("disconnect", function(reason) {
         let log = {},
