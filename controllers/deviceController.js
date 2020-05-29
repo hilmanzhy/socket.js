@@ -4074,6 +4074,8 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 			},
 			function upgradeFrimware( data, callback ) {
 				
+				console.log(data);
+				
 				socket.emit("upgrade_firmware", data);
 
 				callback( null, {

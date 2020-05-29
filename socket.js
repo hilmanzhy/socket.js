@@ -573,25 +573,24 @@ io.on('connection', (socket) => {
 	 * @desc This event handle Upgrade Firmware from Apps to Device
 	 * 
 	 * @param {objects} params {device_id, firmware_name}
-	 * @param {objects} callback {code, message}
 	 */
 	socket.on("upgrade_firmware", params => {
         let log = {},
             req = {},
-            { device_id, firmware_name } = params,
-            firmware_url = `${process.env.APP_URL}/cdn/firmware/${firmware_name}`;
+            { device_id, firmware_version, firmware_url, device_type } = params;
 
         req.APP = APP;
         req.event = `upgrade_firmware`;
         log.body = req.body = params;
         log.info = "UPGRADE FIRMWARE";
-        log.level = { error: false };
+		log.level = { error: false };		
 
         DeviceSession.findOne({ device_id })
             .then(result => {
                 if (!result) throw new Error("DEVICE_DISCONNECTED");
-
-                io.to(result.session_id).emit("upgrade_firmware", { firmware_url });
+				console.log(params);
+				
+                io.to(result.session_id).emit("upgrade_firmware", { firmware_url , firmware_version } );
 
                 return fnOutput.insert(req, result, log);
             })
