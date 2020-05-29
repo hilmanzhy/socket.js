@@ -112,8 +112,9 @@ app.use((req, res, next) => {
 
 	if (whitelist.indexOf(req.originalUrl) >= 0) return next()
 	else if (req.queryUrl && whitelist.indexOf(req.queryUrl[0]) >= 0) return next();
-	else if (req.get('session-key') && req.get('session-key') == 'device' ) return next();
-	else if (req.method === 'GET') return next();
+	/** Disable Session Device for a while */
+	// else if (req.get('session-key') && req.get('session-key') == 'device' ) return next();
+	// else if (req.method === 'GET') return next();
 	else {
 		session.check(req.APP, req, (err, result) => {
 			if (err) {

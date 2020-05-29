@@ -1,6 +1,6 @@
 "use strict";
 
-const validateJS = require('validate.js');
+const moment = require('moment');
 
 exports.username = function (str) {
 	return (!str || str == '' || str.length < 4 || typeof str !== 'string' || / /g.test(str) || str.length > 20)
@@ -33,7 +33,7 @@ exports.password = function (str) {
 };
 
 exports.name = function (str) {
-	return (!str || str == '' || str.length < 6 || (str && typeof str !== 'string'))
+	return (!str || str == '' || str.length < 6 || (str && typeof str !== 'string') || !/[^A-Za-z0-9\s]/.test(str) )
 		? {
 			code: 'INVALID_REQUEST',
 			data: {
@@ -51,3 +51,29 @@ exports.phone = function (str) {
 			}
 		} : true;
 };
+
+exports.number = (str) => isNaN(str) ? false : true;
+
+exports.date = (str) => moment(str).isValid();
+
+exports.device_id = (str) =>
+    (str && typeof str !== "string") ||
+	// Below regex only accept Letters and Numbers
+    /[^A-Za-z0-9-_\s]/.test(str)
+        ? false
+		: true;
+		
+exports.device_name = (str) =>
+	(str && typeof str !== "string") ||
+	// Below regex only accept Letters and Numbers with whitespaces
+    /[^A-Za-z0-9\s]/.test(str)
+        ? false
+		: true;
+		
+exports.ip_address = (str) =>
+	// Below regex only accept valid format IP Address
+	!/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(str)
+		? false
+		: true;
+
+exports.pin = (str) => (str.length > 2 || isNaN(str) ? false : true);

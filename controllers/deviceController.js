@@ -13,6 +13,7 @@ const request = require('../functions/request.js');
 const cdnController = require('./cdnController');
 
 const Device = APP => APP.models.mysql.device
+const DevicePIN = APP => APP.models.mysql.device_pin
 const User = APP => APP.models.mysql.user
 
 let socket = io(process.env.SOCKET_URL);
@@ -863,44 +864,37 @@ exports.devicedetail = function (APP, req, callback) {
 };
 
 exports.pindetail = function (APP, req, callback) {
-	
-	var datareq = req.body
-	var response = {}
-	const Device = APP.models.mysql.device_pin
+    let { device_id, pin } = req.body,
+        { user_id } = req.auth;
 
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
+    query.where = {
+        user_id: user_id,
+        device_id: device_id,
+        pin: pin,
+    };
+    query.attributes = {
+        exclude: ["created_at", "updated_at"],
+        include: [["id", "pin_id"]],
+    };
 
-	console.log(datareq)
+    DevicePIN(APP)
+        .findAll(query)
+        .then((device) => {
+            callback(null, {
+                code: device && device.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: device,
+            });
 
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
-	
-	query.where = { 
-		user_id : datareq.user_id,
-		device_id : datareq.device_id,
-		pin : datareq.pin
-	}
-	query.attributes = { exclude: ['created_at', 'updated_at'] }
-	
-	Device.findAll(query).then(device => {
-		console.log(device)
-		
-		return callback(null, {
-			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : device
-		});
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: err.message,
+            });
 
-	}).catch((err) => {
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
+            return;
+        });
 };
 
 exports.updatename = function (APP, req, callback) {
@@ -1005,103 +999,51 @@ exports.updatename = function (APP, req, callback) {
 };
 
 exports.devicehistory = function (APP, req, callback) {
-	// const DeviceHistory = APP.models.mysql.device_history
-	var response = {},
-		params = req.body
+    let { user_id } = req.auth,
+        {
+            device_id,
+            device_ip,
+            device_name,
+            date_from,
+            date_to,
+            offset,
+            limit,
+            sort,
+        } = req.body,
+        sp =
+            "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort)";
 
-	// query = {
-	// 	attributes : { exclude: ['created_at', 'updated_at'] },
-	// 	where : {
-	// 		user_id : params.user_id,
-	// 		date: {
-	// 			[APP.db.Sequelize.Op.between]: [params.date_from, `${params.date_to} 23:59:59`]
-	// 		  }
-	// 	}
-	// }
+    APP.db.sequelize
+        .query(sp, {
+            replacements: {
+                user_id: user_id,
+                device_id: device_id || "",
+                device_ip: device_ip || "",
+                device_name: device_name || "",
+                date_from: date_from,
+                date_to: date_to,
+                offset: offset || "",
+                limit: limit || "",
+                sort: sort || "",
+            },
+            type: APP.db.sequelize.QueryTypes.RAW,
+        })
+        .then((data) => {
+            callback(null, {
+                code: data && data.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: data,
+            });
 
-	// if (params.device_id) query.where.device_id = params.device_id
-	// if (params.pin) query.where.pin = params.pin
-	
-	// var query = "select device_id, device_ip, IFNULL(pin,'-') as pin, device_name, device_type, switch, date from device_history where user_id = '" + params.user_id + "' and date > '" + params.date_from + "' and date < '" + params.date_to + "'"
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: err.message,
+            });
 
-	// if (params.device_id != '')
-	// {
-	// 	query = query + " and device_id = '" + params.device_id + "'"
-	// }
-
-	// if (params.pin != '')
-	// {
-	// 	query = query + " and pin = '" + params.pin + "'"
-	// }
-	
-	// APP.db.sequelize.query(query, { type: APP.db.sequelize.QueryTypes.SELECT})
-	
-	// .then(device => {	
-
-	var sp = "CALL `sitadev_iot_2`.`get_shared_device_history`(:user_id, :device_id, :device_ip, :device_name, :date_from, :date_to, :offset, :limit, :sort);";
-
-	APP.db.sequelize
-	.query(sp, {
-		replacements: {
-			user_id: params.user_id,
-			device_id: params.device_id,
-			device_ip: params.device_ip,
-			device_name: params.device_name,
-			date_from: params.date_from,
-			date_to: params.date_to,
-			offset: params.offset,
-			limit: params.limit,
-			sort: params.sort
-		},
-		type: APP.db.sequelize.QueryTypes.RAW
-	})
-	// .then((device) => {
-	// 	let Model = APP.models.mysql.device;
-	// 	let data = device.map( history => {
-	// 		query = {
-	// 			attributes : ['icon_id'],
-	// 			raw: true,
-	// 			where : {
-	// 				user_id : history.user_id,
-	// 				device_id : history.device_id
-	// 			}
-	// 		}
-			
-	// 		history = history.toJSON();
-	// 		history.icon_id = null;
-
-	// 		if (history.pin) {
-	// 			Model = APP.models.mysql.device_pin
-	// 			query.where.pin = history.pin
-	// 		}
-
-	// 		return Model.findOne(query).then((result) => {
-	// 			history.icon_id = result.icon_id;
-
-	// 			return history;
-	// 		}).catch((err) => {
-	// 			throw new Error(err)
-	// 		});
-	// 	})
-
-	// 	return Promise.all(data)
-	// })
-	.then((data) => {
-		response = {
-			code : (data && (data.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-			data : data
-		}
-		return callback(null, response);
-	}).catch((err) => {
-		console.log(err);
-		
-		response = {
-			code: 'ERR_DATABASE',
-			data: JSON.stringify(err)
-		}
-		return callback(response);
-	});
-	
+            return;
+        });
 };
 
 exports.commandpanel = function (APP, req, callback) {
@@ -1703,88 +1645,52 @@ exports.runtimereportperdev = function (APP, req, callback) {
 };
 
 exports.runtimereportdaily = function (APP, req, callback) {
-  
-	var datareq = req.body
-	console.log(datareq);
-	var response = {}
-	
-	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_from) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.date_to) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.type) return callback({ code: 'MISSING_KEY' })
-	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
-	
-	var date = new Date();
-	date.setHours(date.getHours());
-	console.log(date);
+    let { device_id, date_from, date_to, type } = req.body,
+        { user_id } = req.auth,
+        sp,
+        params = {
+            user_id: user_id,
+            device_id: device_id,
+            date_from: date_from,
+            date_to: date_to,
+        };
 
-	if (datareq.type == '0')
-	{
-		console.log('runtimereport_perdevice')
-		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)',
-			{ 
-				replacements: {
-					user_id: datareq.user_id,
-					device_id: datareq.device_id,
-					date_from: datareq.date_from,		
-					date_to: datareq.date_to
-				}, 
-				type: APP.db.sequelize.QueryTypes.RAW 
-			}
-		)
+    switch (type) {
+        case "0":
+            sp =
+                "CALL sitadev_iot_2.runtimereport_device_perday (:user_id, :device_id, :date_from, :date_to)";
 
-		.then(device => {
+            break;
 
-			return callback(null, {
-				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data : device
-			});
+        case "1":
+            sp =
+                "CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)";
+            params.pin = req.body.pin;
 
-		}).catch((err) => {
+            break;
+    }
 
-			response = {
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			}
-			return callback(response);
-			
-		});
-	}
-	else
-	{
-		console.log('runtimereport_perdevice')
-		APP.db.sequelize.query('CALL sitadev_iot_2.runtimereport_pin_perday (:user_id, :device_id, :pin, :date_from, :date_to)',
-			{ 
-				replacements: {
-					user_id: datareq.user_id,
-					device_id: datareq.device_id,
-					pin : datareq.pin,
-					date_from: datareq.date_from,		
-					date_to: datareq.date_to
-				}, 
-				type: APP.db.sequelize.QueryTypes.RAW 
-			}
-		)
+    APP.db.sequelize
+        .query(sp, {
+            replacements: params,
+            type: APP.db.sequelize.QueryTypes.RAW,
+        })
+        .then((device) => {
+            callback(null, {
+                code: device && device.length > 0 ? "FOUND" : "NOT_FOUND",
+                data: device,
+            });
 
-		.then(device => {
+            return;
+        })
+        .catch((err) => {
+            callback({
+                code: "ERR_DATABASE",
+                data: JSON.stringify(err),
+            });
 
-			return callback(null, {
-				code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
-				data : device
-			});
-
-		}).catch((err) => {
-
-			response = {
-				code: 'ERR_DATABASE',
-				data: JSON.stringify(err)
-			}
-			return callback(response);
-			
-		});
-	}
-	
+            return;
+        });
 };
 
 exports.totalruntime = function(APP, req, callback) {
@@ -3187,7 +3093,7 @@ exports.check = function (APP, req, callback) {
             });
         })
         .catch(e => {
-			console.log("ERR CHECK DEVICE", err)
+			console.log("ERR CHECK DEVICE", e)
 			
             switch (e.message) {
                 case "1":
