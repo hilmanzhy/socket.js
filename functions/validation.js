@@ -33,7 +33,8 @@ exports.password = function (str) {
 };
 
 exports.name = function (str) {
-	return (!str || str == '' || str.length < 6 || (str && typeof str !== 'string') || !/[^A-Za-z0-9\s]/.test(str) )
+
+	return (!str || str == '' || str.length < 6 || (str && typeof str !== 'string') )
 		? {
 			code: 'INVALID_REQUEST',
 			data: {
