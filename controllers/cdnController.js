@@ -4,6 +4,7 @@ const async = require('async');
 const randomString = require('randomstring');
 // Internal Library
 const path = require('path');
+const fs = require('fs');
 
 
 
@@ -29,25 +30,41 @@ exports.uploadCDN = ( APP, req, callback ) =>{
                 try {
                     // Declare Variable
                     let { mv, name, mimetype } = req.files.file;
-                    let fileName = randomString.generate( 10 ) + path.extname( name );
+                    //let fileName = randomString.generate( 10 ) + path.extname( name );
 
                     data.mv = mv;
-                    data.fileName = fileName;
+                    data.fileName = name;
 
                     callback( null, data );
 
                 } catch ( err ) {
-                    callback(null, {
+
+                    callback({
                         code: "INVALID_REQUEST",
                         message: "File tidak ada",
                         info: err
                     });
                 }
             },
+            function deleteFile( data, callback ) {
+                let { fileName } = data;
+
+                let listFile = fs.readdirSync( path.join( __dirname, `../public/cdn/${folder_name}` ) );
+                let cekFile = listFile.filter( x => x == fileName );
+
+                if ( cekFile.length > 0 ) {
+                    fs.unlinkSync( path.join( __dirname, `../public/cdn/${folder_name}/`, fileName ) );
+
+                    callback( null, data );
+                } else {
+                    callback( null, data );
+                }    
+            },
             function uploadFile( data, callback ) {
                 // Declare Variable
                 let { mv, fileName } = data;
                 let directory = path.join( __dirname, `../public/cdn/${folder_name}/`, fileName );
+                
 
                 // Move file to directory
                 mv( directory, ( err, result ) => {
