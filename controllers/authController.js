@@ -225,16 +225,18 @@ exports.register = function (APP, req, callback) {
 
         function create(data, callback) {
             var query = APP.queries.insert('user', req, APP.models)
+
+            query.level_id = '2'
             
-            switch (req.get('session-key')) {
-                case 'apps':
-                    query.level_id = '3'
-                    break;
+            // switch (req.get('session-key')) {
+            //     case 'apps':
+            //         query.level_id = '3'
+            //         break;
             
-                case 'web':
-                    query.level_id = '2'
-                    break;
-            }
+            //     case 'web':
+            //         query.level_id = '2'
+            //         break;
+            // }
             
             User(APP)
                 .create(query)

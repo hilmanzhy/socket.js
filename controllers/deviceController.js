@@ -1730,8 +1730,8 @@ exports.totalruntime = function(APP, req, callback) {
         .then(resultSP => {
             data.total_kwh = resultSP[0].total_kwh;
             data.total_harga = resultSP[0].total_harga;
-            data.token = resultSP[0].token;
-
+			data.token = resultSP[0].token;
+			
             async.parallel(
                 [
                     function validateKWH(cb) {
@@ -1746,7 +1746,10 @@ exports.totalruntime = function(APP, req, callback) {
                     function validateCost(cb) {
                         APP.roles.can(req, "/totalruntime/cost", (err, permission) => {
                             if (err) return cb(err);
-                            if (!permission.granted) delete data.total_harga;
+							if (!permission.granted) delete data.total_harga;
+							
+							console.log(permission);
+							
 
                             cb(null, data);
                         });
@@ -1774,6 +1777,7 @@ exports.totalruntime = function(APP, req, callback) {
 					 */
                 ],
                 function(err, res) {
+
                     if (err)
                         return callback({
                             code: "GENERAL_ERR",
@@ -3886,6 +3890,8 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 exports.cekVersion = ( APP, req, callback ) => {
 	let { device_id } = req.body;
 	let { device, firmware_device } = APP.models.mysql;
+
+	device.belongsTo( firmware_device, { foreignKey: 'firmware_id'} );
 	
 	async.waterfall(
 		[
@@ -3904,12 +3910,20 @@ exports.cekVersion = ( APP, req, callback ) => {
 				device
 					.findAll({
 						attributes: ['firmware_id','device_type','device_id'],
+						include: [
+							{
+								model: firmware_device,
+								attributes: ['created_at']
+							}
+						],
 						where: { device_id: device_id, user_id: req.auth.user_id }
 					})
 					.then(res => {
+
 						if ( res.length > 0 ) {
 							data.firmware_id = res[0].firmware_id;
 							data.device_type = res[0].device_type;
+							data.release_date = res[0].firmware_device ? res[0].firmware_device.created_at : null;
 
 							callback( null, data );
 						} else {
@@ -3930,7 +3944,7 @@ exports.cekVersion = ( APP, req, callback ) => {
 
 				firmware_device
 					.findAll({
-						attributes: ['firmware_id'],
+						attributes: ['firmware_id','created_at'],
 						where: { device_type: data.device_type },
 						order: [
 							['created_at','DESC']
@@ -3945,6 +3959,7 @@ exports.cekVersion = ( APP, req, callback ) => {
 									data: {
 										firmware_id: data.firmware_id,
 										new_firmware: res[0].firmware_id,
+										release_date: data.release_date,
 										last_version: true
 									}
 								});
@@ -3955,6 +3970,7 @@ exports.cekVersion = ( APP, req, callback ) => {
 									data: {
 										firmware_id: data.firmware_id,
 										new_firmware: res[0].firmware_id,
+										release_date: data.release_date,
 										last_version: false
 									}
 
