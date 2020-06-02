@@ -833,12 +833,9 @@ exports.devicedetail = function (APP, req, callback) {
 	if(!datareq.user_id) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.device_id) return callback({ code: 'MISSING_KEY' })
 
-	console.log(datareq)
-
 	var date = new Date();
 	date.setHours(date.getHours());
-	console.log(date);
-	
+
 	query.where = { 
 		user_id : datareq.user_id,
 		device_id : datareq.device_id,
@@ -846,8 +843,6 @@ exports.devicedetail = function (APP, req, callback) {
 	query.attributes = { exclude: ['created_at', 'updated_at'] }
 
 	Device.findAll(query).then(device => {
-		console.log(device)
-		
 		return callback(null, {
 			code : (device && (device.length > 0)) ? 'FOUND' : 'NOT_FOUND',
 			data : device
