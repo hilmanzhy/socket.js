@@ -3959,18 +3959,18 @@ exports.cekVersion = ( APP, req, callback ) => {
 									data: {
 										firmware_id: data.firmware_id,
 										new_firmware: res[0].firmware_id,
-										release_date: data.release_date,
+										release_date: res[0].created_at,
 										last_version: true
 									}
 								});
 							} else {
 								callback(null, {
 									code: "OK",
-									message: 'Outdated frimware needs updating',
+									message: 'Outdated firmware needs updating',
 									data: {
 										firmware_id: data.firmware_id,
 										new_firmware: res[0].firmware_id,
-										release_date: data.release_date,
+										release_date: res[0].created_at,
 										last_version: false
 									}
 
