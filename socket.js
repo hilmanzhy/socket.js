@@ -74,7 +74,7 @@ io.on('connection', (socket) => {
 	socket.on('handshake', (device) => {
 		let log = {}; 
 		let req = {};
-		let { device_id, user_id, firmware_version, flag_update } = device;
+		let { device_id, user_id, firmware_version, flag_update, device_name } = device;
 
 		req.APP = APP
 		req.event = `handshake`
@@ -196,7 +196,7 @@ io.on('connection', (socket) => {
 							let params = {
 								notif: {
 									title: "Upgrade Firmware",
-									body: `Device ${device_id} success upgrade firmware at ${vascommkit.time.now()}`,
+									body: `Device ${device_name} success upgrade firmware at ${vascommkit.time.now()}`,
 									tag: device_id
 								},
 								data: {
