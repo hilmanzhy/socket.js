@@ -1278,7 +1278,29 @@ exports.sensordata = function(APP, req, callback) {
                 if (params.device_type == "0") params.pin == "1";
 
                 callback(null, params);
-            },
+			},
+			
+			function getDevice(params, callback) {
+				Device
+					.findAll({ 
+						where: { device_id: params.device_id }
+					})
+					.then(res => {
+						if ( res.length > 0 ) {
+							params.device_name = res[0].device_name;
+							
+							callback(null, params);
+						} else {
+							callback({
+								code: 'NOT_FOUND',
+								message: 'Device_id not found'
+							});
+						}
+					})
+					.catch(err => {
+						callback(err);
+					});
+			},
 
             function updatingSensorStatus(params, callback) {
                 User.findOne(query.options)
@@ -1300,7 +1322,7 @@ exports.sensordata = function(APP, req, callback) {
                                 notif: {
                                     title: "Sensor Notice",
                                     body: `Sensor Notice on Device ID ${
-                                        params.device_id
+                                        params.device_name
                                     } PIN ${
                                         params.pin
                                     } at ${vascommkit.time.now()}`,
