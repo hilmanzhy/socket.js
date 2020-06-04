@@ -4023,14 +4023,22 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 			function getDataDevice ( data, callback ) {
 				device
 					.findAll({
-						attributes: ['device_type'],
+						attributes: ['device_type','is_connected'],
 						where: { device_id: device_id, user_id: user_id }
 					})
 					.then(res => {
 						if ( res.length > 0 ) {
+							let message = {
+								code: "INVALID_REQUEST",
+								message: 'device disconnected'
+							}
+
+							if ( res[0].is_connected != 1 ) return callback( message ); 
+
 							data.device_type = res[0].device_type;
 
-							callback( null, data );
+							callback( null, data );	
+							
 						} else {
 							callback({
 								code: "NOT_FOUND",

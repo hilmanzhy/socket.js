@@ -14,7 +14,8 @@ module.exports = function (sequelize, Sequelize) {
 			allowNull: false
 		},
 		firmware_id: {
-			type: Sequelize.STRING
+			type: Sequelize.STRING,
+			defaultValue: 0
 		},
 		device_ip: {
 			type: Sequelize.STRING,
