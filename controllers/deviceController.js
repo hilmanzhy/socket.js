@@ -1281,7 +1281,7 @@ exports.sensordata = function(APP, req, callback) {
 			},
 			
 			function getDevice(params, callback) {
-				Device
+				APP.models.mysql.device
 					.findAll({ 
 						where: { device_id: params.device_id }
 					})
@@ -1316,6 +1316,8 @@ exports.sensordata = function(APP, req, callback) {
                         return DevicePIN.update(query.value, query.options);
                     })
                     .then(updated => {
+						console.log(params.sensor_status);
+						
                         // NOTIF SENSOR UPDATE
                         if (params.sensor_status == '0' && updated[0] > 0 && params.notif == 1) {
                         	let notif = {
