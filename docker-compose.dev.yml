@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  app:
+  dev-sita:
     build:
       context: .
       dockerfile: Dockerfile
@@ -18,12 +18,10 @@ services:
     container_name: dev-sita
     image: gitlab.vascomm.co.id:4567/iot_ceria/sita_dev:latest_dev
     networks:
-      sita :
-        aliases:
-          - sita_core
+      - vascomm-app
     restart: always
 
 networks:
-  sita:
-    name: sita
+  vascomm-app:
+    name: vascomm-app
     driver: bridge
