@@ -1316,14 +1316,12 @@ exports.sensordata = function(APP, req, callback) {
                         return DevicePIN.update(query.value, query.options);
                     })
                     .then(updated => {
-						console.log(params.sensor_status);
-						
                         // NOTIF SENSOR UPDATE
                         if (params.sensor_status == '0' && updated[0] > 0 && params.notif == 1) {
                         	let notif = {
                                 notif: {
                                     title: "Sensor Notice",
-                                    body: `Sensor Notice on Device ID ${
+                                    body: `Sensor Notice on Device ${
                                         params.device_name
                                     } PIN ${
                                         params.pin
