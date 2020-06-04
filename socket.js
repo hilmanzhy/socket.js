@@ -10,6 +10,7 @@ const app = require('express')(),
 	  io = require('socket.io')(http),
 	  async = require('async'),
 	  chalk = require('chalk'),
+	  moment = require('moment'),
 	  vascommkit = require('vascommkit');
 /* CONFIG & FUNCTIONS */
 const db = require('./config/db.js'),
@@ -21,6 +22,7 @@ const db = require('./config/db.js'),
 const Device = require('./models/device.js')(db.sequelize, db.Sequelize),
 	  DevicePIN = require('./models/device_pin.js')(db.sequelize, db.Sequelize),
 	  User = require('./models/user.js')(db.sequelize, db.Sequelize),
+	  Notif = require('./models/mongo/notif.js')(db.mongo),
 	  DeviceSession = require('./models/mongo/device_session.js')(db.mongo),
 	  deviceController = require('./controllers/deviceController.js');
 /* DECLARATION */
@@ -147,7 +149,7 @@ io.on('connection', (socket) => {
 
 				Device.update({ is_connected : 1, firmware_id: firmware_version }, query.sql).then((result) => {
 					callback(null, data);
-				}).catch((err) => {
+				}).catch((err) => {					
 					callback(err);
 				});
 			},
@@ -180,35 +182,73 @@ io.on('connection', (socket) => {
 			},
 			function sendNotification(data, callback) {
 				if ( flag_update == 1 ) {
-					let params = {
-						notif: {
-							title: "Upgrade Firmware",
-							body: `Device ${device_id} success upgrade firmware at ${vascommkit.time.now()}`,
-							tag: device_id
-						},
-						data: {
-							device_id: device_id, 
-							user_id :user_id, 
-							firmware_version: firmware_version
-						}
-					};
+					User
+						.findAll({
+							attributes: ['device_key'],
+							where: { user_id: user_id }
+						})
+						.then(res => {
+							if (!res) return callback({
+								code : 'NOT_FOUND',
+								message : 'User Id Not Found'
+							});
 
-					APP.request.sendNotif(APP.models, params, (err, res) => {
-						if (err) return callback(err);
+							let params = {
+								notif: {
+									title: "Upgrade Firmware",
+									body: `Device ${device_id} success upgrade firmware at ${vascommkit.time.now()}`,
+									tag: device_id
+								},
+								data: {
+									device_id: device_id, 
+									user_id :user_id, 
+									device_key: res[0].device_key,
+									firmware_version: firmware_version
+								}
+							};
 
-						log.message =
-							log.message + `\n> PUSH NOTIFICATION`;
-
-						callback(null, data);
+							if ( res[0].device_key == "" || res[0].device_key == "null" ) {
+								Notif.create(
+									{
+										user_id: user_id,
+										notification: params.notif,
+										data: params.data,
+										date: moment().format("YYYY-MM-DD"),
+										time: moment().format("HH:mm:ss")
+									}
+								)
+								.then(res => {
+									callback(null, data);
+								})
+								.catch(err => {
+									console.log(err ,'2');
+									callback(err);
+								});
+							} else {
+								APP.request.sendNotif(APP.models, params, (err, res) => {
+									console.log(err ,'3');
+									
+									if (err) return callback(err);
+			
+									log.message =
+										log.message + `\n> PUSH NOTIFICATION`;
+			
+									callback(null, data);
+								});
+			
+							}
+					})
+					.catch(err => {
+						callback(err);
 					});
-
-
+	
 				} else {
 					callback(null, data);
 				}
 			}
 
 		], function (err, res) {
+
 			if (err) {
 				log.info = `${log.info} : ERROR`;
 				log.level = { error : true }

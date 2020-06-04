@@ -6,6 +6,30 @@ const async = require("async");
 const fs = require("fs");
 const path = require("path");
 const encryption = require('../functions/encryption.js');
+const io = require('socket.io-client');
+let socket = io(process.env.SOCKET_URL);
+
+router.post('/handshake', (req, res, next) => {
+    let data = {
+        device_id: "SitamotoDevice-v1_8-775",
+        user_id: "8",
+        device_ip: "192.168.1.6",
+        device_name: "Kamar 19",
+        device_type: "0",
+        pin: "1",
+        mac_address: "84:F3:EB:FC:95:6C",
+        firmware_version: "nalaj-v1.0.0",
+        flag_update: "1"
+    };
+    
+    socket.emit("handshake", data);
+
+	
+	return req.APP.output.print(req, res, {
+		code: 'OK',
+		data: data
+	});
+});
 
 router.post('/decrypt', (req, res, next) => {
 	let decrypted = encryption.decrypt(req.body.encrypted)

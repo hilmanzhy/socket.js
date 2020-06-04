@@ -107,6 +107,7 @@ exports.sendNotif = function(models, payload, callback) {
         };
 
     this.post(url, params, (err, res) => {
+        
         if (err) return callback(err);
 
         models.mongo.notif.create(
