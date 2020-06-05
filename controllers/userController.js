@@ -7,8 +7,7 @@ let query = {};
 output = {};
 
 exports.get = function(APP, req, callback) {
-    console.log('haloo');
-    
+
     let User = APP.models.mysql.user,
         queryOptions = {
             include: "user_level",
