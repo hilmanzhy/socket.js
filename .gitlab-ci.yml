@@ -43,8 +43,7 @@ production:
   script:
     # to set environtment production / testing
     - sed -i 's/development/production/' app.json
-    - docker-compose -f docker-compose.prod.yml build
-    - docker-compose -f docker-compose.prod.yml up -d --force-recreate
+    - docker-compose -f docker-compose.prod.yml up -d --force-recreate --build prod-sita
   tags:
     - production
   only:
