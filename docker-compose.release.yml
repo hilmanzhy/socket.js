@@ -18,12 +18,10 @@ services:
     container_name: release-sita
     image: gitlab.vascomm.co.id:4567/iot_ceria/sita_dev:latest_release
     networks:
-      sita :
-        aliases:
-          - sita_core
+      - vascomm-app
     restart: always
 
 networks:
-  sita:
-    name: sita
+  vascomm-app:
+    name: vascomm-app
     driver: bridge
