@@ -274,6 +274,18 @@ router.post('/devicehistory', (req, res, next) => {
 			code: "INVALID_REQUEST",
 			data: { invalid_parameter: "device_id" },
 		});
+
+	if (!valid.date(req.body.date_from))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "date_from" }
+		});
+	
+	if (!valid.date(req.body.date_to))
+        return req.APP.output.print(req, res, {
+            code: "INVALID_REQUEST",
+            data: { invalid_parameter: "date_to" }
+        });
 	
 	if (req.body.device_ip && !valid.ip_address(req.body.device_ip))
 		return req.APP.output.print(req, res, {
