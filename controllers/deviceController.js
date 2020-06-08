@@ -3819,9 +3819,9 @@ exports.updatestatusshare = function(APP, req, callback) {
 /* upload firmware device ( brian ) */
 exports.uploadFirmware = ( APP, req, callback ) =>{
 	let { device_type, firmware_id, description } = req.body;
-	let { firmware_device, users, device } = APP.models.mysql;
+	let { firmware_device, user, device } = APP.models.mysql;
 
-	device.belongTo( users, { foreignKey: 'user_id', });
+	device.belongsTo( user, { foreignKey: 'user_id', });
 
 	async.waterfall(
 		[
@@ -3845,7 +3845,7 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 							callback({
 								code: "INVALID_REQUEST",
 								message: "Gagal upload file",
-								data: {}
+								data: JSON.stringify(err)
 							});
 						} else {
 							callback( null, result );
@@ -3882,12 +3882,13 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 					});
 			},
 			function sendNotif( data, callback ) {
+				
 				device
 					.findAll({
 						attributes: ['user_id','device_id','device_name'],
 						include: [
 							{
-								model: users,
+								model: user,
 								attributes: ['device_key'],
 								required: true
 							}
@@ -3897,26 +3898,27 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 					.then(res => {
 						if ( res == 0 ) return callback( null, data );
 						
-						let notif = {
-							notif: {
-								title: "Sensor Notice",
-								body: `Sensor Notice on Device ${params.device_name} PIN ${params.pin} at ${vascommkit.time.now()}`,
-								tag: params.device_id,
-							},
-							data: {
-								user_id: params.user_id,
-								device_id: params.device_id,
-								device_key: params.device_key,
-							},
-						};
-						
 						try {
 							res.map( ( x, i ) => {
-								request.sendNotif(APP.models, notif, (err, res) => {
+								let notif = {
+									notif: {
+										title: "New Firmware",
+										body: `New Firmware on Device ${x.device_name} at ${vascommkit.time.now()}`,
+										tag: x.device_id,
+									},
+									data: {
+										user_id: x.user_id,
+										device_id: x.device_id,
+										device_name: x.device_name,
+										device_key: x.user.device_key,
+									},
+								};
+
+								request.sendNotif(APP.models, notif, (err, res_notif) => {
 									if (err) throw new ( err ); 
 	
-									console.log(`/ SENDING PUSH NOTIFICATION ${data_device.user_id} /`);
-
+									console.log(`/ SENDING PUSH NOTIFICATION ${x.user_id} /`);
+									
 									if ( i == res.length - 1 ) {
 										callback( null, data );
 									}
