@@ -670,6 +670,7 @@ exports.activate = function (APP, req, callback) {
 		},
 
 		function checkExistingUser(query, callback) {
+			
 			User.findOne(query.options).then((resultUser) => {
 				let pricing = resultUser.electricity_pricing
 
@@ -765,8 +766,10 @@ exports.activate = function (APP, req, callback) {
 			callback(null, output)
 		}
 	], (err, res) => {
-		if (err) return callback(err)
-		if (res) return callback(null, res)
+
+		if (err) return callback(err);
+
+		return callback(null, res)
 	})
 };
 
@@ -3816,12 +3819,14 @@ exports.updatestatusshare = function(APP, req, callback) {
 /* upload firmware device ( brian ) */
 exports.uploadFirmware = ( APP, req, callback ) =>{
 	let { device_type, firmware_id, description } = req.body;
-	let { firmware_device } = APP.models.mysql;
+	let { firmware_device, users, device } = APP.models.mysql;
+
+	device.belongTo( users, { foreignKey: 'user_id', });
 
 	async.waterfall(
 		[
 			function cekParam( callback ) {
-				if ( device_type && ( device_type == 0 || device_type == 1 ) && firmware_id && description ) {
+				if ( device_type && ( device_type == 0 || device_type == 1 || device_type == 3 ) && firmware_id && description ) {
 					callback( null, {} );
 				} else {
 					callback({
@@ -3867,6 +3872,61 @@ exports.uploadFirmware = ( APP, req, callback ) =>{
 							});
 						} else {
 							callback( null, data );
+						}
+					})
+					.catch(err => {
+						callback({
+							code: "GENERAL_ERR",
+							message: JSON.stringify(err)
+						});
+					});
+			},
+			function sendNotif( data, callback ) {
+				device
+					.findAll({
+						attributes: ['user_id','device_id','device_name'],
+						include: [
+							{
+								model: users,
+								attributes: ['device_key'],
+								required: true
+							}
+						],
+						where: { device_type: device_type }
+					})
+					.then(res => {
+						if ( res == 0 ) return callback( null, data );
+						
+						let notif = {
+							notif: {
+								title: "Sensor Notice",
+								body: `Sensor Notice on Device ${params.device_name} PIN ${params.pin} at ${vascommkit.time.now()}`,
+								tag: params.device_id,
+							},
+							data: {
+								user_id: params.user_id,
+								device_id: params.device_id,
+								device_key: params.device_key,
+							},
+						};
+						
+						try {
+							res.map( ( x, i ) => {
+								request.sendNotif(APP.models, notif, (err, res) => {
+									if (err) throw new ( err ); 
+	
+									console.log(`/ SENDING PUSH NOTIFICATION ${data_device.user_id} /`);
+
+									if ( i == res.length - 1 ) {
+										callback( null, data );
+									}
+								})
+							});	
+						} catch ( err ) {
+							callback({
+								code: "GENERAL_ERR",
+								message: JSON.stringify(err)
+							});
 						}
 					})
 					.catch(err => {
