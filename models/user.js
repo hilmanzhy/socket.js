@@ -40,6 +40,7 @@ module.exports = function (sequelize, Sequelize) {
             defaultValue: Sequelize.NOW
         },
         token: Sequelize.DOUBLE,
+        support_pal_id: Sequelize.INTEGER,
         notif_token_alert: {
             type: Sequelize.INTEGER,
             get: function() {
