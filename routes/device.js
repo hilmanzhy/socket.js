@@ -531,6 +531,7 @@ router.post('/runtimereportdaily', (req, res, next) => {
 });
 
 router.post("/runtimereport", (req, res, next) => {
+	
     if (!req.auth && !req.body.user_id)
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY",

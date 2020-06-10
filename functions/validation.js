@@ -55,7 +55,7 @@ exports.phone = function (str) {
 
 exports.number = (str) => isNaN(str) ? false : true;
 
-exports.date = (str) => moment(str).isValid();
+exports.date = (str) => ( moment(str).isValid() && str.match(/^\d{4}-(0?[1-9]|1[012])-(0?[1-9]|[12][0-9]|3[01])$/) ) ? true : false;
 
 exports.device_id = (str) =>
     (str && typeof str !== "string") ||
