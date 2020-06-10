@@ -5,7 +5,8 @@ const async = require('async'),
       request = require('../functions/request.js'),
       roles = require('../functions/roles.js'),
       session = require('../functions/session.js'),
-      validation = require('../functions/validation.js');
+      validation = require('../functions/validation.js'),
+      axios = require('axios');
 
 const User = APP => {
     return APP.models.mysql.user;
@@ -223,10 +224,77 @@ exports.register = function (APP, req, callback) {
             callback(null, true)
         },
 
-        function create(data, callback) {
+        function registerAdminToSupportPal(data, callback) {
+            let fullname = req.body.name.split(' ');
+            let firstname = fullname[0];
+            let lastname = fullname[fullname.length - 1];
+    
+            axios({
+                method: 'POST',
+                auth: {
+                    username: process.env.SUPP_TOKEN,
+                    password: ''
+                },
+                url: `${process.env.SUPP_HOST}/api/user/user`,
+                data: {
+                    brand_id: process.env.SUPP_BRAND_ID,
+                    firstname: firstname,
+                    lastname: lastname,
+                    email: req.body.email,
+                    password: req.body.password,
+                    organisation: 'SITAMOTO'
+                }
+            })
+            .then(res => {            
+                callback(null, res.data.data);
+            })
+            .catch(err => {                
+                if (err.response.data.status == 'error' && err.response.data.message == 'The email has already been taken.') {
+                    callback(null, true);
+                } else {
+                    callback({
+                        code: 'ERR',
+                        message: err.response.data.message,
+                        data: err
+                    }) 
+                }
+            })
+          },
+    
+          function getSupportPalId(data, callback) {
+            axios({
+              method: 'GET',
+              auth: {
+                username: process.env.SUPP_TOKEN,
+                password: ''
+              },
+              url: `${process.env.SUPP_HOST}/api/user/user?email=${req.body.email}&brand_id=${process.env.SUPP_BRAND_ID}`
+            })
+            .then(res => {
+              if (res.data.data.length == 0) {
+                callback({
+                  code: 'NOT_FOUND',
+                  message: 'Email not found!'
+                })
+              } else {                  
+                callback(null, res.data.data[0]);
+              }
+            })
+            .catch(err => {
+              console.log(err);
+              callback({
+                code: 'ERR',
+                message: err.response.data.message,
+                data: err
+              }) 
+            })
+          },
+
+        function create(data, callback) {            
             var query = APP.queries.insert('user', req, APP.models)
 
             query.level_id = '2'
+            query.support_pal_id = data.id
             
             // switch (req.get('session-key')) {
             //     case 'apps':
