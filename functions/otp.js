@@ -1,11 +1,12 @@
 const // External Library
       async = require('async'),
       vascommkit = require('vascommkit'),
+      moment = require('moment'),
       // Internal Library
       datetime = require('../functions/datetime.js'),
       // Declare Variable
-      OTP = (APP) => APP.models.mongo.otp,
-      dateNow = new Date();
+      OTP = (APP) => APP.models.mongo.otp
+      
 
 /**
  * Generate OTP
@@ -42,10 +43,10 @@ exports.create = function (APP, req, callback) {
                             requestUnit = process.env.OTP_REQUEST_UNIT;
                             requestMax = parseInt(process.env.OTP_REQUEST_ATTEMPT_MAX)
 
-                        // Call function declaration
-                        let timeDiff = parseInt(datetime.timeDiff(dateOTP, dateNow, requestUnit));
+                        // Call function declaration                        
+                        let timeDiff = parseInt(datetime.timeDiff(dateOTP, new Date(), requestUnit));
                             isToday = datetime.isToday(dateOTP)
-
+                            
                         // If request OTP before, less than terms
                         if (timeDiff < requestLimit) return callback({ message: "Wait a minute to request new OTP!" });
                         // If request OTP attempt more than termss today
@@ -216,9 +217,7 @@ exports.validate = function (APP, req, callback) {
                  *
                  * @param {err, res} callback
                  */
-                function otpExpired(callback) {
-                    console.log('halo aku masuk sini lo');
-                    
+                function otpExpired(callback) {                    
                     let expiredDuration = parseInt(
                             process.env.OTP_EXPIRED_DURATION
                         ),
@@ -226,7 +225,7 @@ exports.validate = function (APP, req, callback) {
                         timeDiff = parseInt(
                             datetime.timeDiff(
                                 result.updatedAt,
-                                dateNow,
+                                new Date(),
                                 expiredUnit
                             )
                         );
@@ -248,9 +247,7 @@ exports.validate = function (APP, req, callback) {
                 },
             ],
             (err, res) => {
-                if (err) return callback(err);
-                console.log('udah masuk paling akhir');
-                
+                if (err) return callback(err);                
                 callback(null, {
                     code: "OK",
                     message: "OTP match",
