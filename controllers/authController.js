@@ -224,7 +224,7 @@ exports.register = function (APP, req, callback) {
             callback(null, true)
         },
 
-        function registerAdminToSupportPal(data, callback) {
+        function registerToSupportPal(data, callback) {
             let fullname = req.body.name.split(' ');
             let firstname = fullname[0];
             let lastname = fullname[fullname.length - 1];
@@ -413,7 +413,7 @@ exports.changepassword = function (APP, req, callback) {
             query.value = { password : data.encrypted.new_password }
 
             APP.models.mysql.user.update(query.value, query.options).then((user) => {
-               callback( null , {});
+               callback( null , data);
             }).catch((err) => {
                 callback({
                     code    : 'ERR_DATABASE',
@@ -425,7 +425,14 @@ exports.changepassword = function (APP, req, callback) {
 
         
         function getUser( data , callback ) {
-            
+            //new query option after change password succed
+            query.options = {
+                where : {
+                    username        : data.username,
+                    password        : data.encrypted.new_password
+                }
+            }
+
             APP.models.mysql.user.findOne(query.options).then((user) => {
                 if (!user) {
                     return callback({ code : 'INVALID_REQUEST', message : 'User not found!' })

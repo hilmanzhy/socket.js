@@ -217,6 +217,8 @@ exports.validate = function (APP, req, callback) {
                  * @param {err, res} callback
                  */
                 function otpExpired(callback) {
+                    console.log('halo aku masuk sini lo');
+                    
                     let expiredDuration = parseInt(
                             process.env.OTP_EXPIRED_DURATION
                         ),
@@ -239,11 +241,16 @@ exports.validate = function (APP, req, callback) {
                         deleteOTP(APP, rows, (err, res) => {
                             if (err) return callback(err);
                         });
+
+                    callback();
+
+                    return;
                 },
             ],
             (err, res) => {
                 if (err) return callback(err);
-
+                console.log('udah masuk paling akhir');
+                
                 callback(null, {
                     code: "OK",
                     message: "OTP match",
