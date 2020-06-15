@@ -4,7 +4,7 @@ services:
   prod-sita:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     volumes:
       # - ./:/usr/src/app
       # - /usr/src/app/node_modules
