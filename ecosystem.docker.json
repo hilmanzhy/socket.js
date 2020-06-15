@@ -5,6 +5,8 @@
 		"script": "app.js",
 		"log_date_format": "YYYY-MM-DD HH:mm:ss Z",
 		"merge_logs": true,
+		"out_file" : "/dev/null",
+		"error_file" : "/dev/null",
 		"log_file": "/usr/src/log/sita_core.log"
 	},
 	{
@@ -12,6 +14,8 @@
 		"script": "socket.js",
 		"log_date_format": "YYYY-MM-DD HH:mm:ss Z",
 		"merge_logs": true,
+		"out_file" : "/dev/null",
+		"error_file" : "/dev/null",
 		"log_file": "/usr/src/log/sita_socket.log"
 	}]
 }
