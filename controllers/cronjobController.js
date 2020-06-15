@@ -339,6 +339,17 @@ module.exports = function () {
             });
     });
 
+    // Scheduler report hsitory
+    scheduler.scheduleJob('0 * * * * *', ( time ) => {
+        console.log('haloo');
+        let end_date = moment().endOf('month').format('YYYY-MM-DD');
+        let now = moment().format('YYYY-MM-DD');
+
+        if ( now == end_date ) {
+               
+        }
+    });
+
     // Scheduler Connected Device
     // scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
     //     let Device = APP.models.mysql.device
