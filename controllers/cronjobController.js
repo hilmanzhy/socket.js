@@ -341,13 +341,85 @@ module.exports = function () {
 
     // Scheduler report hsitory
     scheduler.scheduleJob('0 * * * * *', ( time ) => {
-        console.log('haloo');
+        let start_date = moment().startOf('month').format('YYYY-MM-DD');
         let end_date = moment().endOf('month').format('YYYY-MM-DD');
         let now = moment().format('YYYY-MM-DD');
+        let { device_report } = APP.models.mysql;
 
         if ( now == end_date ) {
-               
+            async.waterfall(
+                [
+                    function getDataDeviceReport( callback ) {
+                        device_report
+                            .findAll({
+                                where: {
+                                    date: { $between: [ start_date, end_date ] }
+                                }
+                            })
+                            .then(res => {
+                                if ( res.length == 0 ) return callback({
+                                    code: 'NOT_FOUND',
+                                    message: 'Data device report not found'
+                                });
+
+                                console.log(res, 'data');
+                                
+                                callback( null, {
+                                    data_report: res
+                                });
+                            })
+                            .catch(err => {
+                                callback({
+                                    code: 'ERR',
+                                    message: 'Error get device report',
+                                    data: JSON.stringify( err )
+                                });
+                            });
+                    }
+                ],
+                function ( err, result ) {
+                    if ( err ) return console.log( err ,'error cron report history' );
+
+                    return console.log( result , 'success cron report history')
+                }
+            );   
         }
+
+        async.waterfall(
+            [
+                function getDataDeviceReport( callback ) {
+                    device_report
+                        .findAll({
+                            where: {
+                                date: { $between: [ start_date, end_date ] }
+                            }
+                        })
+                        .then(res => {
+                            if ( res.length == 0 ) return callback({
+                                code: 'NOT_FOUND',
+                                message: 'Data device report not found'
+                            });
+
+                            callback( null, {
+                                data_report: {}
+                            });
+                        })
+                        .catch(err => {
+                            callback({
+                                code: 'ERR',
+                                message: 'Error get device report',
+                                data: JSON.stringify( err )
+                            });
+                        });
+                }
+            ],
+            function ( err, result ) {
+                if ( err ) return console.log( err ,'error cron report history' );
+
+                return console.log( result , 'success cron report history')
+            }
+        );   
+
     });
 
     // Scheduler Connected Device
