@@ -8,6 +8,7 @@ services:
     volumes:
       # - ./:/usr/src/app
       # - /usr/src/app/node_modules
+      - /home/apps/config_env/iot_ceria/sita_dev/.env:/usr/src/app/.env.production
       - /home/apps/logs_pm2:/usr/src/log
       # digunakan untuk backend cdn (simpan gambar)
       - /home/apps/cdn_image/sita_dev:/usr/src/app/public/cdn
