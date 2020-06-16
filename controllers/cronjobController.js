@@ -2,6 +2,7 @@ const async = require("async"),
     moment = require("moment"),
     sequelize = require("sequelize"),
     scheduler = require("node-schedule");
+const { unstable_renderSubtreeIntoContainer } = require("react-dom");
 
 const db = require("../config/db.js"),
     datetime = require("../functions/datetime.js"),
@@ -340,11 +341,13 @@ module.exports = function () {
     });
 
     // Scheduler report hsitory
-    scheduler.scheduleJob('0 * * * * *', ( time ) => {
+    scheduler.scheduleJob('* 59 23 * * *', ( time ) => {
         let start_date = moment().startOf('month').format('YYYY-MM-DD');
         let end_date = moment().endOf('month').format('YYYY-MM-DD');
         let now = moment().format('YYYY-MM-DD');
-        let { device_report } = APP.models.mysql;
+        let { device_report, user, electricity_pricing, report_history } = APP.models.mysql;
+
+        user.belongsTo( electricity_pricing, { foreignKey: 'tdl_id' } );
 
         if ( now == end_date ) {
             async.waterfall(
@@ -352,18 +355,26 @@ module.exports = function () {
                     function getDataDeviceReport( callback ) {
                         device_report
                             .findAll({
+                                attributes: [
+                                    'user_id',
+                                    [sequelize.fn('sum', sequelize.col('kwh')), 'total_kwh'], 
+                                ],
                                 where: {
-                                    date: { $between: [ start_date, end_date ] }
-                                }
+                                    date: { [sequelize.Op.between]: [ start_date, end_date ] }
+                                },
+                                group: ['user_id']
                             })
                             .then(res => {
                                 if ( res.length == 0 ) return callback({
                                     code: 'NOT_FOUND',
-                                    message: 'Data device report not found'
+                                    message: 'Data device report not found',
+                                    payloadLog: {
+                                        info: 'REPORT HSITORY END OF MONTH',
+                                        message: 'Data device report not found',
+                                        level: { error: false }
+                                    }
                                 });
-
-                                console.log(res, 'data');
-                                
+    
                                 callback( null, {
                                     data_report: res
                                 });
@@ -372,54 +383,232 @@ module.exports = function () {
                                 callback({
                                     code: 'ERR',
                                     message: 'Error get device report',
+                                    payloadLog: {
+                                        info: 'REPORT HSITORY END OF MONTH',
+                                        message: 'Error get device report',
+                                        level: { error: true }
+                                    },
                                     data: JSON.stringify( err )
                                 });
                             });
-                    }
-                ],
-                function ( err, result ) {
-                    if ( err ) return console.log( err ,'error cron report history' );
-
-                    return console.log( result , 'success cron report history')
-                }
-            );   
-        }
-
-        async.waterfall(
-            [
-                function getDataDeviceReport( callback ) {
-                    device_report
-                        .findAll({
-                            where: {
-                                date: { $between: [ start_date, end_date ] }
-                            }
-                        })
-                        .then(res => {
-                            if ( res.length == 0 ) return callback({
-                                code: 'NOT_FOUND',
-                                message: 'Data device report not found'
-                            });
-
-                            callback( null, {
-                                data_report: {}
-                            });
+                    },
+                    function calcTotalRupiah( data, callback ) {
+                        let { data_report } = data;
+                        let data_insert = [];
+    
+                        Promise.all(
+                            data_report.map( x => {
+                                return user
+                                    .findAll({
+                                        attributes: ['email','user_id','device_key','name'],
+                                        include: [
+                                            {
+                                                model: electricity_pricing,
+                                                attributes: ['rp_lbwp'],
+                                                required: true
+                                            }
+                                        ],
+                                        where: { user_id: x.user_id }
+                                    })
+                                    .then(res => {
+    
+                                        let rp_lbwp = res[0].electricity_pricing.rp_lbwp || 0;
+                                        let total_rp = rp_lbwp * data_report[0].dataValues.total_kwh;
+    
+                                        data_insert.push({
+                                            user_id: x.user_id,
+                                            total_kwh: ( data_report[0].dataValues.total_kwh ).toFixed(2),
+                                            total_rp: Math.round ( total_rp * 100 ) / 100,
+                                            year: moment().format('YYYY'),
+                                            month: parseInt( moment().format('MM') ),
+                                            rp_lbwp: rp_lbwp,
+                                            email: res[0].email,
+                                            device_key: res[0].device_key,
+                                            name: res[0].name
+                                        });
+    
+                                        return true;
+                                    });
+                            })
+                        )
+                        .then(res_promise => {
+                            data.data_insert = data_insert;
+    
+                            callback( null, data );
                         })
                         .catch(err => {
                             callback({
                                 code: 'ERR',
-                                message: 'Error get device report',
+                                message: 'Error get eletrcity pricing',
+                                payloadLog: {
+                                    info: 'REPORT HSITORY END OF MONTH',
+                                    message: 'Error get eletrcity pricing',
+                                    level: { error: true }
+                                },
                                 data: JSON.stringify( err )
                             });
                         });
+                    },
+                    function insertReportHistory( data, callback ) {
+                        report_history
+                            .bulkCreate( data.data_insert )
+                            .then(res => {
+                                callback( null, data );
+                            })
+                            .catch(err => {    
+                                callback({
+                                    code: 'ERR',
+                                    message: 'Error insert report history',
+                                    payloadLog: {
+                                        info: 'REPORT HSITORY END OF MONTH',
+                                        message: 'Error insert report history',
+                                        level: { error: true }
+                                    },
+                                    data: JSON.stringify( err )
+                                });
+                            });
+                    },
+                    function compareReport( data, callback ) {
+                        let { data_insert } = data;
+    
+                        Promise.all(
+                            data_insert.map( x => {
+                                return report_history
+                                    .findAll({
+                                        attributes: ['total_kwh'],
+                                        where: { user_id: x.user_id, month: ( x.month - 1 ) }
+                                    })
+                                    .then(res => {
+    
+                                        if ( res.length > 0 ) {
+                                            let total_kwh = res[0].total_kwh || 0;
+    
+                                            x.old_total_kwh = total_kwh;
+                                            x.exceeded_last_month = x.total_kwh > total_kwh ? true : false;    
+                                        } else {
+                                            x.old_total_kwh = 0;
+                                            x.exceeded_last_month = false;    
+                                        }
+    
+                                        return true;
+                                    });
+                            })
+                        )
+                        .then(res_promise => {
+                            callback( null, data );
+                        })
+                        .catch(err => {
+                            callback({
+                                code: 'ERR',
+                                message: 'Error compare report history',
+                                payloadLog: {
+                                    info: 'REPORT HSITORY END OF MONTH',
+                                    message: 'Error compare report history',
+                                    level: { error: true }
+                                },
+                                data: JSON.stringify( err )
+                            });
+                        });
+                    },
+                    function sendMailReport( data, callback ) {
+                        let { data_insert } = data;
+    
+                        try {
+                            data_insert.map( ( x, i ) => {
+                                let payload = {
+                                    to      : x.email,
+                                    subject : `Report end of month`,
+                                    html    : {
+                                        file    : 'report_history.html',
+                                        data    : {
+                                            name    : x.name,
+                                            cdn_url : `${ process.env.APP_URL }/cdn`,
+                                            total_kwh: x.total_kwh,
+                                            tota_rp: x.total_rp
+                                        }
+                                    }
+                                }
+    
+                                request.sendEmail( payload, ( err, res ) => {
+                    
+                                    if ( err ) throw new Error( err );
+    
+                                    if ( i == data_insert.length - 1 ) {
+                                        callback( null, data );
+                                    }
+                                })
+                            });
+                        } catch ( err ) {
+                            callback({
+                                code: 'ERR',
+                                message: 'failed to send mail',
+                                payloadLog: {
+                                    info: 'REPORT HSITORY END OF MONTH',
+                                    message: 'failed to send mail',
+                                    level: { error: true }
+                                },
+                                data: JSON.stringify( err )
+                            });
+                        }
+                    },
+                    function sendNotif( data, callback ) {
+                        let { data_insert } = data;
+    
+                        try {
+                            data_insert.map( ( x, i ) => {
+    
+                                let payloadNotif = {
+                                    notif: {
+                                        title: "monthly usage notification",
+                                        body:  x.total_kwh == 0 && x.exceeded_last_month == false ? `Usage last month did not exist` :
+                                               x.total_kwh > 0 && x.exceeded_last_month == true ? `The usage of this month is more than last month` :
+                                               x.total_kwh > 0 && x.exceeded_last_month == false ? `Congratulations on using this month more economically than last month` : ''
+                                    },
+                                    data: {
+                                        user_id: x.user_id,
+                                        device_key: x.device_key,
+                                        total_kwh: x.total_kwh,
+                                        old_total_kwh: x.old_total_kwh
+                                    }
+                                };
+        
+                                request.sendNotif( APP.models, payloadNotif, ( err, res ) => {
+                                    if ( err ) throw new Error( err );
+        
+                                    if ( i == data_insert.length - 1 ) {
+                                        callback( null, {
+                                            code: 'OK',
+                                            message: 'Success cronjob report hsitory end of month',
+                                            payloadLog: {
+                                                info: 'REPORT HSITORY END OF MONTH',
+                                                message: 'Success cronjob report hsitory end of month',
+                                                level: { error: false }
+                                            }
+                                        });
+                                    }
+                                });
+                            });   
+                        } catch ( err ) {
+                            callback({
+                                code: 'ERR',
+                                message: 'failed to send notification',
+                                payloadLog: {
+                                    info: 'REPORT HSITORY END OF MONTH',
+                                    message: 'failed to send notification',
+                                    level: { error: true }
+                                },
+                                data: JSON.stringify( err )
+                            });
+                        }
+                    }
+                ],
+                function ( err, result ) {
+                    if ( err ) return output.log( err.payloadLog );
+    
+                    return output.log( result.payloadLog );
                 }
-            ],
-            function ( err, result ) {
-                if ( err ) return console.log( err ,'error cron report history' );
-
-                return console.log( result , 'success cron report history')
-            }
-        );   
-
+            );   
+        }
     });
 
     // Scheduler Connected Device

@@ -77,6 +77,10 @@ exports.sendEmail = function(params, callback) {
         };
 
         nodemailer.createTransport(transport).sendMail(mailOptions, (err, info) => {
+            console.log(params);
+            console.log(err ,'ini error');
+            
+            
             if (err) return callback(err);
     
             callback(null, {
