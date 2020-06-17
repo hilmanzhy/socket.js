@@ -16,4 +16,12 @@ router.post('/reporthistory', ( req, res, next ) => {
 	});
 });
 
+router.post('/usage/change', (req, res, next) => {   
+	reportController.changeUsageTarget(req.APP, req, (err, result) => {
+		if ( err ) return req.APP.output.print(req, res, err);
+
+		return req.APP.output.print(req, res, result);
+	});
+});
+
 module.exports = router;

@@ -41,6 +41,7 @@ module.exports = function (sequelize, Sequelize) {
         },
         token: Sequelize.DOUBLE,
         support_pal_id: Sequelize.INTEGER,
+        usage_target: Sequelize.INTEGER,
         notif_token_alert: {
             type: Sequelize.INTEGER,
             get: function() {
@@ -95,6 +96,14 @@ module.exports = function (sequelize, Sequelize) {
                 if (!this.getDataValue("notif_update_token")) return 0;
 
                 return this.getDataValue("notif_update_token");
+            }
+        },
+        notif_usage_target: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_usage_target")) return 0;
+
+                return this.getDataValue("notif_usage_target");
             }
         }
     });
