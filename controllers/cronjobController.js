@@ -610,6 +610,128 @@ module.exports = function () {
             );   
         }
     });
+    
+    // scheduler check usage target
+    scheduler.scheduleJob('* * 10 * * *', () => {
+        console.log('tes cron nrk');
+        let {user} = APP.models.mysql;
+        async.waterfall(
+            [
+                function getUser(callback) {
+                    user.findAll({
+                        attributes: ['user_id', 'name', 'device_key', 'verify_status', 'notif_usage_target', 'usage_target'],
+                        where: {
+                            verify_status: 1
+                        }
+                    })
+                    .then(res => {
+                        callback(null, res);
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        callback({
+                            code: 'ERR_DATABASE',
+                            data: err
+                        })
+                    })
+                },
+
+                function checkUsageTarget(data, callback) {
+                    Promise.all(
+                        data.map((x, i) => {
+                            let sp = 'call sitadev_iot_2.compare_target(:user_id)';
+
+                            return APP.db.sequelize
+                                .query(sp, {
+                                    replacements: {
+                                        user_id: x.user_id
+                                    },
+                                    type: APP.db.sequelize.QueryTypes.RAW
+                                })
+                                .then(result => {   
+                                    let obj = {};
+                                    obj.user_id = x.user_id;
+                                    obj.device_key = x.device_key;
+                                    obj.notif_usage_target = x.notif_usage_target;
+                                    obj.usage_target = x.usage_target;
+                                    obj.data = result[0].message;   
+
+                                    return obj;
+                                })
+                                .catch(err => {
+                                    return callback({
+                                        code: "ERR_DATABASE",
+                                        data: err
+                                    });
+                                });
+                        })
+                    )
+                    .then(arr => {
+                        console.log(arr);
+                        callback(null, arr);
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        callback({
+                            code: 'ERR',
+                            data: err
+                        })
+                    })
+                },
+
+                function sendNotification(data, callback) {
+                    try {
+                        data.map((x, i) => {
+                            let payloadNotif = {
+                                notif: {
+                                    title: "target usage notification",
+                                    body:  x.data == 1 ? 'usage sudah mendekati target!' : ''
+                                },
+                                data: {
+                                    user_id: x.user_id,
+                                    device_key: x.device_key
+                                }
+                            };
+    
+                            request.sendNotif(APP.models, payloadNotif, (err, res) => {
+                                if (err) throw new Error( err );
+    
+                                if (i == data.length - 1) {
+                                    callback( null, {
+                                        code: 'OK',
+                                        message: 'Success cronjob reminder usage target',
+                                        payloadLog: {
+                                            info: 'REMINDER USAGE TARGET',
+                                            message: 'Success cronjob reminder usage target',
+                                            level: { error: false }
+                                        }
+                                    });
+                                }
+                            });
+                        });   
+                    } catch ( err ) {
+                        callback({
+                            code: 'ERR',
+                            message: 'failed to send notification',
+                            payloadLog: {
+                                info: 'REMINDER USAGE TARGET',
+                                message: 'failed to send notification',
+                                level: { error: true }
+                            },
+                            data: JSON.stringify( err )
+                        });
+                    }
+                }
+
+            ],
+            (err, result) => {
+                if (err) return output.log(err);
+
+                return output.log(result);
+            }
+        )
+        
+    })
 
     // Scheduler Connected Device
     // scheduler.scheduleJob('*/5 * * * *', function (timeCron) {
