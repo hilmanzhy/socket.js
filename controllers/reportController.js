@@ -5,16 +5,15 @@ const sequelize = require('sequelize');
 
 exports.reportHistory = ( APP, req, callback ) => {
     let { report_history } = APP.models.mysql;
-    let { month } = req.body;
 
     report_history
         .findAll({
             attributes: ['id','user_id','total_kwh','total_rp','year','month'],
             order: [
-                ['created_at','DESC']
+                ['month','DESC']
             ],
             where: {
-                month: { [sequelize.Op.lte]: month },
+                month: parseInt( moment().format('MM') ),
                 year: moment().format('YYYY'),
                 user_id: req.auth.user_id
             }
@@ -27,8 +26,6 @@ exports.reportHistory = ( APP, req, callback ) => {
             });
         })
         .catch(err => {
-            console.log(err);
-            
             callback({
                 code: "ERR_DATABASE",
                 message: 'Error database',
