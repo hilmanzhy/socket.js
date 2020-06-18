@@ -13,7 +13,6 @@ exports.reportHistory = ( APP, req, callback ) => {
                 ['month','DESC']
             ],
             where: {
-                month: parseInt( moment().format('MM') ),
                 year: moment().format('YYYY'),
                 user_id: req.auth.user_id
             }
