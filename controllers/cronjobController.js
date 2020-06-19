@@ -418,7 +418,7 @@ module.exports = function () {
                                         data_insert.push({
                                             user_id: x.user_id,
                                             total_kwh: ( data_report[0].dataValues.total_kwh ).toFixed(2),
-                                            total_rp: Math.round ( total_rp * 100 ) / 100,
+                                            total_rp: parseInt( total_rp ),
                                             year: moment().format('YYYY'),
                                             month: parseInt( moment().format('MM') ),
                                             rp_lbwp: rp_lbwp,
@@ -524,7 +524,8 @@ module.exports = function () {
                                             name    : x.name,
                                             cdn_url : `${ process.env.APP_URL }/cdn`,
                                             total_kwh: x.total_kwh,
-                                            tota_rp: x.total_rp
+                                            total_rp: x.total_rp,
+                                            month: moment().format('MMMM')
                                         }
                                     }
                                 }
@@ -609,6 +610,7 @@ module.exports = function () {
                 }
             );   
         }
+
     });
     
     // scheduler check usage target
