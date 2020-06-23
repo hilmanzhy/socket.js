@@ -105,6 +105,14 @@ module.exports = function (sequelize, Sequelize) {
 
                 return this.getDataValue("notif_usage_target");
             }
+        },
+        notif_eom_report: {
+            type: Sequelize.INTEGER,
+            get: function() {
+                if (!this.getDataValue("notif_eom_report")) return 0;
+
+                return this.getDataValue("notif_eom_report");
+            }
         }
     });
 

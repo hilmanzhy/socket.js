@@ -49,7 +49,7 @@
                                                         style="text-align:right; padding: 0 1% 0 0;"
                                                     >
                                                         <img
-                                                            src="{{ cdn_url }}/img/undraw_message_sent.png"
+                                                            src="{{ cdn_url }}/img/email_security.png"
                                                             width="195.2px"
                                                             height="77.67px"
                                                             style="display: block; float: right;"
@@ -90,7 +90,7 @@
                                         style="padding: 40px 0 30px 0; color: #153643; font-size: 28px; font-weight: bold;"
                                     >
                                         <img
-                                            src="{{ cdn_url }}/img/email_security.png"
+                                            src="{{ cdn_url }}/img/undraw_message_sent.png"
                                             width=" 581.22px"
                                             height="350px"
                                             style="display: block;"
@@ -107,11 +107,34 @@
                                         <p
                                             style="color: #828282; font-size: 20px; font-weight: 500; line-height: 32px;"
                                         >
-                                            {{ month }} total usage
+                                            this is monthly roundup for your electrical report usage <br />
+                                            Total usage of {{ month }} {{ year }}
                                         </p>
+                                        
                                         <p>
-                                            Kwh. {{ total_kwh }} <br />
+
+                                        <img
+                                        src="{{ cdn_url }}/img/kwh.svg"
+                                        width="20px"
+                                        height="20px"
+                                        style="display: inline-block;"
+                                        />
+                                            {{ total_kwh }} KwH
+                                        </p>
+
+                                        <p>
+                                        <img
+                                        src="{{ cdn_url }}/img/money.svg"
+                                        width="20px"
+                                        height="20px"
+                                        style="display: inline-block;"
+                                        />
                                             Rp. {{ total_rp }}
+                                        </p>
+                                        <p
+                                            style="font-size: 17px;"
+                                        >
+                                            {{ note }}
                                         </p>
                                     </td>
                                 </tr>
