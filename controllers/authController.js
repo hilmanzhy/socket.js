@@ -248,47 +248,55 @@ exports.register = function (APP, req, callback) {
             .then(res => {            
                 callback(null, res.data.data);
             })
-            .catch(err => {                
-                if (err.response.data.status == 'error' && err.response.data.message == 'The email has already been taken.') {
+            .catch(err => {       
+                try {
+                    let res = err.response.data;
+        
+                    if ( res.status != 'error' && res.message != 'The email has already been taken.' ) return callback({
+                        code: 'ERR',
+                        message: res.message,
+                        data: {}
+                    });
+
                     callback(null, true);
-                } else {
+
+                } catch ( err ) {
                     callback({
                         code: 'ERR',
-                        message: err.response.data.message,
-                        data: err
-                    }) 
-                }
+                        message: 'Connection supportpal',
+                        data: {}
+                    });
+                }         
             })
-          },
+        },
     
-          function getSupportPalId(data, callback) {
+        function getSupportPalId(data, callback) {
             axios({
-              method: 'GET',
-              auth: {
-                username: process.env.SUPP_TOKEN,
-                password: ''
-              },
-              url: `${process.env.SUPP_HOST}/api/user/user?email=${req.body.email}&brand_id=${process.env.SUPP_BRAND_ID}`
+                method: 'GET',
+                auth: {
+                    username: process.env.SUPP_TOKEN,
+                    password: ''
+                },
+                url: `${process.env.SUPP_HOST}/api/user/user?email=${req.body.email}&brand_id=${process.env.SUPP_BRAND_ID}`
             })
             .then(res => {
-              if (res.data.data.length == 0) {
-                callback({
-                  code: 'NOT_FOUND',
-                  message: 'Email not found!'
-                })
-              } else {                  
-                callback(null, res.data.data[0]);
-              }
+                if (res.data.data.length == 0) {
+                    callback({
+                        code: 'NOT_FOUND',
+                        message: 'Email not found!'
+                    })
+                } else {                  
+                    callback(null, res.data.data[0]);
+                }
             })
             .catch(err => {
-              console.log(err);
-              callback({
-                code: 'ERR',
-                message: err.response.data.message,
-                data: err
-              }) 
+                callback({
+                    code: 'ERR',
+                    message: err.response.data.message,
+                    data: err
+                }) 
             })
-          },
+        },
 
         function create(data, callback) {            
             var query = APP.queries.insert('user', req, APP.models)
