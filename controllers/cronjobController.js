@@ -613,8 +613,8 @@ module.exports = function () {
 
     });
     
-    // scheduler check usage target
-    scheduler.scheduleJob('* * 10 * * *', () => {
+    // scheduler check usage target jam 10.00
+    scheduler.scheduleJob('* 0 10 * * *', () => {
         console.log('tes cron nrk');
         let {user} = APP.models.mysql;
         async.waterfall(

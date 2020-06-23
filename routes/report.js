@@ -19,12 +19,4 @@ router.post('/usage/change', (req, res, next) => {
 	});
 });
 
-router.post('/usage/notif', (req, res, next) => {   
-	reportController.setNotifUsageTarget(req.APP, req, (err, result) => {
-		if ( err ) return req.APP.output.print(req, res, err);
-
-		return req.APP.output.print(req, res, result);
-	});
-});
-
 module.exports = router;
