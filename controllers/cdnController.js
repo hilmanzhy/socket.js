@@ -38,7 +38,6 @@ exports.uploadCDN = ( APP, req, callback ) =>{
                     callback( null, data );
 
                 } catch ( err ) {
-
                     callback({
                         code: "INVALID_REQUEST",
                         message: "File tidak ada",
