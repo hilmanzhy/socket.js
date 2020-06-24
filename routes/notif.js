@@ -58,7 +58,8 @@ router.post("/setting/set", (req, res, next) => {
         !req.body.notif_email_login &&
         !req.body.notif_tax_update &&
         !req.body.notif_update_token &&
-        !req.body.notif_usage_target
+        !req.body.notif_usage_target &&
+        !req.body.notif_eom_report
     )
         return req.APP.output.print(req, res, {
             code: "MISSING_KEY"
