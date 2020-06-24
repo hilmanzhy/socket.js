@@ -177,6 +177,8 @@ io.on('connection', (socket) => {
 					
 					callback(null, result)
 				}).catch((err) => {
+					console.log(err, 'error handhakse 1');
+					
 					callback(err);
 				});
 			},
@@ -229,6 +231,7 @@ io.on('connection', (socket) => {
 					
 					})
 					.catch(err => {
+						console.log(err, 'error handhakse 1');
 						callback(err);
 					});
 				});
