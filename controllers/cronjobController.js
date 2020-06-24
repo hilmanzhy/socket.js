@@ -624,7 +624,6 @@ module.exports = function () {
                 }
             );   
         }
-
     });
     
     // scheduler check usage target jam 10.00

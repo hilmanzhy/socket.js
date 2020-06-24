@@ -13,7 +13,8 @@ exports.getSetting = function(APP, req, callback) {
             "notif_email_login",
             "notif_tax_update",
             "notif_update_token",
-            "notif_usage_target"
+            "notif_usage_target",
+            "notif_eom_report"
         ]
     };
 
@@ -45,7 +46,8 @@ exports.setSetting = (APP, req, callback) => {
                 "notif_email_login",
                 "notif_tax_update",
                 "notif_update_token",
-                "notif_usage_target"
+                "notif_usage_target",
+                "notif_eom_report"
             ]
         };
 
@@ -124,6 +126,13 @@ exports.setSetting = (APP, req, callback) => {
                 APP.roles.can(req, "notif_usage_target", (err, permission) => {
                     if (err) return callback(err);
                     if (permission.granted) values.notif_usage_target = req.body.notif_usage_target;
+                    else throw new Error("FORBIDDEN");
+                });
+            
+            if (req.body.notif_eom_report && req.body.notif_eom_report != resGet.notif_eom_report)
+                APP.roles.can(req, "notif_eom_report", (err, permission) => {
+                    if (err) return callback(err);
+                    if (permission.granted) values.notif_eom_report = req.body.notif_eom_report;
                     else throw new Error("FORBIDDEN");
                 });
             // END CHECK USER LEVEL
