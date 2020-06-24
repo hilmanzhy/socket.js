@@ -189,6 +189,9 @@ io.on('connection', (socket) => {
 				let dataCek = {
 					body: {
 						device_id: device_id
+					},
+					auth: {
+						user_id: user_id
 					}
 				};
 
