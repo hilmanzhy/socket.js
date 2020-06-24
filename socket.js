@@ -180,8 +180,19 @@ io.on('connection', (socket) => {
 					callback(err);
 				});
 			},
+
 			function sendNotification(data, callback) {
-				if ( flag_update == 1 ) {
+				if ( flag_update != 1 ) return callback( null, data);
+
+				let dataCek = {
+					body: {
+						device_id: device_id
+					}
+				};
+
+				deviceController.cekVersion(req.APP, dataCek, (err, result) => {
+					if (err) return callback(err, result);
+
 					User
 						.findAll({
 							attributes: ['device_key'],
@@ -196,7 +207,7 @@ io.on('connection', (socket) => {
 							let params = {
 								notif: {
 									title: "Upgrade Firmware",
-									body: `Device ${device_name} success upgrade firmware at ${vascommkit.time.now()}`,
+									body: `Device ${device_name} ${result.data.last_version ? 'success':'failed'} upgrade firmware at ${vascommkit.time.now()}`,
 									tag: device_id
 								},
 								data: {
@@ -207,44 +218,20 @@ io.on('connection', (socket) => {
 								}
 							};
 
-							if ( res[0].device_key == "" || res[0].device_key == "null" ) {
-								Notif.create(
-									{
-										user_id: user_id,
-										notification: params.notif,
-										data: params.data,
-										date: moment().format("YYYY-MM-DD"),
-										time: moment().format("HH:mm:ss")
-									}
-								)
-								.then(res => {
-									callback(null, data);
-								})
-								.catch(err => {
-									console.log(err ,'2');
-									callback(err);
-								});
-							} else {
-								APP.request.sendNotif(APP.models, params, (err, res) => {
-									console.log(err ,'3');
-									
-									if (err) return callback(err);
-			
-									log.message =
-										log.message + `\n> PUSH NOTIFICATION`;
-			
-									callback(null, data);
-								});
-			
-							}
+							APP.request.sendNotif(APP.models, params, (err, res) => {
+								if (err) return callback(err);
+		
+								log.message = log.message + `\n> PUSH NOTIFICATION`;
+		
+								callback(null, data);
+							});
+
+					
 					})
 					.catch(err => {
 						callback(err);
 					});
-	
-				} else {
-					callback(null, data);
-				}
+				});
 			}
 
 		], function (err, res) {
