@@ -1,4 +1,5 @@
 const async = require("async");
+const { parse } = require("mustache");
 roles = require("../functions/roles.js");
 session = require("../functions/session.js");
 validation = require("../functions/validation.js");
@@ -278,7 +279,10 @@ exports.tokenUpdate = function(APP, req, cb) {
                                 );
                         }
                     })
-                    .then(resUpdate => {
+                    .then(resUpdate => {       
+                        console.log(resUpdate);
+                        token.kwh = resUpdate[0].token;
+                                         
                         if (req.body.type == "rph") {
                             switch (resUpdate[0].message) {
                                 case "0":
@@ -347,6 +351,25 @@ exports.tokenUpdate = function(APP, req, cb) {
                     });
             },
 
+            function createHistoryToken(token, user, cb) {                      
+                APP.models.mysql.history_token_update
+                    .create({
+                        user_id: user.user_id,
+                        kwh: token.kwh,
+                        rupiah: token.topup_balance.replace('Rp.', ''),
+                        tipe: 1
+                    })
+                    .then(() => {
+                        cb(null, token, user);
+                    })
+                    .catch(err => {
+                        cb({
+                            code: 'ERR_DATABASE',
+                            data: JSON.stringify(err)
+                        })
+                    })
+            },
+
             function pushNotif(token, user, cb) {
                 if (user.notif_update_token) {
                     let params = {
@@ -372,14 +395,15 @@ exports.tokenUpdate = function(APP, req, cb) {
                             });
     
                         console.log("PUSH NOTIFICATION!");
-    
-                        cb(null, {
-                            code: "OK",
-                            message: "Topup Token success",
-                            data: token
-                        });
+
                     });
                 }
+
+                cb(null, {
+                    code: "OK",
+                    message: "Topup Token success",
+                    data: token
+                });
             }
         ],
         function(err, res) {
@@ -412,4 +436,71 @@ exports.tokenAlert = function(APP, req, cb) {
                 message: err.message
             });
         });
+};
+
+exports.tokenHistory = (APP, req, callback) => {
+    let {history_token_update} = APP.models.mysql,
+        totalkWh = 0,
+        totalRupiah = 0;
+
+    query = {
+        options: {
+            where: { user_id: req.auth.user_id }
+        }
+    };
+    async.waterfall(
+        [
+            function getData(callback) {
+                history_token_update
+                    .findAll(query.options)
+                    .then(res => {
+                        if (res.length == 0) return callback({code: 'NOT_FOUND'})
+
+                        callback(null, res);
+                    })
+                    .catch(err => {
+                        callback({
+                            code: "ERR_DATABASE",
+                            data: JSON.stringify(err)
+                        })
+                    })
+            },
+
+            function sumData(data, callback) {
+                Promise.all(
+                    data.map((x, i) => {
+                        totalkWh += parseFloat(x.kwh);
+                        totalRupiah += parseInt(x.rupiah);
+
+                        return;
+                    })
+                )
+                .then(() => {
+                    console.log(totalRupiah);
+                    
+                    let obj = {};
+                    obj.totalkWh = totalkWh;
+                    obj.totalRupiah = totalRupiah;
+
+                    data.push(obj);
+
+                    callback(null, {
+                        code: 'FOUND',
+                        data: data
+                    })
+                })
+                .catch(err => {
+                    callback({
+                        code: "ERR",
+                        data: JSON.stringify(err)
+                    })
+                })
+            }
+        ],
+        function(err, res) {
+            if (err) return callback(err);
+
+            return callback(null, res);
+        }
+    )
 };
