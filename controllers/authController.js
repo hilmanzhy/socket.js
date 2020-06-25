@@ -224,85 +224,85 @@ exports.register = function (APP, req, callback) {
             callback(null, true)
         },
 
-        function registerToSupportPal(data, callback) {
-            let fullname = req.body.name.split(' ');
-            let firstname = fullname[0];
-            let lastname = fullname[fullname.length - 1];
+        // function registerToSupportPal(data, callback) {
+        //     let fullname = req.body.name.split(' ');
+        //     let firstname = fullname[0];
+        //     let lastname = fullname[fullname.length - 1];
     
-            axios({
-                method: 'POST',
-                auth: {
-                    username: process.env.SUPP_TOKEN,
-                    password: ''
-                },
-                url: `${process.env.SUPP_HOST}/api/user/user`,
-                data: {
-                    brand_id: process.env.SUPP_BRAND_ID,
-                    firstname: firstname,
-                    lastname: lastname,
-                    email: req.body.email,
-                    password: req.body.password,
-                    organisation: 'SITAMOTO'
-                }
-            })
-            .then(res => {            
-                callback(null, res.data.data);
-            })
-            .catch(err => {       
-                try {
-                    let res = err.response.data;
+        //     axios({
+        //         method: 'POST',
+        //         auth: {
+        //             username: process.env.SUPP_TOKEN,
+        //             password: ''
+        //         },
+        //         url: `${process.env.SUPP_HOST}/api/user/user`,
+        //         data: {
+        //             brand_id: process.env.SUPP_BRAND_ID,
+        //             firstname: firstname,
+        //             lastname: lastname,
+        //             email: req.body.email,
+        //             password: req.body.password,
+        //             organisation: 'SITAMOTO'
+        //         }
+        //     })
+        //     .then(res => {            
+        //         callback(null, res.data.data);
+        //     })
+        //     .catch(err => {       
+        //         try {
+        //             let res = err.response.data;
         
-                    if ( res.status != 'error' && res.message != 'The email has already been taken.' ) return callback({
-                        code: 'ERR',
-                        message: res.message,
-                        data: {}
-                    });
+        //             if ( res.status != 'error' && res.message != 'The email has already been taken.' ) return callback({
+        //                 code: 'ERR',
+        //                 message: res.message,
+        //                 data: {}
+        //             });
 
-                    callback(null, true);
+        //             callback(null, true);
 
-                } catch ( err ) {
-                    callback({
-                        code: 'ERR',
-                        message: 'Connection supportpal',
-                        data: {}
-                    });
-                }         
-            })
-        },
+        //         } catch ( err ) {
+        //             callback({
+        //                 code: 'ERR',
+        //                 message: 'Connection supportpal',
+        //                 data: {}
+        //             });
+        //         }         
+        //     })
+        // },
     
-        function getSupportPalId(data, callback) {
-            axios({
-                method: 'GET',
-                auth: {
-                    username: process.env.SUPP_TOKEN,
-                    password: ''
-                },
-                url: `${process.env.SUPP_HOST}/api/user/user?email=${req.body.email}&brand_id=${process.env.SUPP_BRAND_ID}`
-            })
-            .then(res => {
-                if (res.data.data.length == 0) {
-                    callback({
-                        code: 'NOT_FOUND',
-                        message: 'Email not found!'
-                    })
-                } else {                  
-                    callback(null, res.data.data[0]);
-                }
-            })
-            .catch(err => {
-                callback({
-                    code: 'ERR',
-                    message: err.response.data.message,
-                    data: err
-                }) 
-            })
-        },
+        // function getSupportPalId(data, callback) {
+        //     axios({
+        //         method: 'GET',
+        //         auth: {
+        //             username: process.env.SUPP_TOKEN,
+        //             password: ''
+        //         },
+        //         url: `${process.env.SUPP_HOST}/api/user/user?email=${req.body.email}&brand_id=${process.env.SUPP_BRAND_ID}`
+        //     })
+        //     .then(res => {
+        //         if (res.data.data.length == 0) {
+        //             callback({
+        //                 code: 'NOT_FOUND',
+        //                 message: 'Email not found!'
+        //             })
+        //         } else {                  
+        //             callback(null, res.data.data[0]);
+        //         }
+        //     })
+        //     .catch(err => {
+        //         callback({
+        //             code: 'ERR',
+        //             message: err.response.data.message,
+        //             data: err
+        //         }) 
+        //     })
+        // },
 
         function create(data, callback) {            
             var query = APP.queries.insert('user', req, APP.models)
 
             query.level_id = '2'
-            query.support_pal_id = data.id
+            //query.support_pal_id = data.id
             
             // switch (req.get('session-key')) {
             //     case 'apps':
