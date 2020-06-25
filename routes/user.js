@@ -75,4 +75,19 @@ router.post("/token/alert", (req, res, next) => {
     });
 });
 
+router.post("/token/history", (req, res, next) => {
+    if (!req.auth && !req.body.user_id)
+        return req.APP.output.print(req, res, {
+            code: "MISSING_KEY",
+            data: { missing_parameter: "user_id" }
+        });
+    if (!req.auth) req.auth = { user_id: req.body.user_id };
+
+    userController.tokenHistory(req.APP, req, (err, result) => {
+        if (err) return req.APP.output.print(req, res, err);
+
+        return req.APP.output.print(req, res, result);
+    });
+});
+
 module.exports = router;
