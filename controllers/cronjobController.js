@@ -621,7 +621,8 @@ module.exports = function () {
                     user.findAll({
                         attributes: ['user_id', 'name', 'device_key', 'verify_status', 'notif_usage_target', 'usage_target'],
                         where: {
-                            verify_status: 1
+                            verify_status: 1,
+                            notif_usage_target: 1
                         }
                     })
                     .then(res => {
@@ -667,7 +668,6 @@ module.exports = function () {
                         })
                     )
                     .then(arr => {
-                        console.log(arr);
                         callback(null, arr);
                     })
                     .catch(err => {
