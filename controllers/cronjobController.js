@@ -684,9 +684,7 @@ module.exports = function () {
                         })
                     )
                     .then(arr => {
-                        console.log(arr);
-                        
-                        // callback(null, arr);
+                        callback(null, arr);
                     })
                     .catch(err => {
                         console.log(err);
