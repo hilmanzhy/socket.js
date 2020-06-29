@@ -212,7 +212,7 @@ exports.tokenUpdate = function(APP, req, cb) {
             function generatingQuery(cb) {
                 query = {
                     sp:
-                        "CALL sitadev_iot_2.insert_token (:user_id, :token_rph_topup)",
+                        "CALL sitadev_iot_2.insert_token (:user_id, :token_rph_topup, :token_kwh_topup)",
                     values: {},
                     options: {
                         where: { user_id: req.auth.user_id },
@@ -243,59 +243,32 @@ exports.tokenUpdate = function(APP, req, cb) {
                         user = result;
                         pricing = user.electricity_pricing;
 
-                        switch (req.body.type) {
-                            case "rph":
-                                token.topup_balance = `Rp. ${req.body.token}`;
+                        token.topup_balance = 
+                            req.body.type == 'rph' ? `Rp. ${req.body.token}` : 
+                            req.body.type == 'kwh' ? `${req.body.token} kWh` : ''
 
-                                return APP.db.sequelize.query(query.sp, {
-                                    replacements: {
-                                        user_id: req.auth.user_id,
-                                        token_rph_topup: req.body.token
-                                    },
-                                    type: APP.db.sequelize.QueryTypes.RAW
-                                });
-
-                            case "kwh":
-                                token.topup_balance = `${req.body.token} kWh`;
-
-                                power = pricing.range_daya.split(" s.d ")[1];
-                                max_token = (power * 720) / 1000;
-
-                                /* SUM token with previous */
-                                values.token = user.token
-                                    ? parseFloat(user.token) +
-                                      parseFloat(req.body.token)
-                                    : parseFloat(req.body.token);
-
-                                /* INSERT new token */
-                                // values.token = parseFloat(req.body.token);
-                                
-                                if (values.token > max_token)
-                                    throw new Error("MAX_TOKEN");
-
-                                return APP.models.mysql.user.update(
-                                    query.values,
-                                    query.options
-                                );
-                        }
+                        return APP.db.sequelize.query(query.sp, {
+                            replacements: {
+                                user_id: req.auth.user_id,
+                                token_rph_topup: req.body.type == 'rph' ? req.body.token : null,
+                                token_kwh_topup: req.body.type == 'kwh' ? req.body.token : null
+                            },
+                            type: APP.db.sequelize.QueryTypes.RAW
+                        });
                     })
                     .then(resUpdate => {       
-                        console.log(resUpdate);
                         token.kwh = resUpdate[0].token;
                                          
-                        if (req.body.type == "rph") {
-                            switch (resUpdate[0].message) {
-                                case "0":
-                                    throw new Error("MAX_TOKEN");
+                        switch (resUpdate[0].message) {
+                            case "0":
+                                throw new Error("MAX_TOKEN");
+                        
+                            case "2":
+                                throw new Error("TAX_UNAVAILABLE");
 
-                                    break;
-                            
-                                case "2":
-                                    throw new Error("TAX_UNAVAILABLE");
+                            case "3":
+                                throw new Error("MAX_TOKEN");
 
-                                    break;
-
-                            }
                         }
 
                         options.attributes = ["token", "notif_update_token"];
@@ -349,25 +322,6 @@ exports.tokenUpdate = function(APP, req, cb) {
 
                         cb(output);
                     });
-            },
-
-            function createHistoryToken(token, user, cb) {                      
-                APP.models.mysql.history_token_update
-                    .create({
-                        user_id: user.user_id,
-                        kwh: token.kwh,
-                        rupiah: token.topup_balance.replace('Rp.', ''),
-                        tipe: 1
-                    })
-                    .then(() => {
-                        cb(null, token, user);
-                    })
-                    .catch(err => {
-                        cb({
-                            code: 'ERR_DATABASE',
-                            data: JSON.stringify(err)
-                        })
-                    })
             },
 
             function pushNotif(token, user, cb) {
@@ -476,17 +430,15 @@ exports.tokenHistory = (APP, req, callback) => {
                     })
                 )
                 .then(() => {
-                    console.log(totalRupiah);
-                    
-                    let obj = {};
-                    obj.totalkWh = totalkWh;
-                    obj.totalRupiah = totalRupiah;
-
-                    data.push(obj);
-
                     callback(null, {
                         code: 'FOUND',
-                        data: data
+                        data: {
+                            total: {
+                                total_rupiah: totalRupiah,
+                                total_kwh: totalkWh
+                            },
+                            rows: data
+                        }
                     })
                 })
                 .catch(err => {
