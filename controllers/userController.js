@@ -399,7 +399,8 @@ exports.tokenHistory = (APP, req, callback) => {
 
     query = {
         options: {
-            where: { user_id: req.auth.user_id }
+            where: { user_id: req.auth.user_id },
+            order: [['id', 'DESC']]
         }
     };
     async.waterfall(
