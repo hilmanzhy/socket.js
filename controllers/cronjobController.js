@@ -627,7 +627,7 @@ module.exports = function () {
     });
     
     // scheduler check usage target jam 10.00
-    scheduler.scheduleJob('* 0 10 * * *', () => {
+    scheduler.scheduleJob('0 00 10 * * *', () => {
         console.log('tes cron nrk');
         let {user} = APP.models.mysql;
         async.waterfall(
@@ -666,6 +666,7 @@ module.exports = function () {
                                 })
                                 .then(result => {   
                                     let obj = {};
+                                    obj.loop = i + 1,
                                     obj.user_id = x.user_id;
                                     obj.device_key = x.device_key;
                                     obj.notif_usage_target = x.notif_usage_target;
@@ -683,7 +684,9 @@ module.exports = function () {
                         })
                     )
                     .then(arr => {
-                        callback(null, arr);
+                        console.log(arr);
+                        
+                        // callback(null, arr);
                     })
                     .catch(err => {
                         console.log(err);
