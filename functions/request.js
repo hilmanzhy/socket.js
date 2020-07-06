@@ -22,7 +22,7 @@ exports.post = function (url, params, callback) {
     unirest.post(url)
 		.headers(headers)
 		.send(params)
-		.end(function (response) {
+		.end(function (response) {            
             if (response.error) return callback({
                 code : response.body.code,
                 message : response.body.message
@@ -91,9 +91,10 @@ exports.sendEmail = function(params, callback) {
 };
 
 exports.sendNotif = function(models, payload, callback) {
+
     let url = "https://fcm.googleapis.com/fcm/send",
         params = {
-            to: payload.data.device_key,
+            to: payload.data.device_key ? payload.data.device_key : '0',
             notification: {
                 title: payload.notif.title,
                 body: payload.notif.body,
