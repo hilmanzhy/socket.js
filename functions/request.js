@@ -22,10 +22,10 @@ exports.post = function (url, params, callback) {
     unirest.post(url)
 		.headers(headers)
 		.send(params)
-		.end(function (response) {            
+		.end(function (response) {       
             if (response.error) return callback({
-                code : response.body.code,
-                message : response.body.message
+                code : 'NOTIF_ERR',
+                message : 'Sending Notif Error!'
             });
 
             callback(null, response.body);
@@ -108,7 +108,7 @@ exports.sendNotif = function(models, payload, callback) {
         };
 
     this.post(url, params, (err, res) => {
-        
+
         if (err) return callback(err);
 
         models.mongo.notif.create(

@@ -173,6 +173,18 @@
 		"message": "Sending Email Error!"
 	},
 
+	
+	"NOTIF_ERR": {
+		"error"	: true,
+		"code"	: "NOTIF_ERR",
+		"name"	: "NOTIF_ERR",
+		"status": 500,
+		"from"	: "",
+		"info"	: {},
+		"data"	: {},
+		"message": "Sending Notif Error!"
+	},
+
 	"OTP_ERR" : {
 		"error"	: true,
 		"code"	: "OTP_ERR",

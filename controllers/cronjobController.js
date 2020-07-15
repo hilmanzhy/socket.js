@@ -270,12 +270,11 @@ module.exports = function () {
 
         query.where = { notif_token_alert: 1 };
         query.include = "electricity_pricing";
-        query.attributes = ["user_id", "device_key", "token"];
+        query.attributes = ["user_id", "device_key", "token","name"];
 
         APP.models.mysql.user
             .findAll(query)
             .then(result => {
-
                 if (result.length > 0) {
                     result.map(( user , index ) => {                    
                         /**
@@ -284,7 +283,6 @@ module.exports = function () {
                          * if user token less than 20kwh
                          */
                         if (user.token <= 20) {
-
                             let pricing = user.electricity_pricing,
                                 token_kwh = parseFloat(user.token).toFixed(2),
                                 token_rph = parseInt(token_kwh * parseInt(pricing.rp_lbwp)),
@@ -300,27 +298,41 @@ module.exports = function () {
                                 };
 
                             request.sendNotif(APP.models, payloadNotif, (err, res) => {
-                                if (err) throw new Error(err);
+                                if ( err ) {
+                                    payloadLog.info = "TOKEN CRON ERROR";
+                                    payloadLog.message = `user_id: ${user.user_id}, name: ${user.name} : ${err.message}`;
+                                    payloadLog.level = { error: true };
 
-                                payloadLog.message =
+                                    output.log(payloadLog);
+                                } else {
+                                    payloadLog.message =
                                     `Critical Token Balance on User ${user.user_id}` +
                                     "\n" +
                                     `Token Balance (kWh) : ${token_kwh}` +
                                     "\n" +
                                     `Token Balance (rph) : ${token_rph}`;
-                                payloadLog.level = { error: false };
+                                    payloadLog.level = { error: false };
 
-                                return output.log(payloadLog);
+                                    output.log(payloadLog);
+                                }
                             });
                         } else {
-                            console.log('NOT_FOUND');
+                            payloadLog.info = "SCHEDULER TOKEN CHECKER";
+                            payloadLog.message = `USER ${user.name} ${user.user_id} TOKEN IS NOT UNDER 20`;
+                            payloadLog.level = { error: true };
+
+                            output.log(payloadLog)
                         }
                     });
                 } else {
-                    throw new Error("NOT_FOUND");
+                    payloadLog.info = "TOKEN CRON ERROR";
+                    payloadLog.message = 'USER NOT_FOUND';
+                    payloadLog.level = { error: true };
+
+                    return output.log(payloadLog);
                 }
             })
-            .catch(err => {
+            .catch(err => { 
                 switch (err.message) {
                     case "NOT_FOUND":
                         payloadLog.message = `NO SCHEDULED TOKEN ALERT AT THIS TIME`;
