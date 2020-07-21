@@ -21,12 +21,12 @@ exports.post = function (url, params, callback) {
 
     unirest.post(url)
 		.headers(headers)
-		.send(params)
+        .send(params)
+        .proxy(process.env.HTTP_PROXY)
 		.end(function (response) {       
-            if (response.error) return callback({
-                code : 'NOTIF_ERR',
-                message : 'Sending Notif Error!'
-            });
+            console.log(response.error,'error firebase');
+
+            if (response.error) return callback(response);
 
             callback(null, response.body);
 		});

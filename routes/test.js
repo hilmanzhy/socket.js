@@ -103,7 +103,7 @@ router.post("/notif", (req, res, next) => {
             };
 
             req.APP.request.sendNotif(req.APP.models, params, (err, response) => {
-                if (err) throw err;
+                if (err) throw new Error(err);
 
                 return req.APP.output.print(req, res, {
                     code: "OK",
