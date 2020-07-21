@@ -24,7 +24,7 @@ exports.post = function (url, params, callback) {
         .send(params)
         .proxy(process.env.HTTP_PROXY)
 		.end(function (response) {       
-            console.log(response,'error firebase');
+            console.log(response,'response firebase');
 
             if (response.error) return callback(response);
 
