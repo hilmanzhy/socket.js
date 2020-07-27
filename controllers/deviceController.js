@@ -1268,6 +1268,7 @@ exports.sensordata = function(APP, req, callback) {
         User = APP.models.mysql.user,
         DevicePIN = APP.models.mysql.device_pin;
 
+	query = {};
     query.options = {
         where: {
             user_id: params.user_id
@@ -3077,6 +3078,7 @@ exports.check = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
+	query = {};
 	query.options = {
 		where : {
 			device_id : params.device_id,
