@@ -17,7 +17,7 @@ const DevicePIN = APP => APP.models.mysql.device_pin
 const User = APP => APP.models.mysql.user
 
 let socket = io(process.env.SOCKET_URL);
-var query = {};
+let query = {};
 
 function updateSaklar(Sequelize, params, callback) {
 	Sequelize.query('CALL `sitadev_iot_2`.`update_saklar`(:user_id, :device_id, :switch, :user_id_shared, :share_device);', {
@@ -3093,8 +3093,6 @@ exports.check = function (APP, req, callback) {
             type: APP.db.sequelize.QueryTypes.RAW
         })
         .then(resultSP => {
-            // console.log(resultSP)
-            // process.exit(1)
 
             if (resultSP[0].message == "2") return Device.findOne(query.options);
 
@@ -3108,8 +3106,8 @@ exports.check = function (APP, req, callback) {
             return Device.findAndCountAll(query.options);
         })
         .then(resultIP => {
-            if (resultIP.count == "0") throw new Error("3"); // Device IP not Match
-
+			if (resultIP.count == "0") throw new Error("3"); // Device IP not Match
+			
             return callback(null, {
                 code: "OK",
                 message: "Device checked",
@@ -3117,8 +3115,6 @@ exports.check = function (APP, req, callback) {
             });
         })
         .catch(e => {
-			console.log("ERR CHECK DEVICE", e)
-			
             switch (e.message) {
                 case "1":
                     response = {
