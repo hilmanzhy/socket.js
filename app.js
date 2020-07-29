@@ -37,6 +37,7 @@ const cronjob = require('./controllers/cronjobController.js');
 
 const app = express();
 
+
 app.use(bodyParser.json({limit: process.env.JSON_LIMIT}));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));

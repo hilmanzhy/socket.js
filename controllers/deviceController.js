@@ -863,7 +863,9 @@ exports.devicedetail = function (APP, req, callback) {
 
 exports.pindetail = function (APP, req, callback) {
     let { device_id, pin } = req.body,
-        { user_id } = req.auth;
+		{ user_id } = req.auth;
+	
+	query = {};
 
     query.where = {
         user_id: user_id,
