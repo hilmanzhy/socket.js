@@ -4141,10 +4141,14 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 				firmware_device
 					.findAll({
 						attributes: ['firmware_id','path'],
-						where: { device_type: data.device_type }
+						where: { device_type: data.device_type },
+						order: [
+							['created_at','DESC']
+						]
 					})
 					.then(res => {
 						if ( res.length > 0 ) {
+							console.log( res );
 							let { firmware_id, path } = res[0];
 
 							data.firmware_version = firmware_id;
@@ -4176,8 +4180,7 @@ exports.upgradeFirmware = ( APP, req, callback ) => {
 					callback( null, data );
 				});
 			},
-			function upgradeFrimware( data, callback ) {
-				
+			function upgradeFrimware( data, callback ) {				
 				socket.emit("upgrade_firmware", data);
 
 				delete data.firmware_url;
