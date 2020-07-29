@@ -222,6 +222,7 @@ exports.registerdevice_backup = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
+	query = {};
 	query.options = {
 		where : {
 			device_id : datareq.device_id
@@ -839,6 +840,7 @@ exports.devicedetail = function (APP, req, callback) {
 	var date = new Date();
 	date.setHours(date.getHours());
 
+	query = {};
 	query.where = { 
 		user_id : datareq.user_id,
 		device_id : datareq.device_id,
@@ -866,7 +868,6 @@ exports.pindetail = function (APP, req, callback) {
 		{ user_id } = req.auth;
 	
 	query = {};
-
     query.where = {
         user_id: user_id,
         device_id: device_id,
@@ -933,6 +934,7 @@ exports.updatename = function (APP, req, callback) {
 	console.log(datareq)
 	console.log(date);
 
+	query = {};
 	query = {
 		options: {
 			where: {
@@ -1061,6 +1063,7 @@ exports.commandpanel = function (APP, req, callback) {
 	if(!datareq.pin) return callback({ code: 'MISSING_KEY' })
 	if(!datareq.date) return callback({ code: 'MISSING_KEY' })
 
+	query = {};
 	query.where = {
 		device_id : datareq.device_id,
 		user_id : datareq.user_id
@@ -1404,6 +1407,7 @@ exports.sensordata_v2 = function (APP, req, callback) {
 	
 	var response = {}
 
+	query = {};
 	query.options = {
 		where : {
 			user_id : params.user_id,
@@ -1722,6 +1726,7 @@ exports.totalruntime = function(APP, req, callback) {
     var data = {},
         response = {};
 
+	query = {};
     query = {
         col: "device_id",
         where: { user_id: params.user_id }
@@ -1908,6 +1913,7 @@ exports.settimer = function (APP, req, callback) {
 		message: 'Expected array of pin'
 	})	
 	
+	query = {};
 	query.value = {
 		timer_on : params.timer_on,
 		timer_off : params.timer_off
@@ -1959,6 +1965,7 @@ exports.switchtimer = function (APP, req, callback) {
 	if(!params.timer_status) return callback({ code: 'MISSING_KEY' })
 	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 
+	query = {};
 	query.value = {
 		timer_status : params.timer_status
 	}
@@ -2048,6 +2055,7 @@ exports.removetimer = function (APP, req, callback) {
 	if(!params.device_id) return callback({ code: 'MISSING_KEY' })
 	if(!params.pin) return callback({ code: 'MISSING_KEY' })
 
+	query = {};
 	query.value = {
 		timer_on : null,
 		timer_off : null,
@@ -2160,6 +2168,7 @@ exports.command_backup = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 	
+	query = {};
 	query.where = {
 			device_id : datareq.device_id,
 			user_id : datareq.user_id
@@ -2543,6 +2552,7 @@ exports.commandtest = function (APP, req, callback) {
 	date.setHours(date.getHours());
 	console.log(date);
 
+	query = {};
 	query.options = {
 		where : {
 			device_id : datareq.device_id,
@@ -2759,6 +2769,7 @@ exports.command = function (APP, req, callback) {
 
 	socket.emit('commandapi', params)
 
+	query = {};
 	query.options = {
 		where: {
 			device_id: params.device_id,
@@ -3000,6 +3011,7 @@ exports.ipupdate = function (APP, req, callback) {
 	}
 	else
 	{ */
+		query = {};
 		query.value = {
 			device_ip : datareq.device_ip
 		}
@@ -3311,6 +3323,8 @@ exports.delete = function (APP, req, callback) {
 	
 	var response = {}
 
+	query = {};
+
 	async.waterfall([
 		function generatingQuery(callback) {
 			query.options = {
@@ -3381,6 +3395,8 @@ exports.delete = function (APP, req, callback) {
 }
 
 exports.reset = function (APP, req, callback) {
+	query = {};
+
 	async.waterfall([
 		function generatingQuery(callback) {
 			query.where = {
@@ -3435,6 +3451,9 @@ const authController = require('../controllers/authController.js')
 /* Add share user controller */
 exports.addshareuser = function(APP, req, callback) {
 	let User = APP.models.mysql.user
+
+	query = {};
+
 	async.waterfall([
 		function(callback) {
 			authController.verifyPassword(APP, req, (err, result) => {
@@ -3564,6 +3583,8 @@ exports.addshareuser = function(APP, req, callback) {
 exports.deleteshareuser = function(APP, req, callback) {
 	const Sequelize = APP.db.sequelize
 	let User = APP.models.mysql.user
+
+	query = {};
 
 	authController.verifyPassword(APP, req, (err, result) => {
         if (err) return callback(err)
@@ -3712,7 +3733,8 @@ exports.getshareduser = function(APP, req, callback) {
 exports.updatestatusshare = function(APP, req, callback) {
 	const Sequelize = APP.db.sequelize;
 	let User = APP.models.mysql.user
-	
+
+	query = {};
 	query.delete = {
 		user_shared: req.auth.user_id,
 		device_id: req.body.device_id
